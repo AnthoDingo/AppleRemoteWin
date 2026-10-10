@@ -1,0 +1,127 @@
+<Page xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" xmlns:l="clr-namespace:AppleRemote.App" x:Class="AppleRemote.App.Views.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="clr-namespace:AppleRemote.App.Views">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="Branch" TargetType="Rectangle">
+                <Setter Property="Fill" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="BranchStem" TargetType="Rectangle" BasedOn="{StaticResource Branch}">
+                <Style.Triggers><DataTrigger Binding="{Binding AnyOn}" Value="True">
+                    <Setter Property="Fill" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                </DataTrigger></Style.Triggers>
+            </Style>
+            <Style x:Key="BranchWinUsb" TargetType="Rectangle" BasedOn="{StaticResource Branch}">
+                <Style.Triggers><DataTrigger Binding="{Binding WinUsbOn}" Value="True">
+                    <Setter Property="Fill" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                </DataTrigger></Style.Triggers>
+            </Style>
+            <Style x:Key="BranchFilter" TargetType="Rectangle" BasedOn="{StaticResource Branch}">
+                <Style.Triggers><DataTrigger Binding="{Binding FilterOn}" Value="True">
+                    <Setter Property="Fill" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                </DataTrigger></Style.Triggers>
+            </Style>
+            <Style x:Key="Pointer" TargetType="Line">
+                <Setter Property="Stroke" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="StrokeThickness" Value="1.5" />
+                <Setter Property="StrokeEndLineCap" Value="Round" />
+            </Style>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid Margin="18,6,18,18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Margin="0,0,32,0">
+        <TextBlock Text="{l:T Settings.RemoteKeys}" Style="{StaticResource Section}" />
+        <!-- Télécommande à l'échelle 0,5 (190 × 600) ; combobox et lignes sont calées à la main sur ses boutons. -->
+        <Grid Width="690" Height="500" HorizontalAlignment="Center" Margin="0,0,0,14">
+            <!-- Rien sous Lecture/Volume : on coupe la télécommande -->
+            <Grid Width="190" Height="440" Margin="250,50,250,0" VerticalAlignment="Top" ClipToBounds="True">
+                <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
+                    <local:RemoteDrawing />
+                </Viewbox>
+            </Grid>
+            <Canvas>
+            <ComboBox Canvas.Left="270" Canvas.Top="0" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[up].Key}" />
+            <ComboBox Canvas.Left="92" Canvas.Top="94" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[left].Key}" />
+            <ComboBox Canvas.Left="270" Canvas.Top="94" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[click].Key}" />
+            <Line X1="242" Y1="268" X2="272" Y2="268" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="92" Canvas.Top="252" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[menu].Key}" />
+            <Line X1="242" Y1="348" X2="273" Y2="348" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="92" Canvas.Top="332" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[siri].Key}" />
+            <Line X1="242" Y1="428" X2="273" Y2="428" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="92" Canvas.Top="412" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[playpause].Key}" />
+            <ComboBox Canvas.Left="270" Canvas.Top="174" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[down].Key}" />
+            <ComboBox Canvas.Left="448" Canvas.Top="94" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[right].Key}" />
+            <Line X1="448" Y1="268" X2="415" Y2="268" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="448" Canvas.Top="252" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[tv].Key}" />
+            <Line X1="448" Y1="352" X2="418" Y2="352" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="448" Canvas.Top="336" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[volup].Key}" />
+            <Line X1="448" Y1="423" X2="418" Y2="423" Style="{StaticResource Pointer}" />
+            <ComboBox Canvas.Left="448" Canvas.Top="407" Width="150" ItemsSource="{Binding KeyChoices}" SelectedItem="{Binding Bindings[voldown].Key}" />
+            </Canvas>
+        </Grid>
+        </StackPanel>
+        <StackPanel Grid.Column="1">
+        <TextBlock Text="{l:T Settings.Language}" Style="{StaticResource Section}" />
+        <ComboBox ItemsSource="{Binding Languages}" DisplayMemberPath="Name" SelectedValuePath="Code"
+                  SelectedValue="{Binding Language}" MinWidth="220" HorizontalAlignment="Left" Margin="0,0,0,14" />
+
+        <TextBlock Text="{l:T Settings.General}" Style="{StaticResource Section}" />
+        <ui:ToggleSwitch IsChecked="{Binding RunAtStartup}" Content="{l:T Settings.RunAtStartup}" Margin="0,0,0,8" />
+        <ui:ToggleSwitch IsChecked="{Binding CloseToTray}" Content="{l:T Settings.CloseToTray}" Margin="0,0,0,18" />
+
+        <TextBlock Text="{l:T Settings.Keyboard}" Style="{StaticResource Section}" />
+        <ui:ToggleSwitch IsChecked="{Binding KeyboardEnabled}"
+                  Content="{l:T Settings.KeyboardCheck}" Margin="0,0,0,8" />
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <Button Content="{l:T Settings.DefaultMap}" Command="{Binding ResetMapCommand}" />
+        </StackPanel>
+
+        <TextBlock Text="{l:T Settings.Pairing}" Style="{StaticResource Section}" />
+        <Button Content="{l:T Settings.PairButton}" Command="{Binding PairCommand}" HorizontalAlignment="Left" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,2">
+            <TextBlock Text="{l:T Settings.Driver}" Style="{StaticResource Section}" Margin="0" VerticalAlignment="Center" />
+            <Button Command="{Binding RefreshDriverCommand}" IsEnabled="{Binding DriverIdle}" ToolTip="{l:T Settings.Refresh}"
+                    Cursor="Hand" Padding="6,2" Margin="6,0,0,0" Background="Transparent" BorderThickness="0">
+                <TextBlock Text="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" />
+            </Button>
+        </StackPanel>
+        <TextBlock Text="{Binding DriverText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,8"
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="14" /><RowDefinition Height="14" /><RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Rectangle Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Width="2" Style="{StaticResource BranchStem}" />
+            <Rectangle Grid.Row="1" Grid.Column="1" Height="2" VerticalAlignment="Top" Style="{StaticResource BranchWinUsb}" />
+            <Rectangle Grid.Row="1" Grid.Column="2" Height="2" VerticalAlignment="Top" Style="{StaticResource BranchFilter}" />
+            <Rectangle Grid.Row="1" Grid.Column="0" Width="2" HorizontalAlignment="Right" Style="{StaticResource BranchWinUsb}" />
+            <Rectangle Grid.Row="1" Grid.Column="3" Width="2" HorizontalAlignment="Left" Style="{StaticResource BranchFilter}" />
+            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,8,0">
+                <TextBlock Text="{l:T Settings.Option1}" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,14" />
+                <WrapPanel IsEnabled="{Binding DriverIdle}" HorizontalAlignment="Center">
+                    <Button Content="{Binding WinUsbButton}" IsEnabled="{Binding CanToggleWinUsb}" Command="{Binding ToggleWinUsbCommand}" />
+                </WrapPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,0,0,0">
+                <TextBlock Text="{l:T Settings.Option2}" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,14" />
+                <WrapPanel IsEnabled="{Binding DriverIdle}" HorizontalAlignment="Center">
+                    <Button Content="{Binding FilterButton}" IsEnabled="{Binding CanToggleFilter}" Command="{Binding ToggleFilterCommand}" />
+                </WrapPanel>
+            </StackPanel>
+        </Grid>
+        </StackPanel>
+    </Grid>
+</Page>

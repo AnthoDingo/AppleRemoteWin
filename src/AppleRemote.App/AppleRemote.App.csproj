@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>AppleRemote.App</RootNamespace>
+    <AssemblyName>AppleRemote</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" />
+    <ProjectReference Include="..\AppleRemote.Windows\AppleRemote.Windows.csproj" />
+    <!-- Le programme d'installation du filtre (élévation) est copié à côté de l'exe ; l'application n'en référence aucun type. -->
+    <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+    <PackageReference Include="WPF-UI.Tray" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
+
+  <!-- Release : compile et signe (certificat de test) le filtre noyau AppleRemoteDriver, puis le copie à côté de l'exe.
+       Sans toolchain Rust/WDK, l'étape est ignorée avec un avertissement (AppleRemoteDriver=false pour la sauter). -->
+  <PropertyGroup>
+    <DriverDir>$(MSBuildThisFileDirectory)..\AppleRemoteDriver\</DriverDir>
+    <DriverPackage>$(DriverDir)target\release\AppleRemoteDriver_package\</DriverPackage>
+  </PropertyGroup>
+  <Target Name="BuildDriver" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(AppleRemoteDriver)' != 'false'">
+    <Exec Command="cargo make --profile release" WorkingDirectory="$(DriverDir)" EnvironmentVariables="LIBCLANG_PATH=$(ProgramFiles)\LLVM\bin" ContinueOnError="WarnAndContinue" StandardOutputImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="DriverExitCode" />
+    </Exec>
+    <ItemGroup Condition="'$(DriverExitCode)' == '0'">
+      <DriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)" Condition="'$(DriverExitCode)' == '0'" />
+  </Target>
+
+</Project>

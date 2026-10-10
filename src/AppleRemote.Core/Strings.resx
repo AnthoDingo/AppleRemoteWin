@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App.Title" xml:space="preserve"><value>Siri Remote (gen 1) pour Windows</value></data>
+  <data name="Tray.Show" xml:space="preserve"><value>Afficher</value></data>
+  <data name="Tray.Quit" xml:space="preserve"><value>Quitter</value></data>
+  <data name="Nav.Remote" xml:space="preserve"><value>Télécommande</value></data>
+  <data name="Nav.Guide" xml:space="preserve"><value>Tuto</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav.Debug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Remote.Level.Ok" xml:space="preserve"><value>Connectée</value></data>
+  <data name="Remote.Level.Warn" xml:space="preserve"><value>En attente</value></data>
+  <data name="Remote.Level.Idle" xml:space="preserve"><value>Arrêtée</value></data>
+  <data name="Remote.State" xml:space="preserve"><value>ÉTAT</value></data>
+  <data name="Remote.Gesture" xml:space="preserve"><value>GESTE</value></data>
+  <data name="Remote.Nearby" xml:space="preserve"><value>APPAREILS APPLE HID À PROXIMITÉ</value></data>
+  <data name="Remote.NearbyNone" xml:space="preserve"><value>Aucun appareil.</value></data>
+  <data name="Remote.Battery" xml:space="preserve"><value>Batterie : {0} %</value></data>
+  <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Batterie : —</value></data>
+  <data name="Remote.Start" xml:space="preserve"><value>Démarrer</value></data>
+  <data name="Remote.Stop" xml:space="preserve"><value>Arrêter</value></data>
+  <data name="Settings.RemoteKeys" xml:space="preserve"><value>TOUCHES DE LA TÉLÉCOMMANDE</value></data>
+  <data name="Settings.General" xml:space="preserve"><value>GÉNÉRAL</value></data>
+  <data name="Settings.RunAtStartup" xml:space="preserve"><value>Lancer au démarrage</value></data>
+  <data name="Settings.CloseToTray" xml:space="preserve"><value>Fermer dans le systray</value></data>
+  <data name="Settings.Keyboard" xml:space="preserve"><value>CLAVIER</value></data>
+  <data name="Settings.KeyboardCheck" xml:space="preserve"><value>Clavier virtuel</value></data>
+  <data name="Settings.DefaultMap" xml:space="preserve"><value>Mapping par défaut</value></data>
+  <data name="Settings.Pairing" xml:space="preserve"><value>APPAIRAGE</value></data>
+  <data name="Settings.PairButton" xml:space="preserve"><value>Appairer (Bluetooth)…</value></data>
+  <data name="Settings.Driver" xml:space="preserve"><value>PILOTE DE L'ADAPTATEUR BLUETOOTH</value></data>
+  <data name="Settings.InstallWinUsb" xml:space="preserve"><value>Installer WinUSB…</value></data>
+  <data name="Settings.RestoreDriver" xml:space="preserve"><value>Restaurer le pilote d'origine…</value></data>
+  <data name="Settings.Option1" xml:space="preserve"><value>Pilote WinUSB</value></data>
+  <data name="Settings.Option2" xml:space="preserve"><value>Filtre Bluetooth</value></data>
+  <data name="Settings.Refresh" xml:space="preserve"><value>Actualiser</value></data>
+  <data name="Settings.InstallFilter" xml:space="preserve"><value>Installer le filtre Bluetooth…</value></data>
+  <data name="Settings.UninstallFilter" xml:space="preserve"><value>Retirer le filtre…</value></data>
+  <data name="Settings.Language" xml:space="preserve"><value>LANGUE</value></data>
+  <data name="Settings.LanguageNote" xml:space="preserve"><value>Redémarrez l'application pour appliquer la langue.</value></data>
+  <data name="Language.Auto" xml:space="preserve"><value>Automatique (langue de Windows)</value></data>
+  <data name="Language.Fr" xml:space="preserve"><value>Français</value></data>
+  <data name="Language.En" xml:space="preserve"><value>English</value></data>
+  <data name="NoKey" xml:space="preserve"><value>(aucune)</value></data>
+  <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTIC</value></data>
+  <data name="Debug.HidDevices" xml:space="preserve"><value>Périphériques HID Apple</value></data>
+  <data name="Debug.BleScan" xml:space="preserve"><value>Scanner le Bluetooth LE…</value></data>
+  <data name="Debug.Log" xml:space="preserve"><value>JOURNAL</value></data>
+  <data name="Debug.Clear" xml:space="preserve"><value>Effacer</value></data>
+  <data name="Ble.Title" xml:space="preserve"><value>Scanner Bluetooth LE</value></data>
+  <data name="Ble.Intro" xml:space="preserve"><value>Maintenez Menu + Volume + sur la télécommande (~5 à 10 s, tout près du PC) : une nouvelle ligne doit apparaître. La Siri Remote diffuse le fabricant Apple (0x004C) et son numéro de série comme nom. Double-cliquez sur la ligne (ou « Appairer ») pour l'appairer sans passer par les Paramètres.</value></data>
+  <data name="Ble.Pair" xml:space="preserve"><value>Appairer</value></data>
+  <data name="Ble.SystemPair" xml:space="preserve"><value>Appairer (système)</value></data>
+  <data name="Ble.SystemPairTip" xml:space="preserve"><value>Appairage géré par Windows, comme dans les Paramètres</value></data>
+  <data name="Ble.Copy" xml:space="preserve"><value>Copier le résultat</value></data>
+  <data name="Ble.OnlyLikely" xml:space="preserve"><value>Seulement « Apple HID » (sinon tout afficher)</value></data>
+  <data name="Ble.ColName" xml:space="preserve"><value>Nom</value></data>
+  <data name="Ble.ColAddress" xml:space="preserve"><value>Adresse</value></data>
+  <data name="Ble.ColSignal" xml:space="preserve"><value>Signal</value></data>
+  <data name="Ble.ColMaker" xml:space="preserve"><value>Fabricant</value></data>
+  <data name="Ble.ColHints" xml:space="preserve"><value>Indices</value></data>
+  <data name="Ble.Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Ble.Resume" xml:space="preserve"><value>Reprendre</value></data>
+  <data name="Ble.Relaunch" xml:space="preserve"><value>Relancer</value></data>
+  <data name="Ble.Unnamed" xml:space="preserve"><value>(sans nom)</value></data>
+  <data name="Ble.Count" xml:space="preserve"><value>{0} appareil(s), {1} candidat(s)</value></data>
+  <data name="Ble.SelectRow" xml:space="preserve"><value>Sélectionnez une ligne à appairer.</value></data>
+  <data name="Ble.Pairing" xml:space="preserve"><value>Appairage de {0} ({1})…</value></data>
+  <data name="Ble.AlreadyTitle" xml:space="preserve"><value>Déjà appairé</value></data>
+  <data name="Ble.AlreadyAsk" xml:space="preserve"><value>Windows considère {0} ({1}) comme déjà appairé.
+
+Si la télécommande est en mode appairage, ce lien est périmé : Windows ne voit alors aucun périphérique HID.
+
+Supprimer cet appairage puis appairer à nouveau ?</value></data>
+  <data name="Ble.Unpairing" xml:space="preserve"><value>Suppression de l'ancien appairage…</value></data>
+  <data name="Ble.UnpairFailed" xml:space="preserve"><value>Suppression de l'appairage impossible : {0}.</value></data>
+  <data name="Ble.PairFailed" xml:space="preserve"><value>Échec de l'appairage : {0}</value></data>
+  <data name="Ble.TableHeader" xml:space="preserve"><value>Nom | Adresse | Signal | Fabricant | Indices</value></data>
+  <data name="Ble.Copied" xml:space="preserve"><value>Résultat copié dans le presse-papiers.</value></data>
+  <data name="Ble.CopyFailed" xml:space="preserve"><value>Copie impossible : {0}</value></data>
+  <data name="Ble.NoteSerial" xml:space="preserve"><value>nom = n° de série ?</value></data>
+  <data name="Ble.ScanNoRadio" xml:space="preserve"><value>Scan impossible : le Bluetooth est désactivé ou aucun adaptateur n'est disponible.</value></data>
+  <data name="Ble.ScanNoLe" xml:space="preserve"><value>Scan impossible : cet adaptateur ne prend pas en charge le Bluetooth LE.</value></data>
+  <data name="Ble.ScanOffUser" xml:space="preserve"><value>Scan impossible : Bluetooth désactivé dans Windows.</value></data>
+  <data name="Ble.ScanOffPolicy" xml:space="preserve"><value>Scan impossible : Bluetooth désactivé par une stratégie.</value></data>
+  <data name="Ble.ScanStopped" xml:space="preserve"><value>Scan arrêté ({0}).</value></data>
+  <data name="Ble.DeviceNotFound" xml:space="preserve"><value>Appareil introuvable (n'est plus en mode appairage ?).</value></data>
+  <data name="Ble.AlreadyPaired" xml:space="preserve"><value>Déjà appairé.</value></data>
+  <data name="Ble.KindSystem" xml:space="preserve"><value>système</value></data>
+  <data name="Ble.KindApp" xml:space="preserve"><value>app</value></data>
+  <data name="Ble.PairKind" xml:space="preserve"><value> ({0} en {1:0.0} s</value></data>
+  <data name="Ble.PairKindMethod" xml:space="preserve"><value>, méthode : {0})</value></data>
+  <data name="Ble.Paired" xml:space="preserve"><value>Appairé{0}. {1}</value></data>
+  <data name="Ble.PairFailedKind" xml:space="preserve"><value>Échec de l'appairage : {0}{1}.</value></data>
+  <data name="Ble.DiscoverFailed" xml:space="preserve"><value>Découverte des services impossible ({0}) : Windows ne créera pas le périphérique HID.</value></data>
+  <data name="Ble.Discovered" xml:space="preserve"><value>{0} service(s) GATT découvert(s). Le périphérique HID doit apparaître dans « Périphériques HID Apple ».</value></data>
+  <data name="Guide.ResetTitle" xml:space="preserve"><value>RÉINITIALISER LA TÉLÉCOMMANDE</value></data>
+  <data name="Guide.Reset1" xml:space="preserve"><value>Placez la télécommande près du PC (quelques centimètres).</value></data>
+  <data name="Guide.Reset2" xml:space="preserve"><value>Maintenez TV + Volume − en même temps, comme indiqué par les cercles qui pulsent.</value></data>
+  <data name="Guide.Reset3" xml:space="preserve"><value>Relâchez après environ 5 secondes : la télécommande oublie son appairage.</value></data>
+  <data name="Guide.Reset4" xml:space="preserve"><value>Si elle ne réagit pas, branchez-la 30 minutes sur son câble Lightning et réessayez.</value></data>
+  <data name="Guide.Hold" xml:space="preserve"><value>Maintenir environ 5 secondes</value></data>
+  <data name="Guide.PairTitle" xml:space="preserve"><value>METTRE EN MODE ASSOCIATION</value></data>
+  <data name="Guide.Pair1" xml:space="preserve"><value>Dans Settings, cliquez sur « Appairer (Bluetooth)… ».</value></data>
+  <data name="Guide.Pair2" xml:space="preserve"><value>Maintenez Menu + Volume + en même temps, comme indiqué par les cercles qui pulsent.</value></data>
+  <data name="Guide.Pair3" xml:space="preserve"><value>Relâchez après environ 5 secondes : l'app détecte la télécommande et s'y connecte.</value></data>
+  <data name="Guide.Pair4" xml:space="preserve"><value>Juste après l'appairage, une ou deux coupures sont normales.</value></data>
+  <data name="Dir.Up" xml:space="preserve"><value>haut</value></data>
+  <data name="Dir.Down" xml:space="preserve"><value>bas</value></data>
+  <data name="Dir.Left" xml:space="preserve"><value>gauche</value></data>
+  <data name="Dir.Right" xml:space="preserve"><value>droite</value></data>
+  <data name="Src.Flick" xml:space="preserve"><value>flick</value></data>
+  <data name="Src.Glide" xml:space="preserve"><value>glissement</value></data>
+  <data name="Log.Focus" xml:space="preserve"><value>focus {0} ({1})</value></data>
+  <data name="Log.MapIgnored" xml:space="preserve"><value>Mapping ignoré ({0})</value></data>
+  <data name="Log.MapNotSaved" xml:space="preserve"><value>Mapping non enregistré ({0})</value></data>
+  <data name="Log.KeyboardOn" xml:space="preserve"><value>Clavier virtuel activé.</value></data>
+  <data name="Log.KeyboardOff" xml:space="preserve"><value>Clavier virtuel désactivé.</value></data>
+  <data name="Log.PairDirect" xml:space="preserve"><value>Appairage : maintenez Menu + Volume + pendant ~5 s, près du PC.</value></data>
+  <data name="Log.PairSettings" xml:space="preserve"><value>Maintenez Menu + Volume + pendant ~5 s près du PC, puis ajoutez-la dans Paramètres &gt; Bluetooth.</value></data>
+  <data name="Log.OpenBtFailed" xml:space="preserve"><value>Impossible d'ouvrir les paramètres Bluetooth : {0}</value></data>
+  <data name="Log.DriverReboot" xml:space="preserve"><value>Pilote installé : redémarrez le PC pour terminer.</value></data>
+  <data name="Log.DriverInstalled" xml:space="preserve"><value>Pilote WinUSB installé.</value></data>
+  <data name="Log.DriverRestored" xml:space="preserve"><value>Pilote d'origine restauré.</value></data>
+  <data name="Log.FilterInstalled" xml:space="preserve"><value>Filtre Bluetooth installé.</value></data>
+  <data name="Log.FilterRemoved" xml:space="preserve"><value>Filtre Bluetooth retiré.</value></data>
+  <data name="Log.NoHid" xml:space="preserve"><value>Aucun périphérique HID Apple vu par Windows : la télécommande n'est pas appairée/connectée.</value></data>
+  <data name="Log.HidCount" xml:space="preserve"><value>{0} collection(s) HID Apple :</value></data>
+  <data name="Log.HidGen1" xml:space="preserve"><value>   &lt;- Siri Remote gen 1</value></data>
+  <data name="Log.EnumFailed" xml:space="preserve"><value>Énumération impossible : {0}</value></data>
+  <data name="Log.BlePaired" xml:space="preserve"><value>Appairage réussi : connexion automatique dès que Windows expose la télécommande.</value></data>
+  <data name="Log.DefaultMap" xml:space="preserve"><value>Mapping par défaut.</value></data>
+  <data name="Driver.Checking" xml:space="preserve"><value>Pilote de l'adaptateur : vérification…</value></data>
+  <data name="Filter.Installed" xml:space="preserve"><value>Filtre Bluetooth (AppleRemoteDriver) : installé.</value></data>
+  <data name="Filter.NotInstalled" xml:space="preserve"><value>Filtre Bluetooth (AppleRemoteDriver) : non installé.</value></data>
+  <data name="Driver.Absent" xml:space="preserve"><value>Aucun adaptateur Bluetooth USB trouvé.</value></data>
+  <data name="Driver.WinUsb" xml:space="preserve"><value>Pilote actuel : WinUSB (Bluetooth direct possible ; Windows n'utilise plus l'adaptateur).</value></data>
+  <data name="Driver.Original" xml:space="preserve"><value>Pilote actuel : d'origine (pile Bluetooth de Windows).</value></data>
+  <data name="Driver.Unknown" xml:space="preserve"><value>Pilote de l'adaptateur : état inconnu ({0})</value></data>
+  <data name="Driver.DialogTitle" xml:space="preserve"><value>Pilote de l'adaptateur</value></data>
+  <data name="Driver.InstallAsk" xml:space="preserve"><value>Installer WinUSB sur l'adaptateur Bluetooth ?
+
+Windows ne pourra plus l'utiliser (plus de souris/casque Bluetooth) tant que le pilote d'origine n'est pas restauré. Un certificat auto-signé sera ajouté aux autorités approuvées de cet ordinateur (comme Zadig). Une confirmation administrateur (UAC) va s'afficher.</value></data>
+  <data name="Driver.RestoreAsk" xml:space="preserve"><value>Restaurer le pilote d'origine de l'adaptateur Bluetooth ?
+
+Le pilote WinUSB est retiré et Windows reprend l'adaptateur (le Bluetooth direct s'arrête). Une confirmation administrateur (UAC) va s'afficher.</value></data>
+  <data name="Driver.FilterInstallAsk" xml:space="preserve"><value>Installer le filtre Bluetooth (AppleRemoteDriver) sous le pilote de l'adaptateur ?
+
+Pilote noyau en test : exige le mode test-signing, et une erreur peut provoquer un écran bleu. L'adaptateur doit être sous son pilote d'origine (pas WinUSB). Une confirmation administrateur (UAC) va s'afficher.</value></data>
+  <data name="Driver.FilterRemoveAsk" xml:space="preserve"><value>Retirer le filtre Bluetooth (AppleRemoteDriver) de l'adaptateur ?
+
+Une confirmation administrateur (UAC) va s'afficher.</value></data>
+  <data name="Driver.Failed" xml:space="preserve"><value>Échec (code {0}).</value></data>
+  <data name="Driver.ElevationDenied" xml:space="preserve"><value>Élévation refusée.</value></data>
+  <data name="Driver.UnknownVerb" xml:space="preserve"><value>Opération inconnue : {0}</value></data>
+  <data name="Status.Stopped" xml:space="preserve"><value>Arrêté.</value></data>
+  <data name="Status.BtUnavailable" xml:space="preserve"><value>Bluetooth direct indisponible ({0}) : HID de Windows.</value></data>
+  <data name="Status.BtError" xml:space="preserve"><value>Erreur Bluetooth direct : {0}</value></data>
+  <data name="Status.WaitHid" xml:space="preserve"><value>En attente de la télécommande : appairez-la (Menu + Volume + 5 s) ou appuyez sur un bouton.</value></data>
+  <data name="Status.Error" xml:space="preserve"><value>Erreur : {0}</value></data>
+  <data name="Status.CannotOpen" xml:space="preserve"><value>Impossible d'ouvrir la télécommande (erreur {0}) : un autre programme la tient peut-être.</value></data>
+  <data name="Status.Unreachable" xml:space="preserve"><value>Télécommande présente mais injoignable (endormie ?) : appuyez sur un bouton. (déverrouillage refusé, erreur Windows {0})</value></data>
+  <data name="Status.ConnectedHid" xml:space="preserve"><value>Connecté : {0} (déverrouillée)</value></data>
+  <data name="Status.Disconnected" xml:space="preserve"><value>Déconnectée : appuyez sur un bouton pour la réveiller.</value></data>
+  <data name="Status.WaitBonded" xml:space="preserve"><value>En attente de la télécommande : appuyez sur un bouton.</value></data>
+  <data name="Status.WaitPairing" xml:space="preserve"><value>En attente d'une télécommande en mode appairage : maintenez Menu + Volume + ~5 s, près du PC.</value></data>
+  <data name="Status.Found" xml:space="preserve"><value>Télécommande trouvée ({0}) : appairage…</value></data>
+  <data name="Status.ConnectedDirect" xml:space="preserve"><value>Connecté : Siri Remote (Bluetooth direct, déverrouillée)</value></data>
+  <data name="Status.DisconnectedReason" xml:space="preserve"><value>Déconnectée (raison 0x{0:X2}) : appuyez sur un bouton pour la réveiller.</value></data>
+  <data name="Status.KeysRefused" xml:space="preserve"><value>Clés refusées par la télécommande (0x{0:X2}) : nouvel appairage…</value></data>
+  <data name="Status.PairingFirst" xml:space="preserve"><value>Appairage… (première fois : télécommande en mode appairage, Menu + Volume + ~5 s)</value></data>
+  <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Batterie illisible : {0}</value></data>
+  <data name="Status.GattNoRemote" xml:space="preserve"><value>Filtre Bluetooth actif : aucune télécommande appairée trouvée (Scanner BLE → Appairer).</value></data>
+  <data name="Status.GattConnecting" xml:space="preserve"><value>Filtre Bluetooth : connexion à la télécommande {0}…</value></data>
+  <data name="Status.GattRetry" xml:space="preserve"><value>Filtre Bluetooth : {0} — nouvel essai.</value></data>
+  <data name="Status.GattReady" xml:space="preserve"><value>Télécommande connectée (filtre Bluetooth).</value></data>
+  <data name="Status.GattWake" xml:space="preserve"><value>Télécommande hors de portée ou en veille : appuyez sur un bouton pour la réveiller…</value></data>
+  <data name="Status.GattUnlocked" xml:space="preserve"><value>Filtre Bluetooth : déverrouillage envoyé ({0}) — appuyez sur un bouton.</value></data>
+  <data name="Status.GattLost" xml:space="preserve"><value>Filtre Bluetooth : liaison perdue après {0:0.0} s, {1} rapport(s) reçu(s).</value></data>
+  <data name="Status.GattReports" xml:space="preserve"><value>Filtre Bluetooth : {0} rapport(s) reçu(s), dernier = {1}</value></data>
+  <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} introuvable : placez-le à côté de l'application (ou compilez AppleRemote.DriverInstaller).</value></data>
+</root>

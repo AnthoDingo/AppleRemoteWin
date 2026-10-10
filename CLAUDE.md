@@ -11,7 +11,7 @@ src/AppleRemote.Core      décodeur, gestes (One Euro), keymap, rejeu de capture
                           pilote Bluetooth direct : Hci.cs (HCI), Ble.cs (central LE, L2CAP), Gatt.cs (client ATT),
                           Smp.cs (appairage « Just Works »), SiriRemoteBle.cs (connexion, chiffrement/appairage, HID)
 src/AppleRemote.Windows   HID (SetupAPI + hid.dll), déverrouillage, lecture, SendInput, scanner BLE,   net10.0-windows10.0.19041.0
-                          transport HCI sur WinUSB (UsbHci.cs, adaptateur sous pilote WinUSB)
+                          transport HCI sur WinUSB (UsbHci.cs, n'importe quel adaptateur sous pilote WinUSB)
 src/AppleRemote.App       fenêtre WPF (projet de démarrage)                        net10.0-windows10.0.19041.0
                           WPF-UI + MVVM : MainWindow = menu NavigationView ; pages Télécommande, Settings, Debug
                           (pied de menu) partageant MainViewModel ; styles communs dans Views/Styles.xaml
@@ -40,7 +40,7 @@ SDK requis : **.NET 10**. Lancer les tests après toute modification de `Core`.
 - VID `0x004C` (Apple, Bluetooth SIG) / PID `0x026D`. Elle diffuse son **numéro de série** comme nom.
 - Sous Windows, `ReadFile` rend toujours `InputReportByteLength` octets (rembourrés de zéros) : le décodeur ne lit que ce que l'octet 1 annonce.
 - `HidD_SetFeature` exige un tampon de `FeatureReportByteLength` octets (repli : 2 octets nus).
-- Siri (voix) non décodée via HID ; les trames audio sont tronquées dans les captures.
+- Siri (voix) non décodée via HID.
 
 ## Conventions
 
@@ -50,7 +50,6 @@ SDK requis : **.NET 10**. Lancer les tests après toute modification de `Core`.
 - `Core` : toute logique nouvelle = un test. Le test `Whole_pipeline_matches_the_python_reference` compare à `golden.json`
   (sortie du code Python d'origine sur `sample.jsonl`) : ne pas régénérer `golden.json` pour faire passer un test sans comprendre l'écart.
 - Événements du pilote levés depuis des threads du pool : marshaler vers l'UI avec `Dispatcher`.
-- Un rejeu de capture ne doit **jamais** injecter de touches (`RemoteSession._injectionAllowed`).
 
 ## Fonctionnalités de diagnostic
 
@@ -58,7 +57,6 @@ SDK requis : **.NET 10**. Lancer les tests après toute modification de `Core`.
 - **Scanner le Bluetooth LE** (`BleScanner`, `BleScanWindow`) : écoute les publicités LE sans appairage, met en évidence
   Apple (0x004C), le service HID (0x1812) et les noms en forme de n° de série. Sert à savoir si la télécommande émet.
   Double-clic / « Appairer » : appairage sans les Paramètres (`BleScanner.PairAsync`, `DeviceInformationCustomPairing`).
-- **Capture / rejeu** `.jsonl` au format `monitor --raw` d'open-appleremote.
 
 ## État connu
 
@@ -76,10 +74,10 @@ SDK requis : **.NET 10**. Lancer les tests après toute modification de `Core`.
   `BondStore` JSON), connexion, chiffrement, découverte HID, déverrouillage, tous les boutons et gestes décodés par
   `RemotePipeline`, reconnexion chiffrée après veille. Juste après un appairage, la télécommande coupe une ou deux fois
   (raison 0x13) : la boucle se reconnecte seule. Ne réappairer que sur refus de clé (0x05/0x06), pas sur 0x3E.
-- **Dans l'app** : `RemoteSession.Start` prend le Bluetooth direct si `UsbHci.Open()` réussit (Qualcomm `0CF3:E007` sous
-  WinUSB), sinon le HID de Windows. Clés dans `%AppData%\AppleRemoteonds.json` ; sans clés, balayage d'une
+- **Dans l'app** : `RemoteSession.Start` prend le Bluetooth direct si `UsbHci.Open()` réussit (premier adaptateur Bluetooth USB
+  sous WinUSB, détecté par sa classe `E0/01/01`, tout VID/PID), sinon le HID de Windows. Clés dans `%AppData%\AppleRemoteonds.json` ; sans clés, balayage d'une
   télécommande en mode appairage (service 0x1812 + données Apple 0x004C). « Appairer » oublie les clés et relance.
-  Adaptateur codé en dur (pas de réglage) : la UB500 (Realtek) demanderait en plus le chargement de son firmware.
+  Un seul adaptateur géré (le premier trouvé ; `WinUsbDriver.Find` pour l'installation/restauration du pilote). Le firmware n'est pas chargé : la UB500 (Realtek) demanderait en plus le chargement de son firmware.
   `FakeRemote` (tests) reproduit la base GATT de la vraie (handles `0x1D` F0, `0x20` F1, `0x23`/`0x24` FC).
 - Rapports reçus en GATT : l'ID (`0xFC`) n'est pas dans la notification ; on le remet en tête pour rester au format `hid.dll`.
 - Les fenêtres lancées en administrateur ignorent `SendInput` d'un programme non élevé (UIPI).
