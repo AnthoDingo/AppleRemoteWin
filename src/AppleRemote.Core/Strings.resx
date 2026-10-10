@@ -44,9 +44,9 @@
   <data name="Language.Auto" xml:space="preserve"><value>Automatique (langue de Windows)</value></data>
   <data name="Language.Fr" xml:space="preserve"><value>Français</value></data>
   <data name="Language.En" xml:space="preserve"><value>English</value></data>
-  <data name="Pick.Key" xml:space="preserve"><value>Key</value></data>
-  <data name="Pick.KeyCombo" xml:space="preserve"><value>Key Combo</value></data>
-  <data name="Pick.Software" xml:space="preserve"><value>Software</value></data>
+  <data name="Pick.Key" xml:space="preserve"><value>Touche</value></data>
+  <data name="Pick.KeyCombo" xml:space="preserve"><value>Combinaison de touches</value></data>
+  <data name="Pick.Software" xml:space="preserve"><value>Logiciel</value></data>
   <data name="Pick.Macro" xml:space="preserve"><value>Macro</value></data>
   <data name="Pick.Browse" xml:space="preserve"><value>Parcourir…</value></data>
   <data name="Combo.Title" xml:space="preserve"><value>Combinaison de touches</value></data>
