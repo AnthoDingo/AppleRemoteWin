@@ -49,6 +49,10 @@
   <data name="Pick.Software" xml:space="preserve"><value>Software</value></data>
   <data name="Pick.Macro" xml:space="preserve"><value>Macro</value></data>
   <data name="Pick.Browse" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Combo.Title" xml:space="preserve"><value>Key combo</value></data>
+  <data name="Combo.Prompt" xml:space="preserve"><value>Press the key combination to perform, then click Validate.</value></data>
+  <data name="Combo.Reset" xml:space="preserve"><value>Reset</value></data>
+  <data name="Combo.Validate" xml:space="preserve"><value>Validate</value></data>
   <data name="NoKey" xml:space="preserve"><value>(none)</value></data>
   <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTICS</value></data>
   <data name="Debug.HidDevices" xml:space="preserve"><value>Apple HID devices</value></data>

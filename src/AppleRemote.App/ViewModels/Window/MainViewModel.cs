@@ -197,6 +197,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _syncingBindings = true;
         foreach (var (input, choice) in Bindings)
             choice.Key = _settings.Software.TryGetValue(input, out var app) ? SoftwareApps.Prefix + app
+                : _settings.Combos.TryGetValue(input, out var combo) ? combo
                 : _session.KeyMap.TryGet(input, out var k) ? Keys.NameOf(k) ?? NoKey : NoKey;
         _syncingBindings = false;
     }
@@ -205,7 +206,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_syncingBindings) return;
         var map = _session.KeyMap;
-        if (name.StartsWith(SoftwareApps.Prefix))
+        _settings.Combos.Remove(input);
+        if (name.StartsWith(KeyCombos.Prefix))
+        {
+            _settings.Software.Remove(input);
+            _settings.Combos[input] = name;
+            map.Set(input, null);
+        }
+        else if (name.StartsWith(SoftwareApps.Prefix))
         {
             string app = name[SoftwareApps.Prefix.Length..];
             _settings.Software[input] = app;
@@ -234,9 +242,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // ---- événements de la télécommande ---------------------------------------------------
 
-    void LaunchBound(string input)
+    /// <summary>Lance le logiciel ou la combinaison affectés à l'entrée, s'il y en a un et si le clavier est activé.</summary>
+    void RunBound(string input)
     {
-        if (KeyboardEnabled && _settings.Software.TryGetValue(input, out var app)) SoftwareApps.Launch(app);
+        if (!KeyboardEnabled) return;
+        if (_settings.Software.TryGetValue(input, out var app)) SoftwareApps.Launch(app);
+        else if (_settings.Combos.TryGetValue(input, out var combo)) KeyCombos.Run(_session.Injector, combo);
     }
 
     void OnEvent(RemoteEvent ev)
@@ -248,7 +259,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 break;
             case ButtonsEvent b:
                 ShowButtons(b.Mask);
-                foreach (var name in b.Pressed) LaunchBound(name);
+                foreach (var name in b.Pressed) RunBound(name);
                 if (b.Pressed.Count > 0) AddLog("▼ " + string.Join(" + ", b.Pressed));
                 if (b.Released.Count > 0) AddLog("▲ " + string.Join(" + ", b.Released));
                 break;
@@ -306,7 +317,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 TileShiftY = -tilt.Y * 18;
                 break;
             case MoveGesture m:
-                LaunchBound(m.Dir.ToString().ToLowerInvariant());
+                RunBound(m.Dir.ToString().ToLowerInvariant());
                 MoveArrow = m.Dir switch
                 {
                     Direction.Up => "↑",
@@ -491,6 +502,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _session.KeyMap = KeyMap.Default();
         _settings.Software.Clear();
+        _settings.Combos.Clear();
         SyncBindings();
         _settings.KeyMapPath = null;
         _settings.Save();

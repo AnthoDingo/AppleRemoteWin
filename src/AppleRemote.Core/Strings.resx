@@ -49,6 +49,10 @@
   <data name="Pick.Software" xml:space="preserve"><value>Software</value></data>
   <data name="Pick.Macro" xml:space="preserve"><value>Macro</value></data>
   <data name="Pick.Browse" xml:space="preserve"><value>Parcourir…</value></data>
+  <data name="Combo.Title" xml:space="preserve"><value>Combinaison de touches</value></data>
+  <data name="Combo.Prompt" xml:space="preserve"><value>Appuyez sur la combinaison de touches à réaliser, puis cliquez sur Valider.</value></data>
+  <data name="Combo.Reset" xml:space="preserve"><value>Réinitialiser</value></data>
+  <data name="Combo.Validate" xml:space="preserve"><value>Valider</value></data>
   <data name="NoKey" xml:space="preserve"><value>(aucune)</value></data>
   <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTIC</value></data>
   <data name="Debug.HidDevices" xml:space="preserve"><value>Périphériques HID Apple</value></data>

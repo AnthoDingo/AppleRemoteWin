@@ -13,6 +13,8 @@ public sealed class Settings
     /// <summary>« auto » (langue de Windows), « fr » ou « en » ; appliquée au démarrage.</summary>
     /// <summary>Entrée de la télécommande -> exe à lancer (remplace la touche).</summary>
     public Dictionary<string, string> Software { get; set; } = new();
+    /// <summary>Entrée de la télécommande -> combinaison « #Win+D » à envoyer (remplace la touche).</summary>
+    public Dictionary<string, string> Combos { get; set; } = new();
     /// <summary>Logiciels ajoutés par « Browse », conservés dans le menu.</summary>
     public List<string> Apps { get; set; } = new();
     public string Language { get; set; } = "auto";

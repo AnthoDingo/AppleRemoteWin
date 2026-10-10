@@ -15,7 +15,9 @@ public sealed class KeyPicker : Button
     public static readonly DependencyProperty SoftwareProperty = DependencyProperty.Register(nameof(Software), typeof(IEnumerable<string>), typeof(KeyPicker));
     public IEnumerable<string> Software { get => (IEnumerable<string>)GetValue(SoftwareProperty); set => SetValue(SoftwareProperty, value); }
 
-    static string Display(string key) => key.StartsWith(SoftwareApps.Prefix) ? SoftwareApps.NameOf(key[1..]) : key;
+    static string Display(string key) =>
+        key.StartsWith(SoftwareApps.Prefix) ? SoftwareApps.NameOf(key[1..])
+        : key.StartsWith(KeyCombos.Prefix) ? KeyCombos.Display(key) : key;
 
     public string Key { get => (string)GetValue(KeyProperty); set => SetValue(KeyProperty, value); }
     public IEnumerable<string> Choices { get => (IEnumerable<string>)GetValue(ChoicesProperty); set => SetValue(ChoicesProperty, value); }
@@ -37,7 +39,14 @@ public sealed class KeyPicker : Button
         }
         var menu = new ContextMenu { PlacementTarget = this, Placement = PlacementMode.Bottom, MinWidth = ActualWidth };
         menu.Items.Add(keys);
-        menu.Items.Add(new MenuItem { Header = Loc.T("Pick.KeyCombo"), IsEnabled = false });
+        var combo = new MenuItem { Header = Loc.T("Pick.KeyCombo"), IsChecked = Key.StartsWith(KeyCombos.Prefix) };
+        combo.Click += (_, _) =>
+        {
+            var dlg = new Views.KeyComboWindow { Owner = Window.GetWindow(this) };
+            dlg.ShowDialog();
+            if (dlg.Combo is { } c) Key = c; // fermée sans valider : on garde la sélection précédente
+        };
+        menu.Items.Add(combo);
         var soft = new MenuItem { Header = Loc.T("Pick.Software") };
         foreach (var path in Software ?? [])
         {
