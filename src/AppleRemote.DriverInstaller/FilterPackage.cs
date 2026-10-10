@@ -29,14 +29,25 @@ static class FilterPackage
         foreach (string store in new[] { "Root", "TrustedPublisher" })
             Check(Run("certutil", $"-addstore -f {store} \"{cer}\""), $"certutil -addstore {store}");
 
-        Uninstall(); // réinstallation propre : un paquet déjà présent verrouille le .sys et garde l'ancienne version
-
+        // Mise à jour par-dessus l'ancien paquet, sans le désinstaller d'abord : retirer un filtre chargé laisse l'adaptateur
+        // « en attente de redémarrage du PC », et Windows refuse ensuite de le redémarrer. Le paquet le plus récent l'emporte.
+        string[] previous = PublishedPackages();
         int code = Run("pnputil", $"/add-driver \"{Path.Combine(dir, InfName)}\" /install").ExitCode;
         if (code is not (0 or RebootNeeded))
             throw new InvalidOperationException($"pnputil /add-driver a échoué (code {code}). Adaptateur {AdapterHardwareId} présent ?");
 
-        RestartAdapter();
+        if (!RestartAdapter())
+            return RebootNeeded; // le paquet est en place : il sera chargé au prochain démarrage
         RepairEnumerators();
+
+        // Les anciens paquets ne sont plus utilisés depuis le redémarrage de l'adaptateur : retirés du magasin (sans /uninstall,
+        // donc sans toucher au périphérique). Un échec n'est pas grave : ils restent inutilisés.
+        string[] current = PublishedPackages();
+        foreach (string oem in previous.Intersect(current).Where(o => current.Except(previous).Any()))
+        {
+            var removed = Run("pnputil", $"/delete-driver {oem}");
+            Say(removed.ExitCode == 0 ? $"Ancien paquet {oem} retiré." : $"Ancien paquet {oem} conservé (code {removed.ExitCode}).");
+        }
         if (!FilterInstaller.IsInstalled())
             throw new InvalidOperationException("Paquet installé, mais le filtre n'est pas dans les LowerFilters de l'adaptateur.");
         // pnputil répond 3010 dès qu'un fichier du paquet était chargé ; le redémarrage du périphérique ci-dessus a rechargé le pilote.
@@ -50,18 +61,25 @@ static class FilterPackage
     /// <summary>Retire le paquet (s'il est installé) et remet l'adaptateur sans filtre.</summary>
     public static int Uninstall()
     {
-        string published = Ps("(Get-WindowsDriver -Online | Where-Object OriginalFileName -like '*" + InfName + "').Driver").Trim();
-        foreach (string oem in published.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        string[] published = PublishedPackages();
+        foreach (string oem in published)
         {
             Say($"Suppression du paquet {oem}");
             Check(Run("pnputil", $"/delete-driver {oem} /uninstall /force"), $"pnputil /delete-driver {oem}");
         }
-        if (published.Length > 0) { RestartAdapter(); RepairEnumerators(); }
+        if (published.Length == 0) return Ok;
+        if (!RestartAdapter()) return RebootNeeded;
+        RepairEnumerators();
         if (FilterInstaller.IsInstalled())
             throw new InvalidOperationException("Le filtre est toujours dans les LowerFilters (installé par une ancienne méthode ?).");
         // Le filtre a quitté la pile : son service doit s'arrêter après le redémarrage du périphérique. Sinon seulement, redémarrage du PC.
-        return published.Length == 0 || WaitForService("Stopped", 8) ? Ok : RebootNeeded;
+        return WaitForService("Stopped", 8) ? Ok : RebootNeeded;
     }
+
+    /// <summary>Paquets AppleRemoteDriver présents dans le magasin de pilotes (oemNN.inf).</summary>
+    static string[] PublishedPackages() =>
+        Ps("(Get-WindowsDriver -Online | Where-Object OriginalFileName -like '*" + InfName + "').Driver")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>Attend que le service AppleRemoteDriver soit dans l'état voulu ("Running", "Stopped") ; un service absent compte comme arrêté.</summary>
     static bool WaitForService(string wanted, int seconds)
@@ -99,12 +117,22 @@ static class FilterPackage
                ?? throw new FileNotFoundException($"{InfName} introuvable : compilez AppleRemoteDriver avec « cargo make --profile release ».");
     }
 
-    static void RestartAdapter()
+    /// <summary>
+    /// Redémarre l'adaptateur pour (dé)charger le filtre. Faux si Windows le refuse (adaptateur en attente d'un redémarrage du PC,
+    /// ou poignée ouverte par une application qui bloque l'arrêt de la pile) : il faut alors redémarrer le PC.
+    /// </summary>
+    static bool RestartAdapter()
     {
         string id = Ps($"(Get-PnpDevice -PresentOnly | Where-Object InstanceId -like '{AdapterHardwareId}*' | Select-Object -First 1).InstanceId").Trim();
         if (id.Length == 0) throw new InvalidOperationException($"Adaptateur {AdapterHardwareId} introuvable.");
-        Check(Run("pnputil", $"/restart-device \"{id}\""), "pnputil /restart-device");
+        var result = Run("pnputil", $"/restart-device \"{id}\"");
+        if (result.ExitCode is not (0 or RebootNeeded))
+        {
+            Say($"Redémarrage de l'adaptateur refusé (code {result.ExitCode}) : {result.Output.Trim()}");
+            return false;
+        }
         Thread.Sleep(3000);
+        return true;
     }
 
     /// <summary>

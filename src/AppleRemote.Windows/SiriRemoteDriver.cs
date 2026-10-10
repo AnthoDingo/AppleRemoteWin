@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Win32.SafeHandles;
+using Windows.Devices.Bluetooth;
 
 namespace AppleRemote.Windows;
 
@@ -66,11 +67,12 @@ public sealed class SiriRemoteDriver
     /// 0xF0 = 0xAF par HidD_SetFeature ; Windows le refuse parfois (erreur 87) : repli sur le déverrouillage GATT du filtre.
     /// Retourne aussi l'erreur Windows du premier essai, pour le message d'état.
     /// </summary>
-    static async Task<(bool Ok, int Error)> UnlockAsync(HidDeviceInfo info, SafeFileHandle handle)
+    static async Task<(bool Ok, int Error)> UnlockAsync(HidDeviceInfo info, SafeFileHandle handle, BluetoothLEDevice? device)
     {
         if (HidEnumerator.Unlock(handle, info.FeatureLength)) return (true, 0);
         int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-        try { return (await FilterUnlock.TryAsync(info.Path), error); }
+        if (device is null) return (false, error);
+        try { return (await FilterUnlock.TryAsync(device), error); }
         catch (Exception) { return (false, error); } // WinRT indisponible ou télécommande partie : même traitement qu'un refus
     }
 
@@ -84,12 +86,15 @@ public sealed class SiriRemoteDriver
             return;
         }
 
+        // Périphérique LE gardé ouvert toute la connexion : déverrouillage de repli par GATT, et réveil signalé par Windows.
+        using var device = await FilterUnlock.OpenAsync(info.Path);
+
         // Le nœud HID peut exister alors que la télécommande dort : le déverrouillage ne passe que si la liaison est vivante.
         bool unlocked = false;
         int error = 0;
         for (int attempt = 0; attempt < 3 && !unlocked && !ct.IsCancellationRequested; attempt++)
         {
-            (unlocked, error) = await UnlockAsync(info, handle);
+            (unlocked, error) = await UnlockAsync(info, handle, device);
             if (!unlocked) await Task.Delay(300, ct);
         }
         if (!unlocked)
@@ -107,6 +112,25 @@ public sealed class SiriRemoteDriver
         long lastReport = Environment.TickCount64;
         bool seenReport = false;
 
+        // La télécommande se rendort puis se reconnecte souvent, et elle est muette tant qu'elle n'est pas re-déverrouillée :
+        // on le refait dès que Windows signale la reconnexion, sans attendre la sonde (sinon les premiers appuis sont perdus).
+        int relocking = 0;
+        async void OnConnectionChanged(BluetoothLEDevice sender, object _)
+        {
+            if (sender.ConnectionStatus != BluetoothConnectionStatus.Connected || Interlocked.Exchange(ref relocking, 1) == 1) return;
+            try
+            {
+                for (int attempt = 0; attempt < 10 && !linkCts.IsCancellationRequested; attempt++)
+                {
+                    if ((await UnlockAsync(info, handle, sender)).Ok) { Status(Loc.T("Status.Relocked")); break; }
+                    await Task.Delay(300);
+                }
+            }
+            catch (Exception) { /* liaison retombée pendant l'essai : la prochaine reconnexion recommencera */ }
+            finally { Volatile.Write(ref relocking, 0); }
+        }
+        if (device is not null) device.ConnectionStatusChanged += OnConnectionChanged;
+
         // Sonde : si rien n'arrive depuis un moment, un déverrouillage qui échoue = liaison tombée -> reconnexion.
         var probe = Task.Run(async () =>
         {
@@ -116,7 +140,7 @@ public sealed class SiriRemoteDriver
                 {
                     await Task.Delay(ProbeAfterMs, linkCts.Token);
                     if (Environment.TickCount64 - Volatile.Read(ref lastReport) < ProbeAfterMs) continue;
-                    if (!(await UnlockAsync(info, handle)).Ok)
+                    if (!(await UnlockAsync(info, handle, device)).Ok)
                     {
                         linkCts.Cancel();
                         return;
@@ -147,6 +171,7 @@ public sealed class SiriRemoteDriver
         }
         finally
         {
+            if (device is not null) device.ConnectionStatusChanged -= OnConnectionChanged;
             linkCts.Cancel();
             try { await probe; } catch { /* sonde déjà arrêtée */ }
         }

@@ -58,7 +58,7 @@
     </ItemGroup>
     <!-- Un fichier tenu ouvert (VMware, partage de la VM) ne doit pas faire échouer la publication : avertissement, et le paquet reste
          à vérifier (cmp avec le dossier target). -->
-    <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
+    <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 
 </Project>

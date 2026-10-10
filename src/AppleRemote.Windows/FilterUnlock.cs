@@ -16,19 +16,24 @@ static partial class FilterUnlock
     [GeneratedRegex("_([0-9a-f]{12})#", RegexOptions.IgnoreCase)]
     private static partial Regex AddressInPath();
 
-    public static async Task<bool> TryAsync(string hidPath)
+    /// <summary>Le périphérique LE derrière une collection HID, ou null (chemin sans adresse, WinRT indisponible).</summary>
+    public static async Task<BluetoothLEDevice?> OpenAsync(string hidPath)
     {
         var match = AddressInPath().Match(hidPath);
-        if (!match.Success) return false;
-        using var device = await BluetoothLEDevice.FromBluetoothAddressAsync(Convert.ToUInt64(match.Groups[1].Value, 16));
-        if (device is null || device.ConnectionStatus != BluetoothConnectionStatus.Connected) return false;
+        if (!match.Success) return null;
+        try { return await BluetoothLEDevice.FromBluetoothAddressAsync(Convert.ToUInt64(match.Groups[1].Value, 16)); }
+        catch (Exception) { return null; }
+    }
 
-        var services = await device.GetGattServicesForUuidAsync(GattServiceUuids.Battery, BluetoothCacheMode.Uncached);
-        if (services.Status != GattCommunicationStatus.Success || services.Services.Count == 0) return false;
-        var characteristics = await services.Services[0].GetCharacteristicsForUuidAsync(GattCharacteristicUuids.BatteryLevel, BluetoothCacheMode.Uncached);
-        if (characteristics.Status != GattCommunicationStatus.Success || characteristics.Characteristics.Count == 0) return false;
+    public static async Task<bool> TryAsync(BluetoothLEDevice device)
+    {
+        if (device.ConnectionStatus != BluetoothConnectionStatus.Connected) return false;
 
-        var level = characteristics.Characteristics[0];
+        // Cache d'abord : une découverte « Uncached » à chaque déverrouillage est lourde et peut faire recréer la collection HID par Windows.
+        var level = await FindBatteryLevelAsync(device, BluetoothCacheMode.Cached)
+                    ?? await FindBatteryLevelAsync(device, BluetoothCacheMode.Uncached);
+        if (level is null) return false;
+
         // Abonnement aux notifications : le filtre redirige cette écriture du CCCD du niveau de batterie (0x29) vers celui des rapports HID (0x24).
         // Sans cela la télécommande, même déverrouillée, ne notifie rien.
         try { await level.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify); }
@@ -36,5 +41,15 @@ static partial class FilterUnlock
 
         var result = await level.WriteValueAsync(new byte[] { 0xAF }.AsBuffer(), GattWriteOption.WriteWithoutResponse);
         return result == GattCommunicationStatus.Success;
+    }
+
+    static async Task<global::Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic?> FindBatteryLevelAsync(BluetoothLEDevice device, BluetoothCacheMode mode)
+    {
+        var services = await device.GetGattServicesForUuidAsync(GattServiceUuids.Battery, mode);
+        if (services.Status != GattCommunicationStatus.Success || services.Services.Count == 0) return null;
+        var characteristics = await services.Services[0].GetCharacteristicsForUuidAsync(GattCharacteristicUuids.BatteryLevel, mode);
+        return characteristics.Status == GattCommunicationStatus.Success && characteristics.Characteristics.Count > 0
+            ? characteristics.Characteristics[0]
+            : null;
     }
 }
