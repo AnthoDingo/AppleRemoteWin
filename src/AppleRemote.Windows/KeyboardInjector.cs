@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using static AppleRemote.Windows.Native.NativeMethods;
@@ -5,9 +8,9 @@ using static AppleRemote.Windows.Native.NativeMethods;
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// Clavier virtuel via <c>SendInput</c> : l'équivalent Windows de /dev/uinput. Aucun pilote à installer.
-/// Limite : Windows (UIPI) refuse d'envoyer des touches vers une fenêtre exécutée en administrateur
-/// si ce programme ne l'est pas ; lancez-le en administrateur dans ce cas.
+/// Virtual keyboard via <c>SendInput</c>: the Windows equivalent of /dev/uinput. No driver to install.
+/// Limitation: Windows (UIPI) refuses to send keys to a window running as administrator
+/// if this program isn't; run it as administrator in that case.
 /// </summary>
 public sealed class KeyboardInjector : IKeySink
 {

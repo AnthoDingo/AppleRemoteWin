@@ -1,30 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
-/// <summary>Un doigt sur la surface tactile. État : 0 absent, 3 pose, 4 contact, 5-6 départ, 7 levé.</summary>
+/// <summary>One finger on the touch surface. State: 0 absent, 3 touch-down, 4 contact, 5-6 leaving, 7 lifted.</summary>
 public readonly record struct Finger(int X, int Y, int State);
 
-/// <summary>Événement décodé d'un report 0xFC.</summary>
+/// <summary>Event decoded from a 0xFC report.</summary>
 public abstract record RemoteEvent;
 
-/// <summary>Trame tactile. T en secondes sur l'horloge de la télécommande ; X/Y/Down = premier doigt.</summary>
+/// <summary>Touch frame. T in seconds on the remote's clock; X/Y/Down = first finger.</summary>
 public sealed record TouchEvent(double T, int X, int Y, bool Down, IReadOnlyList<Finger> Fingers, byte[] Raw) : RemoteEvent;
 
-/// <summary>Changement d'état des boutons. Mask = boutons enfoncés maintenant.</summary>
+/// <summary>Button state change. Mask = buttons pressed now.</summary>
 public sealed record ButtonsEvent(int Mask, IReadOnlyList<string> Pressed, IReadOnlyList<string> Released, byte[] Raw) : RemoteEvent;
 
-/// <summary>Trame audio pendant que Siri est maintenu (non décodable via HID : réservé à la recherche).</summary>
+/// <summary>Audio frame while Siri is held (not decodable over HID: reserved for research).</summary>
 public sealed record VoiceChunkEvent(byte[] Raw) : RemoteEvent;
 
 public enum Direction { Up, Down, Left, Right }
 
 public enum MoveSource { Slide, Flick }
 
-/// <summary>Geste de type tvOS produit par <see cref="Gestures"/>.</summary>
+/// <summary>tvOS-style gesture produced by <see cref="Gestures"/>.</summary>
 public abstract record GestureEvent;
 
 public sealed record TouchGesture(bool Down) : GestureEvent;
 
 public sealed record MoveGesture(Direction Dir, MoveSource Src) : GestureEvent;
 
-/// <summary>Inclinaison de la tuile focalisée par un doigt au repos, de -1 à 1.</summary>
+/// <summary>Tilt of the focused tile caused by a resting finger, from -1 to 1.</summary>
 public sealed record TiltGesture(double X, double Y) : GestureEvent;

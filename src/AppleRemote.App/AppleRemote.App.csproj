@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -20,7 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" />
     <ProjectReference Include="..\AppleRemote.Windows\AppleRemote.Windows.csproj" />
-    <!-- Le programme d'installation du filtre (élévation) est copié à côté de l'exe ; l'application n'en référence aucun type. -->
+    <!-- The filter installer (elevation) is copied next to the exe; the application references none of its types. -->
     <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -34,8 +38,8 @@
     <Folder Include="Assets\" />
   </ItemGroup>
 
-  <!-- Release : compile et signe (certificat de test) le filtre noyau AppleRemoteDriver, puis le copie à côté de l'exe.
-       Sans toolchain Rust/WDK, l'étape est ignorée avec un avertissement (AppleRemoteDriver=false pour la sauter). -->
+  <!-- Release: builds and signs (test certificate) the AppleRemoteDriver kernel filter, then copies it next to the exe.
+       Without the Rust/WDK toolchain, the step is skipped with a warning (AppleRemoteDriver=false to skip it). -->
   <PropertyGroup>
     <DriverDir>$(MSBuildThisFileDirectory)..\AppleRemoteDriver\</DriverDir>
     <DriverPackage>$(DriverDir)target\release\AppleRemoteDriver_package\</DriverPackage>
@@ -50,14 +54,14 @@
     <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)driver\" Condition="'$(DriverExitCode)' == '0'" />
   </Target>
 
-  <!-- Publication : le paquet du pilote va TOUJOURS dans <PublishDir>driver\ (jamais à la racine, où les fichiers peuvent être
-       verrouillés par la VM de test qui lit le dossier partagé). Les 4 fichiers vont ensemble : le .cat signe ce .sys. -->
+  <!-- Publish: the driver package ALWAYS goes in <PublishDir>driver\ (never at the root, where files can be
+       locked by the test VM reading the shared folder). The 4 files go together: the .cat signs this .sys. -->
   <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' And Exists('$(DriverPackage)AppleRemoteDriver.sys')">
     <ItemGroup>
       <PublishedDriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
-    <!-- Un fichier tenu ouvert (VMware, partage de la VM) ne doit pas faire échouer la publication : avertissement, et le paquet reste
-         à vérifier (cmp avec le dossier target). -->
+    <!-- A file held open (VMware, VM share) must not fail the publish: warning only, and the package remains
+         to be checked (cmp against the target folder). -->
     <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 

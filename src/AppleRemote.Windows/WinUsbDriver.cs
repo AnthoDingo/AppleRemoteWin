@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -7,18 +10,18 @@ namespace AppleRemote.Windows;
 
 public enum AdapterDriver
 {
-    /// <summary>Adaptateur absent (débranché ou désactivé).</summary>
+    /// <summary>Adapter missing (unplugged or disabled).</summary>
     Absent,
     /// <summary>Pilote d'origine (pile Bluetooth de Windows).</summary>
     Original,
-    /// <summary>WinUSB (installé par cette application ou par Zadig).</summary>
+    /// <summary>WinUSB (installed by this application or by Zadig).</summary>
     WinUsb,
 }
 
 /// <summary>
-/// Équivalent de Zadig pour l'adaptateur Bluetooth : installe WinUSB (INF généré sur le VID/PID, catalogue auto-signé,
-/// certificat approuvé), ou retire ce pilote pour que Windows reprenne celui d'origine. <see cref="Install"/> et
-/// <see cref="Restore"/> exigent les droits administrateur ; <see cref="GetState"/> non.
+/// Zadig equivalent for the Bluetooth adapter: installs WinUSB (INF generated for the VID/PID, self-signed catalog,
+/// trusted certificate), or removes that driver so Windows takes back the original one. <see cref="Install"/> et
+/// <see cref="Restore"/> require administrator rights; <see cref="GetState"/> doesn't.
 /// </summary>
 public static class WinUsbDriver
 {
@@ -27,7 +30,7 @@ public static class WinUsbDriver
     static string HardwareId(ushort vid, ushort pid) => $@"USB\VID_{vid:X4}&PID_{pid:X4}";
 
     /// <summary>
-    /// Premier adaptateur Bluetooth USB présent (un seul géré) : déjà sous WinUSB, ou encore sous le pilote d'origine
+    /// First USB Bluetooth adapter present (only one is handled): already under WinUSB, or still under the original driver
     /// (classe Bluetooth). Absent si aucun.
     /// </summary>
     public static (AdapterDriver State, UsbHci.UsbId? Id) Find()
@@ -43,10 +46,10 @@ public static class WinUsbDriver
 
     public static AdapterDriver GetState() => Find().State;
 
-    /// <summary>Installe WinUSB sur l'adaptateur (administrateur). Retourne vrai si Windows demande un redémarrage.</summary>
+    /// <summary>Installs WinUSB on the adapter (administrator). Returns true if Windows requests a restart.</summary>
     public static bool Install()
     {
-        if (Find().Id is not { } id) throw new InvalidOperationException("Aucun adaptateur Bluetooth USB trouvé.");
+        if (Find().Id is not { } id) throw new InvalidOperationException("No USB Bluetooth adapter found.");
         (ushort vid, ushort pid) = (id.Vid, id.Pid);
         string hwid = HardwareId(vid, pid);
         string root = Path.Combine(Path.GetTempPath(), "AppleRemoteWinUsb-" + Guid.NewGuid().ToString("N"));
@@ -57,7 +60,7 @@ public static class WinUsbDriver
             string inf = Path.Combine(pkg, "AppleRemoteWinUsb.inf");
             File.WriteAllText(inf, BuildInf(hwid), new UTF8Encoding(false));
 
-            // Catalogue signé par un certificat auto-signé, approuvé par la machine (c'est ce que fait libwdi/Zadig).
+            // Catalog signed with a self-signed certificate trusted by the machine (what libwdi/Zadig does).
             Ps($$"""
                 $c = Get-ChildItem Cert:\LocalMachine\My | Where-Object Subject -eq '{{CertSubject}}' | Select-Object -First 1
                 if (-not $c) { $c = New-SelfSignedCertificate -Type CodeSigningCert -Subject '{{CertSubject}}' -CertStoreLocation Cert:\LocalMachine\My -NotAfter (Get-Date).AddYears(10) }
@@ -70,9 +73,9 @@ public static class WinUsbDriver
                 Copy-Item $cat '{{pkg}}'
                 """);
 
-            // INSTALLFLAG_FORCE : prend la place du pilote actuel même s'il est mieux classé (comme Zadig).
+            // INSTALLFLAG_FORCE: takes the current driver's place even if it ranks better (like Zadig).
             if (!Native.UpdateDriverForPlugAndPlayDevices(IntPtr.Zero, hwid, inf, 1, out bool reboot))
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Installation du pilote WinUSB impossible");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot install the WinUSB driver");
             return reboot;
         }
         finally
@@ -82,8 +85,8 @@ public static class WinUsbDriver
     }
 
     /// <summary>
-    /// Retire le pilote WinUSB de l'adaptateur (administrateur) : le paquet d'origine, resté dans le magasin de pilotes,
-    /// est réinstallé par Windows. Retourne vrai s'il n'y avait rien à retirer.
+    /// Removes the WinUSB driver from the adapter (administrator): the original package, still in the driver store,
+    /// is reinstalled by Windows. Returns true if there was nothing to remove.
     /// </summary>
     public static bool Restore()
     {
@@ -91,7 +94,7 @@ public static class WinUsbDriver
         (ushort vid, ushort pid) = (id.Vid, id.Pid);
         string inf = Ps($"$d = {FindDevice(vid, pid)}; if ($d -and $d.Service -eq 'WinUSB') " +
                         "{ (Get-PnpDeviceProperty -InstanceId $d.InstanceId -KeyName 'DEVPKEY_Device_DriverInfPath').Data }").Trim();
-        if (!inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase)) return true; // pas de WinUSB tiers (ou pilote inbox)
+        if (!inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase)) return true; // no third-party WinUSB (or inbox driver)
 
         string provider = Ps($"$d = {FindDevice(vid, pid)}; (Get-PnpDeviceProperty -InstanceId $d.InstanceId -KeyName 'DEVPKEY_Device_DriverProvider').Data").Trim();
         Run("pnputil.exe", $"/delete-driver {inf} /uninstall /force");
@@ -157,7 +160,7 @@ public static class WinUsbDriver
         p.BeginErrorReadLine();
         string output = p.StandardOutput.ReadToEnd();
         p.WaitForExit();
-        if (p.ExitCode != 0) throw new InvalidOperationException($"{file} a échoué ({p.ExitCode}) : {(error + output).Trim()}");
+        if (p.ExitCode != 0) throw new InvalidOperationException($"{file} failed ({p.ExitCode}) : {(error + output).Trim()}");
         return output;
     }
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Globalization;
 using System.Resources;
 using System.Text.RegularExpressions;
@@ -36,7 +39,7 @@ public class LocTests
             Assert.True(Loc.StartsWith(Loc.T("Status.ConnectedHid", "Siri Remote"), "Status.ConnectedHid"));
             Loc.SetLanguage("fr");
             Assert.Equal("Arrêté.", Loc.T("Status.Stopped"));
-            Assert.Equal("Inconnue", Loc.T("Inconnue"));   // clé inconnue rendue telle quelle
+            Assert.Equal("Inconnue", Loc.T("Inconnue"));   // unknown key returned as is
         }
         finally
         {

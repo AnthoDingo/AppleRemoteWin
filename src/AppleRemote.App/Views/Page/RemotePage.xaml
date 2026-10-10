@@ -1,10 +1,14 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <Page xmlns:l="clr-namespace:AppleRemote.App" x:Class="AppleRemote.App.Views.RemotePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="clr-namespace:AppleRemote.App.Views"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       ScrollViewer.CanContentScroll="False">
-    <!-- CanContentScroll=False : pas de défilement autour de la page, la télécommande se cale sur la hauteur de la fenêtre. -->
+    <!-- CanContentScroll=False: no scrolling around the page, the remote fits the window height. -->
     <Page.Resources>
         <ResourceDictionary Source="/Styles/Styles.xaml" />
     </Page.Resources>
@@ -15,14 +19,14 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <!-- Colonne gauche : la télécommande, dessinée à l'échelle (380 × 1200), mise à la hauteur de la fenêtre -->
+        <!-- Left column: the remote, drawn to scale (380 × 1200), fitted to the window height -->
         <Viewbox Grid.Column="0" Margin="0,0,24,0" Stretch="Uniform" VerticalAlignment="Top">
             <local:RemoteDrawing />
         </Viewbox>
 
-        <!-- Colonne droite : état, marche/arrêt, geste -->
+        <!-- Right column: status, start/stop, gesture -->
         <StackPanel Grid.Column="1" Width="520" VerticalAlignment="Center">
-            <!-- Carte état : voyant, message, batterie, marche/arrêt -->
+            <!-- Status card: indicator, message, battery, start/stop -->
             <Border Style="{StaticResource Card}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -76,7 +80,7 @@
                 </Grid>
             </Border>
 
-            <!-- Carte geste : pavé tactile et dernier geste -->
+            <!-- Gesture card: touchpad and last gesture -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Text="{l:T Remote.Gesture}" Style="{StaticResource Section}" />
@@ -84,7 +88,7 @@
                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
                             BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
                         <Grid>
-                            <!-- Repères en croix -->
+                            <!-- Crosshair marks -->
                             <Rectangle Height="1" VerticalAlignment="Center" Opacity="0.25"
                                        Fill="{DynamicResource TextFillColorSecondaryBrush}" />
                             <Rectangle Width="1" HorizontalAlignment="Center" Opacity="0.25"
@@ -108,7 +112,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Carte appareils : publicités BLE « Apple HID » à proximité, hauteur fixe -->
+            <!-- Devices card: nearby "Apple HID" BLE advertisements, fixed height -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" />

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +17,7 @@ namespace AppleRemote.App.ViewModels;
 
 public enum StatusLevel { Idle, Ok, Warn }
 
-/// <summary>Un doigt sur la surface tactile, en pixels du carré de 360 px (coin haut-gauche du point).</summary>
+/// <summary>One finger on the touch surface, in pixels of the 360 px square (top-left corner of the dot).</summary>
 public sealed partial class FingerViewModel(int index) : ObservableObject
 {
     public int Index { get; } = index;
@@ -23,7 +26,7 @@ public sealed partial class FingerViewModel(int index) : ObservableObject
     [ObservableProperty] double _top;
 }
 
-/// <summary>Touche affectée à une entrée de la télécommande, éditable dans une combobox.</summary>
+/// <summary>Key assigned to a remote input, editable in a combobox.</summary>
 public sealed partial class KeyChoice(string input, string key, Action<string, string> changed) : ObservableObject
 {
     public string Input { get; } = input;
@@ -33,7 +36,7 @@ public sealed partial class KeyChoice(string input, string key, Action<string, s
 
 public sealed partial class MainViewModel : ObservableObject, IDisposable
 {
-    // Plage tactile observée (≈ 1650–1800 unités par axe, non centrée sur 0) -> carré de 360 px.
+    // Observed touch range (≈ 1650–1800 units per axis, not centred on 0) -> 360 px square.
     const double PadSize = 360, XMin = -1900, YMin = -1150, Span = 1800, DotSize = 30;
 
     readonly Settings _settings = Settings.Load();
@@ -46,7 +49,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     readonly DispatcherTimer _scanTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     readonly DispatcherTimer _trailTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
 
-    /// <summary>Appareils BLE vus en publicité avec fabricant Apple + service HID (« Apple HID »).</summary>
+    /// <summary>BLE devices seen advertising with Apple manufacturer data + HID service ("Apple HID").</summary>
     [ObservableProperty] IReadOnlyList<string> _nearbyDevices = [];
     bool _wasDown;
 
@@ -90,7 +93,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-    /// <summary>Lancement à l'ouverture de session Windows (clé Run de l'utilisateur ; l'état vit dans le registre).</summary>
+    /// <summary>Launch at Windows sign-in (user's Run key; the state lives in the registry).</summary>
     public bool RunAtStartup
     {
         get => Registry.CurrentUser.OpenSubKey(RunKey)?.GetValue("AppleRemote") is not null;
@@ -109,7 +112,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<LanguageChoice> Languages { get; } =
         [new("auto", Loc.T("Language.Auto")), new("fr", Loc.T("Language.Fr")), new("en", Loc.T("Language.En"))];
 
-    /// <summary>Appliquée en direct : textes XAML (<see cref="LocSource"/>) et propriétés du modèle réévalués.</summary>
+    /// <summary>Applied live: XAML texts (<see cref="LocSource"/>) and model properties are re-evaluated.</summary>
     [ObservableProperty] string _language = "auto";
 
     partial void OnLanguageChanged(string value)
@@ -128,7 +131,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public string BatteryPercent => BatteryLevel is { } level ? $"{level} %" : "—";
 
-    /// <summary>Dernier niveau connu (Bluetooth direct) ; « — » tant qu'aucune télécommande ne l'a donné.</summary>
+    /// <summary>Last known level (direct Bluetooth); "—" until a remote has reported one.</summary>
     public string BatteryText => BatteryLevel is { } level ? Loc.T("Remote.Battery", level) : Loc.T("Remote.BatteryUnknown");
 
     public string StartStopText => Loc.T(_session.IsRunning ? "Remote.Stop" : "Remote.Start");
@@ -160,7 +163,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 try { return HidEnumerator.ListApple(); }
                 catch { return []; }
             });
-            // Une même télécommande expose plusieurs collections HID : une ligne par produit.
+            // A single remote exposes several HID collections: one line per product.
             var connected = hid.DistinctBy(d => (d.VendorId, d.ProductId))
                 .Select(d => $"{(d.IsSiriRemoteGen1 ? "Siri Remote (1st)" : d.Product.Length > 0 ? d.Product : $"HID {d.VendorId:X4}:{d.ProductId:X4}")}   {Loc.T("Remote.Connected")}");
             var nearby = _scanner.Snapshot().Where(d => d.AppleHid)
@@ -200,7 +203,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         AddLog(Loc.T(value ? "Log.KeyboardOn" : "Log.KeyboardOff"));
     }
 
-    // ---- affectation des touches ---------------------------------------------------------
+    // ---- key assignment ---------------------------------------------------------
 
     void SyncBindings()
     {
@@ -215,7 +218,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_syncingBindings) return;
         var map = _session.KeyMap;
         map.Set(input, Keys.Names.TryGetValue(name, out var k) ? k : null);
-        _session.KeyMap = map; // relâche les touches tenues
+        _session.KeyMap = map; // releases held keys
         try
         {
             string file = Path.Combine(Path.GetDirectoryName(Settings.FilePath)!, "keymap.json");
@@ -226,7 +229,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception e) { AddLog(Loc.T("Log.MapNotSaved", e.Message)); }
     }
 
-    // ---- événements de la télécommande ---------------------------------------------------
+    // ---- remote events ---------------------------------------------------
 
     void OnEvent(RemoteEvent ev)
     {
@@ -241,11 +244,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 if (b.Released.Count > 0) AddLog("▲ " + string.Join(" + ", b.Released));
                 break;
             case VoiceChunkEvent:
-                break; // audio : non décodable via HID, on l'ignore
+                break; // audio: not decodable over HID, ignored
         }
     }
 
-    // Masques de l'octet 2 du rapport 0xFC ; le clic de la surface tactile ne fait que la teinter.
+    // Masks of byte 2 of the 0xFC report; the touch-surface click only tints it.
     void ShowButtons(int mask)
     {
         MenuPressed = (mask & 0x20) != 0;
@@ -281,7 +284,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _wasDown = anyDown;
     }
 
-    /// <summary>Traînée : chaque point s'efface <see cref="TrailLifeMs"/> après son tracé, la queue raccourcit d'elle-même.</summary>
+    /// <summary>Trail: each point fades <see cref="TrailLifeMs"/> after being drawn, so the tail shortens by itself.</summary>
     void FadeTrail()
     {
         long limit = Environment.TickCount64 - TrailLifeMs;
@@ -327,10 +330,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     void OnStatus(string message)
     {
         StatusText = message;
-        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect" }.Any(k => Loc.StartsWith(message, k));
+        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect", "Status.HidReport" }.Any(k => Loc.StartsWith(message, k));
         bool warn = new[] { "Status.WaitHid", "Status.WaitBonded", "Status.WaitPairing", "Status.Unreachable", "Status.Disconnected", "Status.DisconnectedReason" }
             .Any(k => Loc.StartsWith(message, k));
-        StatusLevel = ok ? StatusLevel.Ok : warn ? StatusLevel.Warn : StatusLevel.Idle;
+        // "Stopped" only if the session is really stopped: an unknown message keeps the current level.
+        StatusLevel = ok ? StatusLevel.Ok : warn ? StatusLevel.Warn : _session.IsRunning ? StatusLevel : StatusLevel.Idle;
         AddLog(message);
     }
 
@@ -359,7 +363,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_session.UsesBluetoothDirect)
         {
-            // Bluetooth direct : on oublie l'appairage et on relance ; la session cherche alors une télécommande en mode appairage.
+            // Direct Bluetooth: forget the bond and restart; the session then looks for a remote in pairing mode.
             _session.Stop();
             _session.ForgetPairing();
             _session.Start();
@@ -373,7 +377,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex) { AddLog(Loc.T("Log.OpenBtFailed", ex.Message)); }
     }
 
-    // ---- pilote de l'adaptateur (équivalent de Zadig) --------------------------------------
+    // ---- adapter driver (Zadig equivalent) --------------------------------------
 
     [ObservableProperty] string _driverText = Loc.T("Driver.Checking");
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DriverIdle))] bool _driverBusy;
@@ -383,8 +387,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(CanToggleFilter))] bool _adapterPresent;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterButton)), NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _filterOn;
     public bool AnyOn => WinUsbOn || FilterOn;
-    public bool CanToggleWinUsb => !FilterOn && AdapterPresent; // exclusifs : un seul des deux à la fois
-    public bool CanToggleFilter => !WinUsbOn && (AdapterPresent || FilterOn); // sans adaptateur, seul le retrait reste possible
+    public bool CanToggleWinUsb => !FilterOn && AdapterPresent; // mutually exclusive: only one of the two at a time
+    public bool CanToggleFilter => !WinUsbOn && (AdapterPresent || FilterOn); // without an adapter, only removal remains possible
     public string WinUsbButton => Loc.T(WinUsbOn ? "Settings.RestoreDriver" : "Settings.InstallWinUsb");
     public string FilterButton => Loc.T(FilterOn ? "Settings.UninstallFilter" : "Settings.InstallFilter");
 
@@ -428,7 +432,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         DriverBusy = true;
         try
         {
-            if (_session.IsRunning) { _session.Stop(); RefreshButtons(); } // libère l'adaptateur
+            if (_session.IsRunning) { _session.Stop(); RefreshButtons(); } // releases the adapter
             var (code, error) = await DriverCommand.RunElevatedAsync(verb);
             if (code is DriverCommand.Ok or DriverCommand.RebootNeeded)
             {
@@ -475,8 +479,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     void BleScan() =>
-        // Le pilote attend la télécommande et la déverrouille seul dès que Windows expose sa collection HID :
-        // il suffit que la session tourne.
+        // The driver waits for the remote and unlocks it by itself as soon as Windows exposes its HID collection:
+        // the session just has to be running.
         _dialogs.ShowBleScan(() =>
         {
             AddLog(Loc.T("Log.BlePaired"));
@@ -505,7 +509,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         string stamped = $"{DateTime.Now:HH:mm:ss}  {line}";
         Log.Add(stamped);
         while (Log.Count > 300) Log.RemoveAt(0);
-        // Copie dans %TEMP%\AppleRemote.log : lisible sans l'interface (diagnostic à distance, session de test sur VM).
+        // Copy to %TEMP%\AppleRemote.log: readable without the UI (remote diagnosis, VM test session).
         try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "AppleRemote.log"), stamped + Environment.NewLine); }
         catch (IOException) { }
     }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
@@ -15,7 +18,7 @@ public class HciTests
         var pending = _host.CommandAsync(HciOpcode.ReadBdAddr);
         Assert.Equal(new byte[] { 0x09, 0x10, 0x00 }, _sent.Single());
 
-        // Command Complete découpé n'importe où par les transferts USB : statut 0 + adresse (petit-boutiste).
+        // Command Complete split anywhere by the USB transfers: status 0 + address (little-endian).
         _host.ReceiveEventBytes(new byte[] { 0x0E, 0x0A, 0x01 });
         _host.ReceiveEventBytes(new byte[] { 0x09, 0x10, 0x00, 0x50, 0xA0, 0x3B, 0x4B, 0xC8, 0x8C });
 
@@ -26,7 +29,7 @@ public class HciTests
     public async Task Non_zero_status_throws_and_unrelated_completions_are_ignored()
     {
         var pending = _host.CommandAsync(HciOpcode.Reset);
-        _host.ReceiveEventBytes(new byte[] { 0x0E, 0x03, 0x01, 0x00, 0x00 });          // opcode 0 : « prêt »
+        _host.ReceiveEventBytes(new byte[] { 0x0E, 0x03, 0x01, 0x00, 0x00 });          // opcode 0: "ready"
         _host.ReceiveEventBytes(new byte[] { 0x0F, 0x04, 0x12, 0x01, 0x03, 0x0C });    // Command Status, 0x12
         var e = await Assert.ThrowsAsync<HciException>(() => pending);
         Assert.Equal(0x12, e.Status);
@@ -40,7 +43,7 @@ public class HciTests
         _host.Event += (code, p) => events.Add((code, p));
         _host.AclData += (h, pb, d) => acl.Add((h, pb, d));
 
-        // Deux événements dans un même transfert, le second coupé en deux.
+        // Two events in the same transfer, the second split in two.
         _host.ReceiveEventBytes(new byte[] { 0x05, 0x04, 0x00, 0x40, 0x00, 0x13, 0x08, 0x04 });
         _host.ReceiveEventBytes(new byte[] { 0x00, 0x40, 0x00, 0x01 });
         Assert.Equal(new byte[] { 0x05, 0x08 }, events.Select(e => e.Item1));

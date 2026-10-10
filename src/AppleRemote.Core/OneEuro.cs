@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
-/// <summary>Filtre One Euro (Casiez, Roussel, Vogel, CHI 2012) : passe-bas dont la coupure monte avec la vitesse.</summary>
+/// <summary>One Euro filter (Casiez, Roussel, Vogel, CHI 2012): a low-pass whose cutoff rises with speed.</summary>
 public sealed class OneEuro
 {
     readonly double _minCutoff, _beta, _dCutoff;

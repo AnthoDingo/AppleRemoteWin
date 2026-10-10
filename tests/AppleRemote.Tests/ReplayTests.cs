@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Text.Json;
 using Xunit;
 
@@ -23,7 +26,7 @@ public class ReplayTests
         {
             File.WriteAllLines(path, new[]
             {
-                """{"kind":"mark","t":0.0,"step":"0: ignoré"}""",
+                """{"kind":"mark","t":0.0,"step":"0: ignored"}""",
                 Replay.Line(0.0, new byte[] { 0xFC, 0x00, 0x20 }),
                 Replay.Line(0.05, new byte[] { 0xFC, 0x00, 0x00 }),
             });
@@ -35,7 +38,7 @@ public class ReplayTests
             Assert.Equal(new byte[] { 0xFC, 0x00, 0x20 }, reports[0].Report);
             Assert.Equal(0.05, reports[1].Time, 6);
 
-            // entre les deux reports (50 ms) et à la fin (1 s), des ticks null toutes les 10 ms
+            // between the two reports (50 ms) and at the end (1 s), null ticks every 10 ms
             Assert.True(items.Count(i => i.Report is null) >= 3 + 100);
             Assert.True(items.Zip(items.Skip(1)).All(p => p.Second.Time >= p.First.Time));
         }

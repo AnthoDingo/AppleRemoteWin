@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Diagnostics;
 using System.Text;
 using AppleRemote.Windows;
@@ -128,14 +131,30 @@ static class FilterPackage
         string id = Ps($"(Get-PnpDevice -PresentOnly | Where-Object InstanceId -like '{AdapterHardwareId}*' | Select-Object -First 1).InstanceId").Trim();
         if (id.Length == 0) throw new InvalidOperationException($"Adapter {AdapterHardwareId} not found.");
         // Windows Bluetooth services keep the adapter open and veto its removal (Kernel-PnP event 225); pnputil
-        // then answers 3010 and Windows marks the adapter "restart required" until the next boot. So they are stopped
-        // BEFORE the adapter restart, then those that were running are started again.
+        // then answers 3010 and Windows marks the adapter "restart required" until the next boot. So they are taken
+        // down BEFORE the adapter restart. Stopping is not enough: bthserv is trigger-started and Windows relaunches it
+        // during the restart, so each one is disabled for the duration, then its startup type and state are restored.
         string[] holders = ["bthserv", "DeviceAssociationService"];
-        string[] stopped = holders.Where(s => Ps($"(Get-Service {s} -ErrorAction SilentlyContinue).Status").Trim() == "Running").ToArray();
-        foreach (string s in stopped) Ps($"Stop-Service {s} -Force -ErrorAction SilentlyContinue");
+        var saved = holders
+            .Select(s => (Name: s, State: Ps($"(Get-Service {s} -ErrorAction SilentlyContinue).Status").Trim(),
+                          StartType: Ps($"(Get-Service {s} -ErrorAction SilentlyContinue).StartType").Trim()))
+            .Where(s => s.StartType.Length > 0)
+            .ToArray();
         (int ExitCode, string Output) result;
-        try { result = Run("pnputil", $"/restart-device \"{id}\""); }
-        finally { foreach (string s in stopped) Ps($"Start-Service {s} -ErrorAction SilentlyContinue"); }
+        try
+        {
+            foreach (var s in saved)
+                Ps($"Set-Service {s.Name} -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service {s.Name} -Force -ErrorAction SilentlyContinue");
+            result = Run("pnputil", $"/restart-device \"{id}\"");
+        }
+        finally
+        {
+            foreach (var s in saved)
+            {
+                Ps($"Set-Service {s.Name} -StartupType {s.StartType} -ErrorAction SilentlyContinue");
+                if (s.State == "Running") Ps($"Start-Service {s.Name} -ErrorAction SilentlyContinue");
+            }
+        }
         if (result.ExitCode != 0) // 3010 included: the stack was not reloaded
         {
             Say($"Adapter restart refused (code {result.ExitCode}): {result.Output.Trim()}");

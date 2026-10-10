@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <ui:FluentWindow xmlns:l="clr-namespace:AppleRemote.App" Icon="pack://application:,,,/app.ico" x:Class="AppleRemote.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -32,7 +36,7 @@
         </tray:NotifyIcon.Menu>
     </tray:NotifyIcon>
 
-    <!-- Menu à gauche : la télécommande en haut ; Settings et Debug en pied de menu. -->
+    <!-- Menu on the left: the remote at the top; Settings and Debug at the bottom. -->
     <ui:NavigationView x:Name="RootNavigation" Grid.Row="1" PaneDisplayMode="Left" OpenPaneLength="200" IsPaneOpen="False"
                        IsBackButtonVisible="Collapsed" IsPaneToggleVisible="True">
         <ui:NavigationView.MenuItems>

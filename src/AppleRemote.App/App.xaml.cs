@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Windows;
 using AppleRemote.App.Models;
 
@@ -5,14 +8,14 @@ namespace AppleRemote.App;
 
 public partial class App : Application
 {
-    // Une seule instance : la suivante réveille la première (réduite dans la zone de notification) puis s'arrête.
+    // Single instance: a second launch wakes the first one (minimised to the notification area) and exits.
     Mutex? _instance;
     EventWaitHandle? _showRequest;
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        Loc.SetLanguage(Settings.Load().Language);   // avant tout texte, y compris celui de l'instance élevée
-        // Instance élevée lancée par DriverCommand : pas de fenêtre, juste l'opération.
+        Loc.SetLanguage(Settings.Load().Language);   // before any text, including the elevated instance's
+        // Elevated instance launched by DriverCommand: no window, just the operation.
         if (e.Args is ["--driver", var verb]) Environment.Exit(DriverCommand.Run(verb));
 
         _instance = new Mutex(true, @"Local\AppleRemote.Instance", out bool first);

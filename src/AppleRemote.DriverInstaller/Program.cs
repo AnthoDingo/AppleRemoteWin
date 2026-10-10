@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using AppleRemote.DriverInstaller;
 
 // Usage: AppleRemote.DriverInstaller.exe install|uninstall [--package <folder>] [--quiet]

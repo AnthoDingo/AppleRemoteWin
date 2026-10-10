@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
 
-/// <summary>Port de _selftest() de gestures.py : mêmes trajectoires, mêmes attentes.</summary>
+/// <summary>Port of _selftest() from gestures.py: same trajectories, same expectations.</summary>
 public class GesturesTests
 {
     sealed class Rig
@@ -51,7 +54,7 @@ public class GesturesTests
     public void Slow_slide_steps_three_times_per_surface()
     {
         var r = new Rig();
-        r.Touch(Enumerable.Range(0, 200).Select(i => (9.0 * i, 0.0)));   // 1800 unités à 900 u/s
+        r.Touch(Enumerable.Range(0, 200).Select(i => (9.0 * i, 0.0)));   // 1800 units at 900 u/s
         Assert.Equal(new[] { Direction.Right, Direction.Right, Direction.Right }, r.Moves());
     }
 
@@ -68,11 +71,11 @@ public class GesturesTests
     public void Short_fast_flick_coasts_with_friction_and_next_touch_stops_it()
     {
         var r = new Rig();
-        r.Touch(Enumerable.Range(0, 14).Select(i => (60.0 * i, 0.0)));   // 6000 u/s, trop court pour glisser
+        r.Touch(Enumerable.Range(0, 14).Select(i => (60.0 * i, 0.0)));   // 6000 u/s, too short to drag
         Assert.Empty(r.Moves());
         Assert.InRange(r.G.PendingCoast, 1, Gestures.CoastMax);
 
-        // on laisse passer le temps : les pas arrivent, tous en flick vers la droite
+        // let time pass: the steps arrive, all flicking to the right
         int pending = r.G.PendingCoast;
         r.Now += 5;
         r.G.Tick();
@@ -85,7 +88,7 @@ public class GesturesTests
         });
         Assert.Equal(0, r.G.PendingCoast);
 
-        // un toucher arrête l'inertie en cours
+        // a touch stops the ongoing inertia
         var r2 = new Rig();
         r2.Touch(Enumerable.Range(0, 14).Select(i => (60.0 * i, 0.0)));
         Assert.True(r2.G.PendingCoast > 0);

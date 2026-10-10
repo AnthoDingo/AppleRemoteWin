@@ -1,14 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Text.Json;
 
 namespace AppleRemote;
 
-/// <summary>Capture JSONL (format de <c>monitor --raw</c> du projet open-appleremote) : lecture et écriture.</summary>
+/// <summary>JSONL capture (format of the open-appleremote project's <c>monitor --raw</c>): reading and writing.</summary>
 public static class Replay
 {
     /// <summary>
-    /// Lit une capture : lignes <c>{"kind":"report","t":..,"hex":".."}</c> (les autres sont ignorées). Donne les ticks d'inactivité
-    /// qu'aurait une télécommande réelle (pour l'inertie des gestes) ; <paramref name="realtime"/> respecte aussi le rythme.
-    /// Les silences sont coupés à 1 s.
+    /// Reads a capture: <c>{"kind":"report","t":..,"hex":".."}</c> lines (others are ignored). Yields the idle ticks
+    /// a real remote would have (for gesture inertia); <paramref name="realtime"/> also honours the timing.
+    /// Silences are capped at 1 s.
     /// </summary>
     public static IEnumerable<(double Time, byte[]? Report)> Read(string path, bool realtime = false, double idle = 0.01, CancellationToken ct = default)
     {
@@ -50,7 +53,7 @@ public static class Replay
         }
     }
 
-    /// <summary>Une ligne de capture pour un report.</summary>
+    /// <summary>A capture line for a report.</summary>
     public static string Line(double t, byte[] report) =>
         JsonSerializer.Serialize(new { kind = "report", t = Math.Round(t, 4), hex = Convert.ToHexString(report).ToLowerInvariant() });
 }

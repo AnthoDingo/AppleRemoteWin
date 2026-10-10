@@ -174,14 +174,6 @@ Une confirmation administrateur (UAC) va s'afficher.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Clés refusées par la télécommande (0x{0:X2}) : nouvel appairage…</value></data>
   <data name="Status.PairingFirst" xml:space="preserve"><value>Appairage… (première fois : télécommande en mode appairage, Menu + Volume + ~5 s)</value></data>
   <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Batterie illisible : {0}</value></data>
-  <data name="Status.GattNoRemote" xml:space="preserve"><value>Filtre Bluetooth actif : aucune télécommande appairée trouvée (Scanner BLE → Appairer).</value></data>
-  <data name="Status.GattConnecting" xml:space="preserve"><value>Filtre Bluetooth : connexion à la télécommande {0}…</value></data>
-  <data name="Status.GattRetry" xml:space="preserve"><value>Filtre Bluetooth : {0} — nouvel essai.</value></data>
-  <data name="Status.GattReady" xml:space="preserve"><value>Télécommande connectée (filtre Bluetooth).</value></data>
-  <data name="Status.GattWake" xml:space="preserve"><value>Télécommande hors de portée ou en veille : appuyez sur un bouton pour la réveiller…</value></data>
-  <data name="Status.GattUnlocked" xml:space="preserve"><value>Filtre Bluetooth : déverrouillage envoyé ({0}) — appuyez sur un bouton.</value></data>
-  <data name="Status.GattLost" xml:space="preserve"><value>Filtre Bluetooth : liaison perdue après {0:0.0} s, {1} rapport(s) reçu(s).</value></data>
-  <data name="Status.GattReports" xml:space="preserve"><value>Filtre Bluetooth : {0} rapport(s) reçu(s), dernier = {1}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} introuvable : placez-le à côté de l'application (ou compilez AppleRemote.DriverInstaller).</value></data>
   <data name="Status.HidReport" xml:space="preserve"><value>Premier rapport reçu de la télécommande : {0}</value></data>
   <data name="Status.Relocked" xml:space="preserve"><value>Télécommande réveillée : déverrouillage refait.</value></data>

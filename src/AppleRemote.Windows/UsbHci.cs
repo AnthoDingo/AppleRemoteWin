@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -6,9 +9,9 @@ using static AppleRemote.Windows.Native.NativeMethods;
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// Contrôleur Bluetooth piloté directement en USB (transport HCI « H2 ») via WinUSB, sans la pile Bluetooth de Windows :
-/// commandes par transfert de contrôle, événements par le point d'accès interruption, données ACL par les points bulk.
-/// L'adaptateur doit avoir le pilote WinUSB (Zadig) ; Windows ne peut alors plus s'en servir.
+/// Bluetooth controller driven directly over USB (HCI "H2" transport) via WinUSB, without the Windows Bluetooth stack:
+/// commands via control transfers, events via the interrupt endpoint, ACL data via the bulk endpoints.
+/// The adapter must have the WinUSB driver (Zadig); Windows can then no longer use it.
 /// </summary>
 public sealed class UsbHci : IDisposable
 {
@@ -20,7 +23,7 @@ public sealed class UsbHci : IDisposable
 
     public HciHost Host { get; }
 
-    /// <summary>Erreur de lecture USB (adaptateur retiré, pilote changé…). Levé depuis un thread de lecture.</summary>
+    /// <summary>USB read error (adapter removed, driver changed…). Raised from a reader thread.</summary>
     public event Action<string>? Failed;
 
     UsbHci(SafeFileHandle file, IntPtr usb)
@@ -29,23 +32,23 @@ public sealed class UsbHci : IDisposable
         _usb = usb;
         (_eventPipe, _aclInPipe, _aclOutPipe) = FindPipes(usb);
         Host = new HciHost(SendCommand, SendAcl);
-        _eventReader = StartReader(_eventPipe, 260, Host.ReceiveEventBytes, "événements");
+        _eventReader = StartReader(_eventPipe, 260, Host.ReceiveEventBytes, "events");
         _aclReader = StartReader(_aclInPipe, 1024, Host.ReceiveAclBytes, "ACL");
     }
 
-    /// <summary>Identifiant USB (VID/PID) d'un adaptateur.</summary>
+    /// <summary>USB identifier (VID/PID) of an adapter.</summary>
     public readonly record struct UsbId(ushort Vid, ushort Pid)
     {
         public override string ToString() => $"{Vid:X4}:{Pid:X4}";
     }
 
-    /// <summary>Chemins des périphériques USB présents.</summary>
+    /// <summary>Paths of the present USB devices.</summary>
     static IEnumerable<string> EnumerateUsbPaths()
     {
         Guid guid = GUID_DEVINTERFACE_USB_DEVICE;
         IntPtr set = SetupDiGetClassDevs(ref guid, IntPtr.Zero, IntPtr.Zero, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
         if (set == IntPtr.Zero || set == new IntPtr(-1))
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "SetupDiGetClassDevs a échoué");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "SetupDiGetClassDevs failed");
         try
         {
             for (uint index = 0; ; index++)
@@ -66,8 +69,8 @@ public sealed class UsbHci : IDisposable
         new(@"vid_([0-9a-f]{4})&pid_([0-9a-f]{4})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
     /// <summary>
-    /// Ouvre le premier périphérique USB sous WinUSB dont l'interface 0 est un contrôleur Bluetooth
-    /// (classe 0xE0, sous-classe 1, protocole 1), quels que soient son VID/PID.
+    /// Opens the first USB device under WinUSB whose interface 0 is a Bluetooth controller
+    /// (class 0xE0, subclass 1, protocol 1), whatever its VID/PID.
     /// </summary>
     static bool TryOpenAdapter(out SafeFileHandle file, out IntPtr usb, out UsbId id)
     {
@@ -96,7 +99,7 @@ public sealed class UsbHci : IDisposable
         return false;
     }
 
-    /// <summary>Adaptateur Bluetooth déjà sous WinUSB, ou null.</summary>
+    /// <summary>Bluetooth adapter already under WinUSB, or null.</summary>
     public static UsbId? FindWinUsbAdapter()
     {
         if (!TryOpenAdapter(out var file, out var usb, out var id)) return null;
@@ -105,12 +108,12 @@ public sealed class UsbHci : IDisposable
         return id;
     }
 
-    /// <summary>Ouvre le premier adaptateur Bluetooth USB sous WinUSB.</summary>
+    /// <summary>Opens the first USB Bluetooth adapter under WinUSB.</summary>
     public static UsbHci Open()
     {
         if (!TryOpenAdapter(out var file, out var usb, out _))
             throw new InvalidOperationException(
-                "Aucun adaptateur Bluetooth USB sous WinUSB (pilote WinUSB installé, PC redémarré depuis, adaptateur pas déjà utilisé ?).");
+                "No USB Bluetooth adapter under WinUSB (WinUSB driver installed, PC restarted since, adapter not already in use?).");
         return new UsbHci(file, usb);
     }
 
@@ -128,16 +131,16 @@ public sealed class UsbHci : IDisposable
             else if (pipe.PipeType == UsbdPipeTypeBulk) aclOut = pipe.PipeId;
         }
         if (evt == 0 || aclIn == 0 || aclOut == 0)
-            throw new InvalidOperationException("Ce périphérique USB n'a pas les points d'accès d'un contrôleur Bluetooth.");
+            throw new InvalidOperationException("This USB device doesn't have the endpoints of a Bluetooth controller.");
         return (evt, aclIn, aclOut);
     }
 
     void SendCommand(byte[] packet)
     {
-        // Commande HCI : requête de classe vers le périphérique (bmRequestType 0x20, bRequest 0).
+        // HCI command: class request to the device (bmRequestType 0x20, bRequest 0).
         var setup = new WINUSB_SETUP_PACKET { RequestType = 0x20, Length = (ushort)packet.Length };
         if (!WinUsb_ControlTransfer(_usb, setup, packet, (uint)packet.Length, out _, IntPtr.Zero))
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Envoi de la commande HCI impossible");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot send the HCI command");
     }
 
     void SendAcl(byte[] packet)
@@ -174,7 +177,7 @@ public sealed class UsbHci : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        WinUsb_AbortPipe(_usb, _eventPipe);   // débloque les lectures en cours
+        WinUsb_AbortPipe(_usb, _eventPipe);   // unblocks pending reads
         WinUsb_AbortPipe(_usb, _aclInPipe);
         _eventReader.Join(1000);
         _aclReader.Join(1000);

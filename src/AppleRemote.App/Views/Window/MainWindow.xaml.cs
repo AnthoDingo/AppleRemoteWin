@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using AppleRemote.App.Models;
 using AppleRemote.App.ViewModels;
 using System.Windows;
@@ -14,20 +17,20 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         InitializeComponent();
         DataContext = _viewModel = new MainViewModel(new Dialogs(this));
-        TrayMenu.DataContext = _viewModel;   // le menu de la zone de notification n'hérite pas du DataContext de la fenêtre
-        // Les pages (Télécommande, Settings, Debug) partagent le view-model et gardent leur état d'une visite à l'autre.
+        TrayMenu.DataContext = _viewModel;   // the notification-area menu doesn't inherit the window's DataContext
+        // The pages (Remote, Settings, Debug) share the view-model and keep their state between visits.
         RootNavigation.SetPageProviderService(new PageProvider(_viewModel));
-        Application.Current.SessionEnding += (_, _) => _quitting = true;   // arrêt de Windows : on ne retient pas la fermeture
+        Application.Current.SessionEnding += (_, _) => _quitting = true;   // Windows shutdown: don't hold back the close
     }
 
     void Window_Loaded(object sender, RoutedEventArgs e)
     {
         RootNavigation.Navigate(typeof(RemotePage));
         _viewModel.Start();
-        if (Environment.GetCommandLineArgs().Contains("--tray")) Hide();   // lancée avec Windows : directement dans la zone de notification
+        if (Environment.GetCommandLineArgs().Contains("--tray")) Hide();   // launched with Windows: straight to the notification area
     }
 
-    // Fermer la fenêtre la réduit dans la zone de notification ; seul « Quitter » du menu contextuel arrête l'app.
+    // Closing the window minimises it to the notification area; only "Quit" in the context menu exits the app.
     void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!_quitting && !_viewModel.CloseQuits)
@@ -54,7 +57,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         Close();
     }
 
-    /// <summary>Crée chaque page une seule fois, avec le view-model de la fenêtre comme DataContext.</summary>
+    /// <summary>Creates each page only once, with the window's view-model as DataContext.</summary>
     sealed class PageProvider(object dataContext) : INavigationViewPageProvider
     {
         readonly Dictionary<Type, FrameworkElement> _pages = new();

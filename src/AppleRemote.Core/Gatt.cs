@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
-/// <summary>Requête ATT refusée par l'appareil (Error Response).</summary>
+/// <summary>ATT request rejected by the device (Error Response).</summary>
 public sealed class AttException(byte request, ushort handle, byte error)
-    : Exception($"Requête ATT 0x{request:X2} refusée (handle 0x{handle:X4}, erreur 0x{error:X2}).")
+    : Exception($"ATT request 0x{request:X2} rejected (handle 0x{handle:X4}, error 0x{error:X2}).")
 {
     public byte Error { get; } = error;
 }
@@ -11,9 +14,9 @@ public sealed record GattService(ushort Start, ushort End, byte[] Uuid);
 public sealed record GattCharacteristic(ushort Declaration, byte Properties, ushort Value, byte[] Uuid);
 
 /// <summary>
-/// Client GATT minimal sur le canal ATT (MTU par défaut, 23 octets) d'une connexion : découverte, lecture, écriture,
-/// notifications. Répond aussi aux requêtes que l'appareil nous adresse (nous n'exposons aucun service), sinon il
-/// attendrait 30 s et couperait la liaison.
+/// Minimal GATT client on a connection's ATT channel (default MTU, 23 bytes): discovery, read, write,
+/// notifications. Also answers the requests the device sends us (we expose no service), otherwise it
+/// would wait 30 s and drop the link.
 /// </summary>
 public sealed class GattClient
 {
@@ -34,10 +37,10 @@ public sealed class GattClient
 
     public TimeSpan RequestTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
-    /// <summary>Notification ou indication : (handle de la valeur, valeur). Levé depuis le thread du transport.</summary>
+    /// <summary>Notification or indication: (value handle, value). Raised from the transport thread.</summary>
     public event Action<ushort, byte[]>? Notification;
 
-    /// <summary>À appeler quand la connexion se termine : n'écoute plus le canal.</summary>
+    /// <summary>Call when the connection ends: stops listening to the channel.</summary>
     public void Detach() => _central.L2capData -= OnL2cap;
 
     public static bool Is(byte[] uuid, ushort uuid16) => uuid.Length == 2 && (uuid[0] | uuid[1] << 8) == uuid16;
@@ -72,7 +75,7 @@ public sealed class GattClient
         return characteristics;
     }
 
-    /// <summary>Descripteurs entre deux handles : (handle, UUID).</summary>
+    /// <summary>Descriptors between two handles: (handle, UUID).</summary>
     public async Task<List<(ushort Handle, byte[] Uuid)>> DiscoverDescriptorsAsync(ushort start, ushort end)
     {
         var descriptors = new List<(ushort, byte[])>();
@@ -80,7 +83,7 @@ public sealed class GattClient
         {
             byte[]? r = await RequestOrNotFoundAsync([0x04, .. U16(start), .. U16(end)]);   // Find Information
             if (r is null) break;
-            int size = r[1] == 1 ? 4 : 18;   // UUID 16 ou 128 bits
+            int size = r[1] == 1 ? 4 : 18;   // 16- or 128-bit UUID
             for (int i = 2; i + size <= r.Length; i += size)
                 descriptors.Add((U16(r, i), r[(i + 2)..(i + size)]));
             if (descriptors[^1].Item1 == 0xFFFF) break;
@@ -96,10 +99,10 @@ public sealed class GattClient
     async Task<byte[]?> RequestOrNotFoundAsync(byte[] pdu)
     {
         try { return await RequestAsync(pdu); }
-        catch (AttException e) when (e.Error == AttributeNotFound) { return null; }   // fin d'une découverte
+        catch (AttException e) when (e.Error == AttributeNotFound) { return null; }   // end of a discovery
     }
 
-    /// <summary>Une requête à la fois (règle ATT) ; renvoie la réponse entière, opcode compris.</summary>
+    /// <summary>One request at a time (ATT rule); returns the whole response, opcode included.</summary>
     async Task<byte[]> RequestAsync(byte[] pdu)
     {
         await _gate.WaitAsync();
@@ -130,16 +133,16 @@ public sealed class GattClient
                 if (opcode == 0x1D) _central.SendL2cap(_connection, LeCentral.CidAtt, [0x1E]);   // confirmation
                 Notification?.Invoke(U16(pdu, 1), pdu[3..]);
                 break;
-            case 0x02:   // Exchange MTU : on reste au minimum
+            case 0x02:   // Exchange MTU: stay at the minimum
                 _central.SendL2cap(_connection, LeCentral.CidAtt, [0x03, 23, 0]);
                 break;
-            case 0x04 or 0x06 or 0x08 or 0x0A or 0x0C or 0x0E or 0x10 or 0x12 or 0x16 or 0x18 or 0x20:   // requête de l'appareil
+            case 0x04 or 0x06 or 0x08 or 0x0A or 0x0C or 0x0E or 0x10 or 0x12 or 0x16 or 0x18 or 0x20:   // request from the device
                 byte error = opcode is 0x04 or 0x06 or 0x08 or 0x10 ? AttributeNotFound : RequestNotSupported;
                 ushort handle = pdu.Length >= 3 ? U16(pdu, 1) : (ushort)0;
                 _central.SendL2cap(_connection, LeCentral.CidAtt, [ErrorResponse, opcode, .. U16(handle), error]);
                 break;
             default:
-                if (_pending is { } q && opcode == q.Request + 1) q.Done.TrySetResult(pdu);   // réponse = requête + 1
+                if (_pending is { } q && opcode == q.Request + 1) q.Done.TrySetResult(pdu);   // response = request + 1
                 break;
         }
     }

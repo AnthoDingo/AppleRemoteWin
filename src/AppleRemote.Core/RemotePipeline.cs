@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
 /// <summary>
-/// Chaîne complète : report brut -> <see cref="Decoder"/> -> <see cref="Gestures"/>. Pas d'horloge propre :
-/// le temps hôte est celui passé à <see cref="Feed"/>, ce qui rend les rejeux déterministes.
-/// Non thread-safe : l'appelant sérialise les appels.
+/// Full chain: raw report -> <see cref="Decoder"/> -> <see cref="Gestures"/>. No clock of its own:
+/// the host time is the one passed to <see cref="Feed"/>, which makes replays deterministic.
+/// Not thread-safe: the caller serialises the calls.
 /// </summary>
 public sealed class RemotePipeline
 {
@@ -20,8 +23,8 @@ public sealed class RemotePipeline
     }
 
     /// <summary>
-    /// Injecte un report à l'instant hôte <paramref name="hostTime"/> (secondes). <c>null</c> = simple tick (inertie des flicks),
-    /// tableau vide = lien coupé.
+    /// Feeds a report at host time <paramref name="hostTime"/> (seconds). <c>null</c> = plain tick (flick inertia),
+    /// empty array = link lost.
     /// </summary>
     public void Feed(double hostTime, byte[]? report)
     {

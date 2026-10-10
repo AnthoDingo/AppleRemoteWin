@@ -1,8 +1,12 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <UserControl x:Class="AppleRemote.App.Views.RemoteDrawing"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- La télécommande dessinée à l'échelle (380 × 1200), partagée par les pages Télécommande, Tuto et Settings.
-         IsEnabled="False" : simple illustration, sans retour des touches ni des doigts. -->
+    <!-- The remote drawn to scale (380 × 1200), shared by the Remote, Tutorial and Settings pages.
+         IsEnabled="False": plain illustration, no key or finger feedback. -->
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -10,7 +14,7 @@
             </ResourceDictionary.MergedDictionaries>
             <SolidColorBrush x:Key="KeyOnBrush" Color="#4C8DFF" />
             <SolidColorBrush x:Key="ClickOnBrush" Color="#404C8DFF" />
-            <!-- Les touches s'allument quand leur Tag (lié à l'état du view-model) vaut True, si le contrôle est actif. -->
+            <!-- Keys light up when their Tag (bound to the view-model state) is True, if the control is enabled. -->
             <Style x:Key="RemoteKey" TargetType="Border">
                 <Style.Triggers>
                     <MultiDataTrigger>
@@ -79,7 +83,7 @@
             </Border>
 
             <Canvas>
-                <!-- Niveau de batterie, en bas de la télécommande -->
+                <!-- Battery level, at the bottom of the remote -->
                 <Grid Canvas.Left="0" Canvas.Top="1100" Width="380">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <TextBlock Text="&#xEBA7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="34"
@@ -155,7 +159,7 @@
                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
 
-                <!-- Volume : une pilule, deux moitiés -->
+                <!-- Volume: one pill, two halves -->
                 <Grid Canvas.Left="217" Canvas.Top="535" Width="120" Height="283">
                     <Grid.RowDefinitions>
                         <RowDefinition />

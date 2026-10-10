@@ -1,20 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
-/// <summary>Touche Windows : code de touche virtuelle (VK_*) et drapeau « étendue » (flèches, navigation).</summary>
+/// <summary>Windows key: virtual-key code (VK_*) and "extended" flag (arrows, navigation).</summary>
 public readonly record struct KeyCode(ushort Vk, bool Extended = false);
 
-/// <summary>Destination des touches (SendInput sous Windows, faux récepteur dans les tests).</summary>
+/// <summary>Key sink (SendInput on Windows, fake receiver in tests).</summary>
 public interface IKeySink
 {
     void Key(KeyCode key, bool down);
 }
 
-/// <summary>Noms de touches acceptés dans le fichier de mapping JSON. Table portable (valeurs VK_*).</summary>
+/// <summary>Key names accepted in the JSON mapping file. Portable table (VK_* values).</summary>
 public static class Keys
 {
     public static readonly IReadOnlyDictionary<string, KeyCode> Names = Build();
 
-    /// <summary>Nom de touche pour l'affichage (le premier déclaré : « Escape » avant « Esc »), null si hors table.</summary>
+    /// <summary>Key name for display (the first declared: "Escape" before "Esc"), null if not in the table.</summary>
     public static string? NameOf(KeyCode key) => Names.FirstOrDefault(p => p.Value == key).Key;
 
     static IReadOnlyDictionary<string, KeyCode> Build()
@@ -40,8 +43,8 @@ public static class Keys
 }
 
 /// <summary>
-/// Correspondance entrée de la télécommande -> touche. Entrées : up, down, left, right, click, menu, tv,
-/// playpause, volup, voldown, siri. Une entrée absente est désactivée.
+/// Mapping remote input -> key. Inputs: up, down, left, right, click, menu, tv,
+/// playpause, volup, voldown, siri. A missing input is disabled.
 /// </summary>
 public sealed class KeyMap
 {
@@ -72,14 +75,14 @@ public sealed class KeyMap
 
     public IReadOnlyDictionary<string, KeyCode> Entries => _map;
 
-    /// <summary>Associe une touche à une entrée ; null la désactive.</summary>
+    /// <summary>Assigns a key to an input; null disables it.</summary>
     public void Set(string input, KeyCode? key)
     {
         if (key is { } k) _map[input] = k;
         else _map.Remove(input);
     }
 
-    /// <summary>JSON relisible par <see cref="FromJson"/> : toutes les entrées, null si désactivée.</summary>
+    /// <summary>JSON readable by <see cref="FromJson"/>: all inputs, null if disabled.</summary>
     public string ToJson()
     {
         var o = new Dictionary<string, object?>();
@@ -89,22 +92,22 @@ public sealed class KeyMap
     }
 
     /// <summary>
-    /// Applique par-dessus le mapping par défaut un JSON du type
-    /// <c>{"click": "Space", "siri": "C", "tv": null, "volup": 175}</c> : nom de touche, code VK (1-254) ou null pour désactiver.
-    /// Lève <see cref="ArgumentException"/> si une entrée ou une touche est inconnue.
+    /// Applies on top of the default mapping a JSON of the form
+    /// <c>{"click": "Space", "siri": "C", "tv": null, "volup": 175}</c> : key name, VK code (1-254) or null to disable.
+    /// Throws <see cref="ArgumentException"/> if an input or a key is unknown.
     /// </summary>
     public static KeyMap FromJson(string json)
     {
         var m = Default();
         using var doc = System.Text.Json.JsonDocument.Parse(json);
         if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object)
-            throw new ArgumentException("Le mapping doit être un objet JSON.");
+            throw new ArgumentException("The mapping must be a JSON object.");
 
         foreach (var p in doc.RootElement.EnumerateObject())
         {
             string input = p.Name.ToLowerInvariant();
             if (!Inputs.Contains(input))
-                throw new ArgumentException($"Entrée inconnue : « {p.Name} » (valides : {string.Join(", ", Inputs)}).");
+                throw new ArgumentException($"Unknown input: \"{p.Name}\" (valid: {string.Join(", ", Inputs)}).");
 
             var v = p.Value;
             switch (v.ValueKind)
@@ -115,14 +118,14 @@ public sealed class KeyMap
                 case System.Text.Json.JsonValueKind.String:
                     string name = v.GetString()!;
                     if (!Keys.Names.TryGetValue(name, out var key))
-                        throw new ArgumentException($"Touche inconnue : « {name} » pour « {p.Name} ».");
+                        throw new ArgumentException($"Unknown key: \"{name}\" for \"{p.Name}\".");
                     m._map[input] = key;
                     break;
                 case System.Text.Json.JsonValueKind.Number when v.TryGetInt32(out int vk) && vk is >= 1 and <= 254:
                     m._map[input] = new KeyCode((ushort)vk);
                     break;
                 default:
-                    throw new ArgumentException($"Valeur invalide pour « {p.Name} » : {v}.");
+                    throw new ArgumentException($"Invalid value for \"{p.Name}\": {v}.");
             }
         }
         return m;
@@ -130,8 +133,8 @@ public sealed class KeyMap
 }
 
 /// <summary>
-/// Clavier virtuel : traduit boutons et pas de focus en touches. Boutons : appui = touche enfoncée, relâche = touche levée.
-/// Pas de focus (glisser/flick) : une frappe. Les relâches passent avant les appuis dans un même événement.
+/// Virtual keyboard: translates buttons and focus steps into keys. Buttons: press = key down, release = key up.
+/// Focus steps (drag/flick): one keystroke. Releases come before presses within the same event.
 /// </summary>
 public sealed class KeyBinder
 {
@@ -170,7 +173,7 @@ public sealed class KeyBinder
         _sink.Key(key, false);
     }
 
-    /// <summary>Relâche toute touche encore enfoncée (désactivation, arrêt, lien coupé).</summary>
+    /// <summary>Releases every key still held (disable, stop, link lost).</summary>
     public void ReleaseAll()
     {
         foreach (var name in _held.ToArray())

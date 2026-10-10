@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using AppleRemote.App.Models;
 using AppleRemote.App.ViewModels;
 using System.Windows;

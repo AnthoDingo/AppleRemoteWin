@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
@@ -29,10 +32,10 @@ public class BleTests
         var connecting = _central.ConnectAsync("14:9D:99:26:BF:CC");
         byte[] cmd = _sent.Single();
         Assert.Equal(new byte[] { 0x0D, 0x20, 25 }, cmd[..3]);
-        Assert.Equal(new byte[] { 0x00, 0xCC, 0xBF, 0x26, 0x99, 0x9D, 0x14, 0x00 }, cmd[8..16]);   // pair publique, nous publics
+        Assert.Equal(new byte[] { 0x00, 0xCC, 0xBF, 0x26, 0x99, 0x9D, 0x14, 0x00 }, cmd[8..16]);   // public peer, public us
 
         CommandStatusOk(HciOpcode.LeCreateConnection);
-        Assert.False(connecting.IsCompleted);   // en attente de la télécommande
+        Assert.False(connecting.IsCompleted);   // waiting for the remote
         _hci.ReceiveEventBytes([0x3E, 0x13, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00, 0xCC, 0xBF, 0x26, 0x99, 0x9D, 0x14,
             0x18, 0x00, 0x00, 0x00, 0xC8, 0x00, 0x00]);
         Assert.Equal((ushort)0x0040, await connecting);

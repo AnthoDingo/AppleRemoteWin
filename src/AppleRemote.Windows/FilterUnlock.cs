@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
 using Windows.Devices.Bluetooth;
@@ -6,17 +9,17 @@ using Windows.Devices.Bluetooth.GenericAttributeProfile;
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// Déverrouille la télécommande par GATT quand HidD_SetFeature(0xF0) est refusé (erreur 87 sous Windows) : on écrit 0xAF sur le
-/// « niveau de batterie » (0x2A19) sans réponse ; le filtre AppleRemoteDriver le réécrit en écriture du rapport 0xF0 (handle 0x28 -> 0x1d).
-/// La lecture des rapports reste celle de la collection HID de Windows.
+/// Unlocks the remote over GATT when HidD_SetFeature(0xF0) is refused (error 87 on Windows): 0xAF is written to the
+/// "battery level" (0x2A19) without response; the AppleRemoteDriver filter rewrites it as a write of the 0xF0 report (handle 0x28 -> 0x1d).
+/// Report reading remains that of Windows' HID collection.
 /// </summary>
 static partial class FilterUnlock
 {
-    /// <summary>L'adresse Bluetooth est le dernier élément du chemin HID : ..._rev&amp;0000_149d9926bfcc#...</summary>
+    /// <summary>The Bluetooth address is the last element of the HID path: ..._rev&amp;0000_149d9926bfcc#...</summary>
     [GeneratedRegex("_([0-9a-f]{12})#", RegexOptions.IgnoreCase)]
     private static partial Regex AddressInPath();
 
-    /// <summary>Le périphérique LE derrière une collection HID, ou null (chemin sans adresse, WinRT indisponible).</summary>
+    /// <summary>The LE device behind a HID collection, or null (path without an address, WinRT unavailable).</summary>
     public static async Task<BluetoothLEDevice?> OpenAsync(string hidPath)
     {
         var match = AddressInPath().Match(hidPath);
@@ -29,15 +32,15 @@ static partial class FilterUnlock
     {
         if (device.ConnectionStatus != BluetoothConnectionStatus.Connected) return false;
 
-        // Cache d'abord : une découverte « Uncached » à chaque déverrouillage est lourde et peut faire recréer la collection HID par Windows.
+        // Cache first: an "Uncached" discovery on every unlock is heavy and can make Windows recreate the HID collection.
         var level = await FindBatteryLevelAsync(device, BluetoothCacheMode.Cached)
                     ?? await FindBatteryLevelAsync(device, BluetoothCacheMode.Uncached);
         if (level is null) return false;
 
-        // Abonnement aux notifications : le filtre redirige cette écriture du CCCD du niveau de batterie (0x29) vers celui des rapports HID (0x24).
-        // Sans cela la télécommande, même déverrouillée, ne notifie rien.
+        // Notification subscription: the filter redirects this write of the battery-level CCCD (0x29) to the HID reports one (0x24).
+        // Without it the remote, even unlocked, notifies nothing.
         try { await level.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify); }
-        catch (Exception) { /* propriété Notify absente côté Windows : on tente quand même le déverrouillage */ }
+        catch (Exception) { /* Notify property missing on the Windows side: try the unlock anyway */ }
 
         var result = await level.WriteValueAsync(new byte[] { 0xAF }.AsBuffer(), GattWriteOption.WriteWithoutResponse);
         return result == GattCommunicationStatus.Success;

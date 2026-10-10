@@ -1,16 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.IO;
 using System.Text.Json;
 
 namespace AppleRemote.App.Models;
 
-/// <summary>Préférences dans %AppData%\AppleRemote\settings.json.</summary>
+/// <summary>Preferences in %AppData%\AppleRemote\settings.json.</summary>
 public sealed class Settings
 {
     public bool KeyboardEnabled { get; set; }
     public string? KeyMapPath { get; set; }
-    /// <summary>Fermer la fenêtre la réduit dans la zone de notification (sinon l'app s'arrête).</summary>
+    /// <summary>Closing the window minimises it to the notification area (otherwise the app exits).</summary>
     public bool CloseToTray { get; set; } = true;
-    /// <summary>« auto » (langue de Windows), « fr » ou « en » ; appliquée au démarrage.</summary>
+    /// <summary>"auto" (Windows language), "fr" or "en"; applied at startup.</summary>
     public string Language { get; set; } = "auto";
 
     public static string FilePath => System.IO.Path.Combine(
@@ -25,7 +28,7 @@ public sealed class Settings
         }
         catch
         {
-            // fichier illisible : valeurs par défaut
+            // unreadable file: defaults
         }
         return new Settings();
     }
@@ -39,7 +42,7 @@ public sealed class Settings
         }
         catch
         {
-            // préférences non critiques
+            // non-critical preferences
         }
     }
 }

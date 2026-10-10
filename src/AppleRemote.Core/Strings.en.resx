@@ -174,14 +174,6 @@ An administrator confirmation (UAC) will appear.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Keys refused by the remote (0x{0:X2}): pairing again…</value></data>
   <data name="Status.PairingFirst" xml:space="preserve"><value>Pairing… (first time: remote in pairing mode, Menu + Volume + ~5 s)</value></data>
   <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Battery unreadable: {0}</value></data>
-  <data name="Status.GattNoRemote" xml:space="preserve"><value>Bluetooth filter active: no paired remote found (BLE scanner → Pair).</value></data>
-  <data name="Status.GattConnecting" xml:space="preserve"><value>Bluetooth filter: connecting to remote {0}…</value></data>
-  <data name="Status.GattRetry" xml:space="preserve"><value>Bluetooth filter: {0} — retrying.</value></data>
-  <data name="Status.GattReady" xml:space="preserve"><value>Remote connected (Bluetooth filter).</value></data>
-  <data name="Status.GattWake" xml:space="preserve"><value>Remote asleep or out of range: press a button to wake it…</value></data>
-  <data name="Status.GattUnlocked" xml:space="preserve"><value>Bluetooth filter: unlock sent ({0}) — press a button.</value></data>
-  <data name="Status.GattLost" xml:space="preserve"><value>Bluetooth filter: link lost after {0:0.0} s, {1} report(s) received.</value></data>
-  <data name="Status.GattReports" xml:space="preserve"><value>Bluetooth filter: {0} report(s) received, last = {1}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} not found: put it next to the application (or build AppleRemote.DriverInstaller).</value></data>
   <data name="Status.HidReport" xml:space="preserve"><value>First report received from the remote: {0}</value></data>
   <data name="Status.Relocked" xml:space="preserve"><value>Remote woke up: unlocked again.</value></data>

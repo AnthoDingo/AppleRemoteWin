@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,7 +10,7 @@ using static AppleRemote.Windows.Native.NativeMethods;
 
 namespace AppleRemote.Windows;
 
-/// <summary>Une collection HID exposée par Windows (un « top-level collection » = un chemin d'interface).</summary>
+/// <summary>A HID collection exposed by Windows (one top-level collection = one interface path).</summary>
 public sealed record HidDeviceInfo(
     string Path, ushort VendorId, ushort ProductId, string Product,
     ushort UsagePage, ushort Usage, int InputLength, int OutputLength, int FeatureLength)
@@ -17,11 +20,11 @@ public sealed record HidDeviceInfo(
         (VendorId == HidEnumerator.AppleBluetoothVendorId || Path.Contains("004c_pid&026d", StringComparison.OrdinalIgnoreCase));
 
     public override string ToString() =>
-        $"{(string.IsNullOrWhiteSpace(Product) ? "(sans nom)" : Product)}  VID {VendorId:X4} PID {ProductId:X4}  " +
+        $"{(string.IsNullOrWhiteSpace(Product) ? "(unnamed)" : Product)}  VID {VendorId:X4} PID {ProductId:X4}  " +
         $"usage {UsagePage:X4}:{Usage:X4}  in {InputLength} out {OutputLength} feat {FeatureLength}\n    {Path}";
 }
 
-/// <summary>Énumération des périphériques HID via SetupAPI + hid.dll. Aucun pilote noyau : Windows fournit HidBthLE.</summary>
+/// <summary>Enumeration of HID devices via SetupAPI + hid.dll. No kernel driver: Windows provides HidBthLE.</summary>
 public static class HidEnumerator
 {
     /// <summary>ID fournisseur Bluetooth SIG d'Apple (0x004C) ; produit 0x026D = Siri Remote gen 1 (A1513/A1962).</summary>
@@ -29,7 +32,7 @@ public static class HidEnumerator
     public const ushort AppleUsbVendorId = 0x05AC;
     public const ushort RemoteProductId = 0x026D;
 
-    /// <summary>Tous les périphériques HID présents (collections de premier niveau).</summary>
+    /// <summary>All present HID devices (top-level collections).</summary>
     public static IReadOnlyList<HidDeviceInfo> ListAll()
     {
         var result = new List<HidDeviceInfo>();
@@ -37,7 +40,7 @@ public static class HidEnumerator
 
         IntPtr set = SetupDiGetClassDevs(ref hidGuid, IntPtr.Zero, IntPtr.Zero, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
         if (set == IntPtr.Zero || set == new IntPtr(-1))
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "SetupDiGetClassDevs a échoué");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "SetupDiGetClassDevs failed");
 
         try
         {
@@ -60,13 +63,13 @@ public static class HidEnumerator
         return result;
     }
 
-    /// <summary>Les périphériques HID Apple (diagnostic : « la télécommande est-elle vue par Windows ? »).</summary>
+    /// <summary>Apple HID devices (diagnostic: "does Windows see the remote?").</summary>
     public static IReadOnlyList<HidDeviceInfo> ListApple() =>
         ListAll().Where(d => d.VendorId is AppleBluetoothVendorId or AppleUsbVendorId || d.IsSiriRemoteGen1).ToList();
 
     /// <summary>
-    /// La collection de la Siri Remote gen 1 qui porte le report d'entrée 0xFC et le report de fonctionnalité 0xF0
-    /// (usage constructeur, longueurs d'entrée et de fonctionnalité non nulles).
+    /// The Siri Remote gen 1 collection carrying the 0xFC input report and the 0xF0 feature report
+    /// (vendor usage, non-zero input and feature lengths).
     /// </summary>
     public static HidDeviceInfo? FindRemote()
     {
@@ -97,7 +100,7 @@ public static class HidEnumerator
 
     static HidDeviceInfo? Query(string path)
     {
-        // Accès 0 : suffisant pour interroger les attributs, et ne gêne pas les autres applications.
+        // Access 0: enough to query the attributes, and doesn't get in other applications' way.
         using SafeFileHandle h = CreateFile(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
         if (h.IsInvalid) return null;
 
@@ -131,14 +134,14 @@ public static class HidEnumerator
         return new HidDeviceInfo(path, attr.VendorID, attr.ProductID, product, usagePage, usage, inLen, outLen, featLen);
     }
 
-    /// <summary>Ouvre une collection en lecture/écriture, E/S asynchrones (overlapped).</summary>
+    /// <summary>Opens a collection for read/write, asynchronous (overlapped) I/O.</summary>
     public static SafeFileHandle Open(string path) =>
         CreateFile(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING,
             FILE_FLAG_OVERLAPPED, IntPtr.Zero);
 
     /// <summary>
-    /// Déverrouille la télécommande : report de fonctionnalité 0xF0 = 0xAF. Sous Windows, HidD_SetFeature exige un tampon de
-    /// FeatureReportByteLength octets (zéros derrière) ; si le pilote refuse, on retente avec les 2 octets nus (comme Linux).
+    /// Unlocks the remote: feature report 0xF0 = 0xAF. On Windows, HidD_SetFeature requires a buffer of
+    /// FeatureReportByteLength bytes (zero-padded); if the driver refuses, retry with the bare 2 bytes (like Linux).
     /// </summary>
     public static bool Unlock(SafeFileHandle handle, int featureLength)
     {

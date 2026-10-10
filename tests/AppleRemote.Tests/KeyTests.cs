@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
@@ -20,7 +23,7 @@ public class KeyTests
     {
         Assert.Equal(new KeyCode(0x26, true), Keys.Names["Up"]);
         Assert.Equal(new KeyCode(0x0D), Keys.Names["Enter"]);
-        Assert.Equal(new KeyCode(0x41), Keys.Names["a"]);          // insensible à la casse
+        Assert.Equal(new KeyCode(0x41), Keys.Names["a"]);          // case-insensitive
         Assert.Equal(new KeyCode(0x30), Keys.Names["D0"]);
         Assert.Equal(new KeyCode(0x70), Keys.Names["F1"]);
         Assert.Equal(new KeyCode(0x7B), Keys.Names["F12"]);
@@ -35,7 +38,7 @@ public class KeyTests
         Assert.True(m.TryGet("click", out var click) && click == Enter);
         Assert.True(m.TryGet("menu", out var menu) && menu == Keys.Names["Escape"]);
         Assert.True(m.TryGet("tv", out var tv) && tv == Keys.Names["BrowserHome"]);
-        Assert.False(m.TryGet("siri", out _));                      // Siri : rien par défaut
+        Assert.False(m.TryGet("siri", out _));                      // Siri: nothing by default
     }
 
     [Fact]
@@ -57,8 +60,8 @@ public class KeyTests
         Assert.True(m.TryGet("siri", out var siri) && siri == Keys.Names["C"]);
         Assert.True(m.TryGet("click", out var click) && click == new KeyCode(32));
         Assert.True(m.TryGet("volup", out var volup) && volup == Keys.Names["VolumeMute"]);
-        Assert.False(m.TryGet("tv", out _));                        // null : entrée désactivée
-        Assert.True(m.TryGet("up", out var up) && up == Up);        // le reste garde son défaut
+        Assert.False(m.TryGet("tv", out _));                        // null: input disabled
+        Assert.True(m.TryGet("up", out var up) && up == Up);        // the rest keeps its default
     }
 
     [Theory]
@@ -79,7 +82,7 @@ public class KeyTests
         var binder = new KeyBinder(KeyMap.Default(), sink);
 
         binder.OnEvent(Buttons(0x80, new[] { "click" }, Array.Empty<string>()));
-        binder.OnEvent(Buttons(0x10, new[] { "siri" }, new[] { "click" }));   // siri : non mappé
+        binder.OnEvent(Buttons(0x10, new[] { "siri" }, new[] { "click" }));   // siri: not mapped
         binder.OnGesture(new MoveGesture(Direction.Up, MoveSource.Slide));
 
         Assert.Equal(new[] { (Enter, true), (Enter, false), (Up, true), (Up, false) }, sink.Log);
@@ -120,7 +123,7 @@ public class KeyTests
         binder.OnEvent(Buttons(0x80, new[] { "click" }, Array.Empty<string>()));
 
         binder.Map = KeyMap.FromJson("""{"click": "Space"}""");
-        binder.OnEvent(Buttons(0, Array.Empty<string>(), new[] { "click" }));   // déjà relâché : pas de double relâche
+        binder.OnEvent(Buttons(0, Array.Empty<string>(), new[] { "click" }));   // already released: no double release
 
         Assert.Equal(new[] { (Enter, true), (Enter, false) }, sink.Log);
     }

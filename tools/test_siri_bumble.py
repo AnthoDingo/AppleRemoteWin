@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 AnthoDingo
+
 """
 Checks siri_bumble.py without hardware: a fake Siri Remote on virtual Bumble controllers.
 1st session: pairing, subscription, unlock 0xF0 <- 0xAF, reception of a 0xFC report.

@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -20,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Vraie capture d'une A1962 (open-appleremote, MIT) : octets de reports, temps relatifs, libellés d'étapes. -->
+    <!-- Real capture of an A1962 (open-appleremote, MIT): report bytes, relative times, step labels. -->
     <None Update="sample.jsonl" CopyToOutputDirectory="PreserveNewest" />
-    <!-- Sortie du code Python de référence (decode.py + gestures.py) sur cette même capture. -->
+    <!-- Output of the reference Python code (decode.py + gestures.py) on this same capture. -->
     <None Update="golden.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
