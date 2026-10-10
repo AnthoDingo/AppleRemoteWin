@@ -86,7 +86,7 @@
                 <!-- Battery level, at the bottom of the remote -->
                 <Grid Canvas.Left="0" Canvas.Top="1100" Width="380">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="&#xEBA7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="34"
+                    <TextBlock Text="{Binding BatteryGlyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="34"
                                Foreground="#9AA0A6" VerticalAlignment="Center" Margin="0,0,10,0" />
                     <TextBlock Text="{Binding BatteryPercent}" FontSize="30" Foreground="#9AA0A6"
                                VerticalAlignment="Center" />

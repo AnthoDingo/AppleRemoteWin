@@ -175,6 +175,5 @@ Une confirmation administrateur (UAC) va s'afficher.</value></data>
   <data name="Status.PairingFirst" xml:space="preserve"><value>Appairage… (première fois : télécommande en mode appairage, Menu + Volume + ~5 s)</value></data>
   <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Batterie illisible : {0}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} introuvable : placez-le à côté de l'application (ou compilez AppleRemote.DriverInstaller).</value></data>
-  <data name="Status.HidReport" xml:space="preserve"><value>Premier rapport reçu de la télécommande : {0}</value></data>
   <data name="Status.Relocked" xml:space="preserve"><value>Télécommande réveillée : déverrouillage refait.</value></data>
 </root>

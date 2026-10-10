@@ -25,10 +25,21 @@ public sealed class SiriRemoteDriver
 
     /// <param name="onReport">(host time, report). Empty array = link lost. Called from a pool thread.</param>
     /// <param name="onStatus">Status messages, de-duplicated.</param>
-    public SiriRemoteDriver(Action<double, byte[]?> onReport, Action<string> onStatus)
+    /// <param name="onBattery">Battery level in %, read over GATT after each (re)unlock. Called from a pool thread.</param>
+    public SiriRemoteDriver(Action<double, byte[]?> onReport, Action<string> onStatus, Action<int>? onBattery = null)
     {
         _onReport = onReport;
         _onStatus = onStatus;
+        _onBattery = onBattery;
+    }
+
+    readonly Action<int>? _onBattery;
+
+    async Task ReportBatteryAsync(BluetoothLEDevice? device)
+    {
+        if (_onBattery is null || device is null) return;
+        try { if (await FilterUnlock.ReadBatteryAsync(device) is { } level) _onBattery(level); }
+        catch (Exception) { /* battery is optional: link dropped or WinRT refused */ }
     }
 
     void Status(string message)
@@ -110,10 +121,11 @@ public sealed class SiriRemoteDriver
 
         Status(Loc.T("Status.ConnectedHid", string.IsNullOrWhiteSpace(info.Product) ? "Siri Remote" : info.Product));
 
+        _ = ReportBatteryAsync(device);
+
         int length = Math.Max(info.InputLength, 21);
         using var linkCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         long lastReport = Environment.TickCount64;
-        bool seenReport = false;
 
         // The remote often falls asleep then reconnects, and stays mute until it is unlocked again:
         // we redo it as soon as Windows signals the reconnection, without waiting for the probe (otherwise the first presses are lost).
@@ -125,7 +137,7 @@ public sealed class SiriRemoteDriver
             {
                 for (int attempt = 0; attempt < 10 && !linkCts.IsCancellationRequested; attempt++)
                 {
-                    if ((await UnlockAsync(info, handle, sender)).Ok) { Status(Loc.T("Status.Relocked")); break; }
+                    if ((await UnlockAsync(info, handle, sender)).Ok) { Status(Loc.T("Status.Relocked")); _ = ReportBatteryAsync(sender); break; }
                     await Task.Delay(300);
                 }
             }
@@ -163,7 +175,6 @@ public sealed class SiriRemoteDriver
                 int n = await stream.ReadAsync(buffer.AsMemory(0, length), linkCts.Token);
                 if (n <= 0) throw new IOException("end of HID stream");
                 Volatile.Write(ref lastReport, Environment.TickCount64);
-                if (!seenReport) { seenReport = true; Status(Loc.T("Status.HidReport", Convert.ToHexString(buffer, 0, n))); }
                 _onReport(HostNow, buffer.AsSpan(0, n).ToArray());
             }
         }

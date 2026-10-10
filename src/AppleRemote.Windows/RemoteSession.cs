@@ -22,7 +22,7 @@ public sealed class RemoteSession : IDisposable
     public event Action<GestureEvent>? Gesture;
     public event Action<string>? Status;
 
-    /// <summary>Battery level in % (direct Bluetooth only), raised from a pool thread.</summary>
+    /// <summary>Battery level in %, raised from a pool thread.</summary>
     public event Action<int>? Battery;
 
     public RemoteSession(KeyMap? map = null)
@@ -101,7 +101,7 @@ public sealed class RemoteSession : IDisposable
         }
         else
         {
-            var driver = new SiriRemoteDriver(Feed, s => Status?.Invoke(s));
+            var driver = new SiriRemoteDriver(Feed, s => Status?.Invoke(s), l => Battery?.Invoke(l));
             _driverTask = Task.Run(() => driver.RunAsync(ct));
         }
         _tickTask = Task.Run(() => TickLoopAsync(ct));

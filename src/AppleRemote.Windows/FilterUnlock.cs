@@ -46,6 +46,17 @@ static partial class FilterUnlock
         return result == GattCommunicationStatus.Success;
     }
 
+    /// <summary>Battery level in % read over GATT (reads are not redirected by the filter), or null.</summary>
+    public static async Task<int?> ReadBatteryAsync(BluetoothLEDevice device)
+    {
+        var level = await FindBatteryLevelAsync(device, BluetoothCacheMode.Cached)
+                    ?? await FindBatteryLevelAsync(device, BluetoothCacheMode.Uncached);
+        if (level is null) return null;
+        var read = await level.ReadValueAsync(BluetoothCacheMode.Uncached);
+        if (read.Status != GattCommunicationStatus.Success || read.Value.Length == 0) return null;
+        return global::Windows.Storage.Streams.DataReader.FromBuffer(read.Value).ReadByte();
+    }
+
     static async Task<global::Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristic?> FindBatteryLevelAsync(BluetoothLEDevice device, BluetoothCacheMode mode)
     {
         var services = await device.GetGattServicesForUuidAsync(GattServiceUuids.Battery, mode);

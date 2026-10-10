@@ -127,7 +127,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BatteryText))]
     [NotifyPropertyChangedFor(nameof(BatteryPercent))]
+    [NotifyPropertyChangedFor(nameof(BatteryGlyph))]
     int? _batteryLevel;
+
+    /// <summary>Segoe MDL2 battery glyph in steps of 10 % (Battery0 = E850 … Battery9 = E858, Battery10 = E83F); E996 = unknown.</summary>
+    public string BatteryGlyph => BatteryLevel is { } level
+        ? char.ConvertFromUtf32(Math.Clamp((level + 5) / 10, 0, 10) switch { 10 => 0xE83F, var step => 0xE850 + step })
+        : "";
 
     public string BatteryPercent => BatteryLevel is { } level ? $"{level} %" : "—";
 
@@ -330,7 +336,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     void OnStatus(string message)
     {
         StatusText = message;
-        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect", "Status.HidReport" }.Any(k => Loc.StartsWith(message, k));
+        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect" }.Any(k => Loc.StartsWith(message, k));
         bool warn = new[] { "Status.WaitHid", "Status.WaitBonded", "Status.WaitPairing", "Status.Unreachable", "Status.Disconnected", "Status.DisconnectedReason" }
             .Any(k => Loc.StartsWith(message, k));
         // "Stopped" only if the session is really stopped: an unknown message keeps the current level.
@@ -356,6 +362,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             foreach (var f in Fingers) f.IsVisible = false;
             ShowButtons(0);
         }
+    }
+
+    // Double-click on a row of the nearby list: only the rows that are not connected start pairing.
+    [RelayCommand]
+    void PairDevice(string line)
+    {
+        if (!line.EndsWith(Loc.T("Remote.Connected"))) Pair();
     }
 
     [RelayCommand]
