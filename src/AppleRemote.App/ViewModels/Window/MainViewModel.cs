@@ -40,9 +40,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     readonly RemoteSession _session;
     readonly IDialogs _dialogs;
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
-    readonly List<Point> _trail = new();
+    const long TrailLifeMs = 400;
+    readonly List<(Point Point, long Time)> _trail = new();
     readonly BleScanner _scanner = new();
     readonly DispatcherTimer _scanTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    readonly DispatcherTimer _trailTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
 
     /// <summary>Appareils BLE vus en publicité avec fabricant Apple + service HID (« Apple HID »).</summary>
     [ObservableProperty] IReadOnlyList<string> _nearbyDevices = [];
@@ -150,6 +152,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var input in KeyMap.Inputs) Bindings[input] = new KeyChoice(input, NoKey, OnBindingChanged);
         SyncBindings();
 
+        _trailTimer.Tick += (_, _) => FadeTrail();
         _scanTimer.Tick += async (_, _) =>
         {
             var hid = await Task.Run(() =>
@@ -271,11 +274,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (anyDown)
         {
             if (!_wasDown) _trail.Clear();
-            _trail.Add(new Point(PadX(t.X), PadY(t.Y)));
-            if (_trail.Count > 80) _trail.RemoveAt(0);
-            TrailPoints = new PointCollection(_trail);
+            _trail.Add((new Point(PadX(t.X), PadY(t.Y)), Environment.TickCount64));
+            TrailPoints = new PointCollection(_trail.Select(p => p.Point));
+            _trailTimer.Start();
         }
         _wasDown = anyDown;
+    }
+
+    /// <summary>Traînée : chaque point s'efface <see cref="TrailLifeMs"/> après son tracé, la queue raccourcit d'elle-même.</summary>
+    void FadeTrail()
+    {
+        long limit = Environment.TickCount64 - TrailLifeMs;
+        int expired = _trail.FindIndex(p => p.Time > limit);
+        if (expired < 0) expired = _trail.Count;
+        if (expired == 0) return;
+        _trail.RemoveRange(0, expired);
+        TrailPoints = new PointCollection(_trail.Select(p => p.Point));
+        if (_trail.Count == 0) _trailTimer.Stop();
     }
 
     static double PadX(int x) => Math.Clamp((x - XMin) / Span, 0, 1) * PadSize;
