@@ -44,6 +44,11 @@
   <data name="Language.Auto" xml:space="preserve"><value>Automatique (langue de Windows)</value></data>
   <data name="Language.Fr" xml:space="preserve"><value>Français</value></data>
   <data name="Language.En" xml:space="preserve"><value>English</value></data>
+  <data name="Pick.Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Pick.KeyCombo" xml:space="preserve"><value>Key Combo</value></data>
+  <data name="Pick.Software" xml:space="preserve"><value>Software</value></data>
+  <data name="Pick.Macro" xml:space="preserve"><value>Macro</value></data>
+  <data name="Pick.Browse" xml:space="preserve"><value>Parcourir…</value></data>
   <data name="NoKey" xml:space="preserve"><value>(aucune)</value></data>
   <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTIC</value></data>
   <data name="Debug.HidDevices" xml:space="preserve"><value>Périphériques HID Apple</value></data>

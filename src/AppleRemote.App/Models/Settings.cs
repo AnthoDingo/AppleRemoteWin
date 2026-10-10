@@ -11,6 +11,10 @@ public sealed class Settings
     /// <summary>Fermer la fenêtre la réduit dans la zone de notification (sinon l'app s'arrête).</summary>
     public bool CloseToTray { get; set; } = true;
     /// <summary>« auto » (langue de Windows), « fr » ou « en » ; appliquée au démarrage.</summary>
+    /// <summary>Entrée de la télécommande -> exe à lancer (remplace la touche).</summary>
+    public Dictionary<string, string> Software { get; set; } = new();
+    /// <summary>Logiciels ajoutés par « Browse », conservés dans le menu.</summary>
+    public List<string> Apps { get; set; } = new();
     public string Language { get; set; } = "auto";
 
     public static string FilePath => System.IO.Path.Combine(

@@ -51,6 +51,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     static readonly string NoKey = Loc.T("NoKey");
     public IReadOnlyList<string> KeyChoices { get; } = [NoKey, .. Keys.Names.Keys.Where(n => n != "Esc")];
     public Dictionary<string, KeyChoice> Bindings { get; } = new();
+    /// <summary>Chemins des logiciels proposés dans le menu Software : détectés + ajoutés par Browse.</summary>
+    public ObservableCollection<string> SoftwareChoices { get; } = new();
     bool _syncingBindings;
 
     public ObservableCollection<string> Log { get; } = new();
@@ -147,6 +149,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _session.Gesture += g => _ui.InvokeAsync(() => OnGesture(g), DispatcherPriority.Render);
         _session.Status += s => _ui.InvokeAsync(() => OnStatus(s));
         _session.Battery += level => _ui.InvokeAsync(() => BatteryLevel = level);
+        foreach (var p in SoftwareApps.Detect().Concat(_settings.Apps).Where(File.Exists))
+            if (!SoftwareChoices.Contains(p, StringComparer.OrdinalIgnoreCase)) SoftwareChoices.Add(p);
         foreach (var input in KeyMap.Inputs) Bindings[input] = new KeyChoice(input, NoKey, OnBindingChanged);
         SyncBindings();
 
@@ -192,7 +196,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _syncingBindings = true;
         foreach (var (input, choice) in Bindings)
-            choice.Key = _session.KeyMap.TryGet(input, out var k) ? Keys.NameOf(k) ?? NoKey : NoKey;
+            choice.Key = _settings.Software.TryGetValue(input, out var app) ? SoftwareApps.Prefix + app
+                : _session.KeyMap.TryGet(input, out var k) ? Keys.NameOf(k) ?? NoKey : NoKey;
         _syncingBindings = false;
     }
 
@@ -200,7 +205,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_syncingBindings) return;
         var map = _session.KeyMap;
-        map.Set(input, Keys.Names.TryGetValue(name, out var k) ? k : null);
+        if (name.StartsWith(SoftwareApps.Prefix))
+        {
+            string app = name[SoftwareApps.Prefix.Length..];
+            _settings.Software[input] = app;
+            if (!SoftwareChoices.Contains(app, StringComparer.OrdinalIgnoreCase))
+            {
+                SoftwareChoices.Add(app);
+                _settings.Apps.Add(app);
+            }
+            map.Set(input, null);
+        }
+        else
+        {
+            _settings.Software.Remove(input);
+            map.Set(input, Keys.Names.TryGetValue(name, out var k) ? k : null);
+        }
         _session.KeyMap = map; // relâche les touches tenues
         try
         {
@@ -214,6 +234,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // ---- événements de la télécommande ---------------------------------------------------
 
+    void LaunchBound(string input)
+    {
+        if (KeyboardEnabled && _settings.Software.TryGetValue(input, out var app)) SoftwareApps.Launch(app);
+    }
+
     void OnEvent(RemoteEvent ev)
     {
         switch (ev)
@@ -223,6 +248,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 break;
             case ButtonsEvent b:
                 ShowButtons(b.Mask);
+                foreach (var name in b.Pressed) LaunchBound(name);
                 if (b.Pressed.Count > 0) AddLog("▼ " + string.Join(" + ", b.Pressed));
                 if (b.Released.Count > 0) AddLog("▲ " + string.Join(" + ", b.Released));
                 break;
@@ -280,6 +306,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 TileShiftY = -tilt.Y * 18;
                 break;
             case MoveGesture m:
+                LaunchBound(m.Dir.ToString().ToLowerInvariant());
                 MoveArrow = m.Dir switch
                 {
                     Direction.Up => "↑",
@@ -463,6 +490,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     void ResetMap()
     {
         _session.KeyMap = KeyMap.Default();
+        _settings.Software.Clear();
         SyncBindings();
         _settings.KeyMapPath = null;
         _settings.Save();
