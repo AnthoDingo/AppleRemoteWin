@@ -1,0 +1,17 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>AppleRemote</RootNamespace>
+    <AssemblyName>AppleRemote.Core</AssemblyName>
+    <NeutralLanguage>fr</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

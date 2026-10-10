@@ -14,3 +14,30 @@ tools/siri-remote-keys.json
 
 # Captures personnelles à la racine (tests/AppleRemote.Tests/sample.jsonl reste suivi)
 /*.jsonl
+
+# Pilote Rust (src/AppleRemoteDriver) : sortie de compilation et paquet signé
+target/
+*.sys
+*.cat
+*.cer
+*.pfx
+*.pdb
+
+# .NET / IDE / tests
+.vscode/
+.idea/
+*.DotSettings.user
+TestResults/
+*.log
+*.pubxml.user
+PublishProfiles/
+
+# Outils locaux
+.claude/
+graphify-out/
+
+# Rust (src/AppleRemoteDriver)
+target/
+
+# Inno Setup
+Output/

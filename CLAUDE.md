@@ -1,28 +1,30 @@
 # CLAUDE.md
 
-Application WPF + pilote user-mode Windows 11 pour la **Siri Remote gen 1** (Apple TV, A1513/A1962).
-Port C# de [a-funk/open-appleremote](https://github.com/a-funk/open-appleremote) (MIT, Python/Linux) : `Decoder.cs` et `Gestures.cs`
-sont des ports de `decode.py` et `gestures.py`. Protocole de référence : `docs/PROTOCOL.md` du dépôt amont.
+WPF application + user-mode driver for Windows 11 for the **Siri Remote gen 1** (Apple TV, A1513/A1962).
+C# port of [a-funk/open-appleremote](https://github.com/a-funk/open-appleremote) (MIT, Python/Linux): `Decoder.cs` and `Gestures.cs`
+are ports of `decode.py` and `gestures.py`. Reference protocol: `docs/PROTOCOL.md` in the upstream repository.
 
 ## Structure
 
 ```
-src/AppleRemote.Core      décodeur, gestes (One Euro), keymap, rejeu de captures,  net10.0, portable, AUCUNE dépendance Windows
-                          pilote Bluetooth direct : Hci.cs (HCI), Ble.cs (central LE, L2CAP), Gatt.cs (client ATT),
-                          Smp.cs (appairage « Just Works »), SiriRemoteBle.cs (connexion, chiffrement/appairage, HID)
-src/AppleRemote.Windows   HID (SetupAPI + hid.dll), déverrouillage, lecture, SendInput, scanner BLE,   net10.0-windows10.0.19041.0
-                          transport HCI sur WinUSB (UsbHci.cs, adaptateur sous pilote WinUSB)
-src/AppleRemote.App       fenêtre WPF (projet de démarrage)                        net10.0-windows10.0.19041.0
-                          WPF-UI + MVVM : MainWindow = menu NavigationView ; pages Télécommande, Settings, Debug
-                          (pied de menu) partageant MainViewModel ; styles communs dans Views/Styles.xaml
-tests/AppleRemote.Tests   xunit, tournent sur tout OS (sample.jsonl + golden.json)
-tools/siri_bumble.py      sonde Python (Bumble) : télécommande via un adaptateur sous WinUSB, hors pile Bluetooth Windows
-tools/test_siri_bumble.py son test sans matériel (fausse télécommande sur contrôleurs Bumble virtuels)
+src/AppleRemote.Core      decoder, gestures (One Euro), keymap, capture replay,  net10.0, portable, NO Windows dependency
+                          direct Bluetooth driver: Hci.cs (HCI), Ble.cs (LE central, L2CAP), Gatt.cs (ATT client),
+                          Smp.cs ("Just Works" pairing), SiriRemoteBle.cs (connection, encryption/pairing, HID)
+src/AppleRemote.Windows   HID (SetupAPI + hid.dll), unlock, reading, SendInput, BLE scanner,   net10.0-windows10.0.19041.0
+                          HCI transport over WinUSB (UsbHci.cs, any adapter under the WinUSB driver)
+src/AppleRemote.App       WPF window (startup project)                             net10.0-windows10.0.19041.0
+                          WPF-UI + MVVM: MainWindow = NavigationView menu; Remote, Settings, Debug pages
+                          (menu footer) sharing MainViewModel; common styles in Views/Styles.xaml
+src/AppleRemote.DriverInstaller  installs / removes the kernel filter through its package (pnputil), requires elevation; launched by the app's button
+src/AppleRemoteDriver     KMDF kernel filter in Rust (windows-drivers-rs) under BTHUSB, extension INF; signed package (test certificate)
+tests/AppleRemote.Tests   xunit, run on any OS (sample.jsonl + golden.json)
+tools/siri_bumble.py      Python probe (Bumble): remote through an adapter under WinUSB, outside the Windows Bluetooth stack
+tools/test_siri_bumble.py its hardware-free test (fake remote on virtual Bumble controllers)
 ```
 
-Dépendances : `App` -> `Windows` -> `Core`. Ne jamais faire dépendre `Core` de Windows : il doit rester testable partout.
+Dependencies: `App` -> `Windows` -> `Core`. Never make `Core` depend on Windows: it must stay testable everywhere.
 
-## Commandes
+## Commands
 
 ```
 dotnet build AppleRemote.sln
@@ -30,58 +32,84 @@ dotnet test tests/AppleRemote.Tests
 dotnet run --project src/AppleRemote.App
 ```
 
-Hors Windows : ajouter `-p:EnableWindowsTargeting=true` pour compiler (pas exécuter) `Windows` et `App`.
-SDK requis : **.NET 10**. Lancer les tests après toute modification de `Core`.
+Kernel filter: `cargo make --profile release` in `src/AppleRemoteDriver` (LLVM required: `LIBCLANG_PATH=C:\Program Files\LLVM\bin`, WDK).
+The Release build of `App` does it too (`-p:AppleRemoteDriver=false` to skip it); publishing copies it to `Publish\driver\`
+(the 4 files go together: every build re-stamps the INF and re-signs the `.cat`).
 
-## Protocole (à ne pas casser)
+Outside Windows: add `-p:EnableWindowsTargeting=true` to compile (not run) `Windows` and `App`.
+Required SDK: **.NET 10**. Run the tests after any change to `Core`.
 
-- Rapports d'entrée `0xFC`, rapport de fonctionnalité `0xF0`. La télécommande reste **muette** tant qu'on n'a pas envoyé `0xF0 0xAF`
-  (`HidEnumerator.Unlock`). À refaire à chaque connexion.
-- VID `0x004C` (Apple, Bluetooth SIG) / PID `0x026D`. Elle diffuse son **numéro de série** comme nom.
-- Sous Windows, `ReadFile` rend toujours `InputReportByteLength` octets (rembourrés de zéros) : le décodeur ne lit que ce que l'octet 1 annonce.
-- `HidD_SetFeature` exige un tampon de `FeatureReportByteLength` octets (repli : 2 octets nus).
-- Siri (voix) non décodée via HID ; les trames audio sont tronquées dans les captures.
+## Protocol (do not break)
+
+- Input reports `0xFC`, feature report `0xF0`. The remote stays **mute** until `0xF0 0xAF` has been sent
+  (`HidEnumerator.Unlock`). Redo it on every connection.
+- VID `0x004C` (Apple, Bluetooth SIG) / PID `0x026D`. It broadcasts its **serial number** as its name.
+- On Windows, `ReadFile` always returns `InputReportByteLength` bytes (zero-padded): the decoder only reads what byte 1 announces.
+- `HidD_SetFeature` requires a buffer of `FeatureReportByteLength` bytes (fallback: 2 bare bytes). On the Windows stack it fails
+  (error 87): fallback unlock over GATT (`FilterUnlock`: `0xAF` written to the battery level, which the filter redirects).
+- Siri (voice) is not decoded over HID (frames are truncated to 20 bytes by the filter).
 
 ## Conventions
 
-- Interface, messages et commentaires en **français**. Identifiants de code en anglais.
-- `Nullable` activé, `ImplicitUsings` activé. Dans `App` (WPF), `System.IO` n'est **pas** importé implicitement : ajouter `using System.IO;`.
-- Le TFM doit rester `net10.0-windows10.0.19041.0` (un `SupportedOSPlatformVersion` séparé provoque NETSDK1135).
-- `Core` : toute logique nouvelle = un test. Le test `Whole_pipeline_matches_the_python_reference` compare à `golden.json`
-  (sortie du code Python d'origine sur `sample.jsonl`) : ne pas régénérer `golden.json` pour faire passer un test sans comprendre l'écart.
-- Événements du pilote levés depuis des threads du pool : marshaler vers l'UI avec `Dispatcher`.
-- Un rejeu de capture ne doit **jamais** injecter de touches (`RemoteSession._injectionAllowed`).
+- User interface (displayed texts, `Strings*.resx` resources) in **French** (and English via `Strings.en.resx`).
+- **Log and debug messages**, **code comments** and identifiers in **English**.
+- `Nullable` enabled, `ImplicitUsings` enabled. In `App` (WPF), `System.IO` is **not** implicitly imported: add `using System.IO;`.
+- The TFM must stay `net10.0-windows10.0.19041.0` (a separate `SupportedOSPlatformVersion` causes NETSDK1135).
+- `Core`: any new logic = a test. The `Whole_pipeline_matches_the_python_reference` test compares against `golden.json`
+  (output of the original Python code on `sample.jsonl`): do not regenerate `golden.json` to make a test pass without understanding the discrepancy.
+- Driver events are raised from thread-pool threads: marshal to the UI with `Dispatcher`.
+- Every source file starts with a license header (SPDX: `AGPL-3.0-or-later`, `MIT` under `src/AppleRemoteDriver`).
 
-## Fonctionnalités de diagnostic
+## Diagnostic features
 
-- **Périphériques HID Apple** : liste ce que Windows voit (`HidEnumerator.ListApple`).
-- **Scanner le Bluetooth LE** (`BleScanner`, `BleScanWindow`) : écoute les publicités LE sans appairage, met en évidence
-  Apple (0x004C), le service HID (0x1812) et les noms en forme de n° de série. Sert à savoir si la télécommande émet.
-  Double-clic / « Appairer » : appairage sans les Paramètres (`BleScanner.PairAsync`, `DeviceInformationCustomPairing`).
-- **Capture / rejeu** `.jsonl` au format `monitor --raw` d'open-appleremote.
+- **Apple HID devices**: lists what Windows sees (`HidEnumerator.ListApple`).
+- **Scan Bluetooth LE** (`BleScanner`, `BleScanWindow`): listens to LE advertisements without pairing, highlights
+  Apple (0x004C), the HID service (0x1812) and serial-number-shaped names. Tells whether the remote is transmitting.
+  Double-click / "Pair": pairing without Settings (`BleScanner.PairAsync`, `DeviceInformationCustomPairing`).
 
-## État connu
+## Known state
 
-- **La pile Bluetooth de Windows ne garde pas la télécommande** (constaté le 2026-10-09, Windows 11 build 26300,
-  adaptateur Qualcomm QCA61x4A, trace HCI à l'appui) : l'appairage réussit, puis Windows lit la caractéristique Apple
-  `ce5ad0bc…` (handle `0x003A`, service `8341f2b4…`) ; la télécommande ne répond jamais, Windows coupe au bout de 30 s
-  (délai ATT), aucune collection HID n'est créée et la télécommande ne se reconnecte plus. Aucune API ne permet de
-  l'éviter : la couche HID (`hid.dll`) n'est donc pas validée sur matériel. Contournement : adaptateur sous WinUSB + Bumble
-  (autre piste : filtre noyau type [Jack-R1/SiriRemoteDriver](https://github.com/Jack-R1/SiriRemoteDriver)).
-- **`tools/siri_bumble.py` validé sur matériel** (2026-10-10, QCA61x4A `0CF3:E007` passé sous WinUSB avec Zadig, firmware
-  ROM, redémarrage du PC nécessaire) : appairage, reconnexion chiffrée avec les clés enregistrées après veille,
-  déverrouillage, boutons, pavé et voix ; la capture rejouée dans `Core` donne les bons événements. Ce firmware refuse
-  les paquets LE de 251 octets (Bumble s'arrête au démarrage) : la sonde demande 27 octets.
-- **Pilote C# (`UsbHci` + `SiriRemoteBle`) validé sur matériel** (2026-10-10) : appairage « Just Works » (clés dans un
-  `BondStore` JSON), connexion, chiffrement, découverte HID, déverrouillage, tous les boutons et gestes décodés par
-  `RemotePipeline`, reconnexion chiffrée après veille. Juste après un appairage, la télécommande coupe une ou deux fois
-  (raison 0x13) : la boucle se reconnecte seule. Ne réappairer que sur refus de clé (0x05/0x06), pas sur 0x3E.
-- **Dans l'app** : `RemoteSession.Start` prend le Bluetooth direct si `UsbHci.Open()` réussit (Qualcomm `0CF3:E007` sous
-  WinUSB), sinon le HID de Windows. Clés dans `%AppData%\AppleRemoteonds.json` ; sans clés, balayage d'une
-  télécommande en mode appairage (service 0x1812 + données Apple 0x004C). « Appairer » oublie les clés et relance.
-  Adaptateur codé en dur (pas de réglage) : la UB500 (Realtek) demanderait en plus le chargement de son firmware.
-  `FakeRemote` (tests) reproduit la base GATT de la vraie (handles `0x1D` F0, `0x20` F1, `0x23`/`0x24` FC).
-- Rapports reçus en GATT : l'ID (`0xFC`) n'est pas dans la notification ; on le remet en tête pour rester au format `hid.dll`.
-- Les fenêtres lancées en administrateur ignorent `SendInput` d'un programme non élevé (UIPI).
-- Une seule télécommande à la fois ; Siri Remote gen 2/3 non prises en charge (autres rapports, autre déverrouillage).
-- Constantes de gestes (`Gestures.cs`) réglées sous Linux : à réajuster sur matériel.
+- **Without the filter, the Windows Bluetooth stack does not keep the remote** (observed 2026-10-09, Windows 11 build 26300,
+  Qualcomm QCA61x4A adapter, backed by an HCI trace): pairing succeeds, then Windows reads the Apple characteristic
+  `ce5ad0bc…` (handle `0x003A`, service `8341f2b4…`); the remote never answers, Windows drops the link after 30 s
+  (ATT timeout), deletes the pairing key, and no HID collection is created. No API can avoid this.
+- **`AppleRemoteDriver` kernel filter + Windows HID validated on hardware** (2026-10-10, dev PC, test-signing, QCA61x4A
+  under its original BTHUSB driver + `BtFilter`): pairing, unlock, all buttons, touchpad (click, drags) and Siri.
+  What the filter fixes, and why (each point was measured with the filter's counters):
+  - ATT read `0x3A` redirected to `0x28`: Windows finishes its discovery and creates the HID collection;
+  - unlock and subscription (`0xAF` on `0x28` -> `0xF0` report at `0x1D`, CCCD `0x29` -> `0x24`) written by the app over GATT;
+    redone on every reconnection (the app does it as soon as Windows signals it);
+  - voice notifications longer than the remote's ATT MTU (23) are truncated, otherwise Windows drops the link after 1 to 2 s;
+  - short reports (buttons: 2 to 4 bytes, touchpad: 13) padded to 20 bytes: Windows' HID driver rejects any report
+    shorter than the declared size (only full-length touchpad and truncated voice got through);
+  - the ACL connection handle changes on every connection: no rule tests it. The rules only touch the remote's connection
+    (an LE mouse shares the adapter): address learned at the first unlock, kept in
+    `Services\AppleRemoteDriver\Parameters` (`RemoteAddressLow/High`; delete them to switch remotes).
+  KMDF driver pitfalls: IOCTL code must be read from the IRP stack in completion (not from the WDF parameters); parallel queue with
+  unlimited `NumberOfPresentedRequests` (otherwise BTHUSB init timeout, code 10); **extension** INF (a full driver
+  evicts `BtFilter` from the Qualcomm driver: code 10). Debugger-free diagnosis: `Parameters` (`Stage` = 3, `Hit*`).
+- **Filter installation** (`AppleRemote.DriverInstaller`, or the app's button, which closes the session first): updates
+  over the old package; install, uninstall and reinstall without a PC restart (validated 2026-10-10). `bthserv` and
+  `DeviceAssociationService` keep the adapter open and veto its removal (Kernel-PnP event 225) whenever pnputil binds,
+  unbinds or restarts the driver: Windows then leaves the adapter "pending restart" (`restart-device` refused, code 50)
+  until the next boot. The installer disables both for the whole pnputil operation (stopping is not enough: `bthserv`
+  is trigger-started and comes straight back), then restores their startup type and state. A handle still open on the
+  remote (the app's session) can veto too. The `BTH\MS_*` enumerators
+  sometimes stay at code 19 (0xC0000034) after an adapter restart: the installer recreates them.
+- **`tools/siri_bumble.py` validated on hardware** (2026-10-10, QCA61x4A `0CF3:E007` switched to WinUSB with Zadig, ROM
+  firmware, PC restart needed): pairing, encrypted reconnection with the stored keys after sleep,
+  unlock, buttons, touchpad and voice; the capture replayed in `Core` yields the right events. This firmware rejects
+  251-byte LE packets (Bumble stops at startup): the probe asks for 27 bytes.
+- **C# driver (`UsbHci` + `SiriRemoteBle`) validated on hardware** (2026-10-10): "Just Works" pairing (keys in a JSON
+  `BondStore`), connection, encryption, HID discovery, unlock, all buttons and gestures decoded by
+  `RemotePipeline`, encrypted reconnection after sleep. Right after a pairing, the remote drops once or twice
+  (reason 0x13): the loop reconnects by itself. Only re-pair on key rejection (0x05/0x06), not on 0x3E.
+- **In the app**: `RemoteSession.Start` uses direct Bluetooth if `UsbHci.Open()` succeeds (first USB Bluetooth adapter
+  under WinUSB, detected by its `E0/01/01` class, any VID/PID), otherwise Windows' HID (with the filter). Keys in `%AppData%\AppleRemote\bonds.json`; without keys, scan for a
+  remote in pairing mode (service 0x1812 + Apple data 0x004C). "Pair" forgets the keys and restarts.
+  Only one adapter handled (the first found; `WinUsbDriver.Find` for driver install/restore). Firmware is not loaded: the UB500 (Realtek) would additionally need its firmware loaded.
+  `FakeRemote` (tests) reproduces the real one's GATT database (handles `0x1D` F0, `0x20` F1, `0x23`/`0x24` FC).
+- Reports received over GATT: the ID (`0xFC`) is not in the notification; it is put back at the front to keep the `hid.dll` format.
+- Application windows running as administrator ignore `SendInput` from a non-elevated program (UIPI).
+- One remote at a time; Siri Remote gen 2/3 not supported (other reports, other unlock).
+- Gesture constants (`Gestures.cs`) tuned on Linux: to be readjusted on hardware.

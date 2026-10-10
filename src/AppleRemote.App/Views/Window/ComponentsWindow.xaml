@@ -1,0 +1,34 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<ui:FluentWindow xmlns:l="clr-namespace:AppleRemote.App" Icon="pack://application:,,,/app.ico" x:Class="AppleRemote.App.Views.ComponentsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="{l:T Settings.Components}"
+        Width="560" Height="460" MinWidth="400" MinHeight="300"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
+        FontSize="13" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Title="{l:T Settings.Components}" ShowMinimize="False" ShowMaximize="False" />
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="List" Margin="16,4,16,16">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,0,0,12">
+                            <TextBlock FontWeight="SemiBold"><Run Text="{Binding Name, Mode=OneTime}" /> <Run Text="{Binding Version, Mode=OneTime}" /></TextBlock>
+                            <TextBlock Text="{Binding License, Mode=OneTime}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="{Binding Usage, Mode=OneTime}" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <ui:HyperlinkButton Content="{Binding Url, Mode=OneTime}" NavigateUri="{Binding Url, Mode=OneTime}" Padding="0" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</ui:FluentWindow>

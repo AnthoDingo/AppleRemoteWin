@@ -1,0 +1,42 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<Page xmlns:l="clr-namespace:AppleRemote.App" x:Class="AppleRemote.App.Views.DebugPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      ScrollViewer.CanContentScroll="False">
+    <!-- CanContentScroll=False: the log fills the remaining height and scrolls itself. -->
+    <Page.Resources>
+        <ResourceDictionary Source="/Styles/Styles.xaml" />
+    </Page.Resources>
+
+    <Grid Margin="18,6,18,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{l:T Debug.Diagnostic}" Style="{StaticResource Section}" />
+        <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+            <Button Content="{l:T Debug.HidDevices}" Command="{Binding ListDevicesCommand}" />
+            <Button Content="{l:T Debug.BleScan}" Command="{Binding BleScanCommand}" />
+        </WrapPanel>
+
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <TextBlock Text="{l:T Debug.Log}" Style="{StaticResource Section}" />
+                <Button Content="{l:T Debug.Clear}" HorizontalAlignment="Right" Padding="8,2" Margin="0,0,0,6"
+                        Command="{Binding ClearLogCommand}" />
+            </Grid>
+            <TextBox x:Name="LogBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                     VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas" FontSize="12" />
+        </Grid>
+    </Grid>
+</Page>

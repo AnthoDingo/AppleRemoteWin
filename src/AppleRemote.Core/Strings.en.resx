@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="App.Title" xml:space="preserve"><value>Siri Remote (gen 1) for Windows</value></data>
+  <data name="Tray.Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Tray.Quit" xml:space="preserve"><value>Quit</value></data>
+  <data name="Nav.Remote" xml:space="preserve"><value>Remote</value></data>
+  <data name="Nav.Guide" xml:space="preserve"><value>Guide</value></data>
+  <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Nav.Debug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Remote.Level.Ok" xml:space="preserve"><value>Connected</value></data>
+  <data name="Remote.Level.Warn" xml:space="preserve"><value>Waiting</value></data>
+  <data name="Remote.Level.Idle" xml:space="preserve"><value>Stopped</value></data>
+  <data name="Remote.State" xml:space="preserve"><value>STATE</value></data>
+  <data name="Remote.Gesture" xml:space="preserve"><value>GESTURE</value></data>
+  <data name="Remote.Nearby" xml:space="preserve"><value>NEARBY APPLE HID DEVICES</value></data>
+  <data name="Remote.Connected" xml:space="preserve"><value>connected</value></data>
+  <data name="Remote.NearbyNone" xml:space="preserve"><value>No device.</value></data>
+  <data name="Remote.Battery" xml:space="preserve"><value>Battery: {0}%</value></data>
+  <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Battery: —</value></data>
+  <data name="Remote.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Remote.Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Settings.RemoteKeys" xml:space="preserve"><value>REMOTE KEYS</value></data>
+  <data name="Settings.General" xml:space="preserve"><value>GENERAL</value></data>
+  <data name="Settings.RunAtStartup" xml:space="preserve"><value>Launch at startup</value></data>
+  <data name="Settings.CloseToTray" xml:space="preserve"><value>Close to system tray</value></data>
+  <data name="Settings.Keyboard" xml:space="preserve"><value>KEYBOARD</value></data>
+  <data name="Settings.KeyboardCheck" xml:space="preserve"><value>Virtual keyboard</value></data>
+  <data name="Settings.DefaultMap" xml:space="preserve"><value>Default mapping</value></data>
+  <data name="Settings.Pairing" xml:space="preserve"><value>PAIRING</value></data>
+  <data name="Settings.PairButton" xml:space="preserve"><value>Pair (Bluetooth)…</value></data>
+  <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Settings.License" xml:space="preserve"><value>License</value></data>
+  <data name="Settings.Components" xml:space="preserve"><value>Components and licenses</value></data>
+  <data name="Update.Title" xml:space="preserve"><value>Update available</value></data>
+  <data name="Update.Body" xml:space="preserve"><value>Siri Remote {0} is available. Click to open the release page.</value></data>
+  <data name="Settings.Driver" xml:space="preserve"><value>BLUETOOTH ADAPTER DRIVER</value></data>
+  <data name="Settings.InstallWinUsb" xml:space="preserve"><value>Install WinUSB…</value></data>
+  <data name="Settings.RestoreDriver" xml:space="preserve"><value>Restore the original driver…</value></data>
+  <data name="Settings.Option1" xml:space="preserve"><value>WinUSB driver</value></data>
+  <data name="Settings.Option2" xml:space="preserve"><value>Bluetooth filter</value></data>
+  <data name="Settings.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Settings.InstallFilter" xml:space="preserve"><value>Install the Bluetooth filter…</value></data>
+  <data name="Settings.UninstallFilter" xml:space="preserve"><value>Remove the filter…</value></data>
+  <data name="Settings.Language" xml:space="preserve"><value>LANGUAGE</value></data>
+  <data name="Settings.LanguageNote" xml:space="preserve"><value>Restart the application to apply the language.</value></data>
+  <data name="Language.Auto" xml:space="preserve"><value>Automatic (Windows language)</value></data>
+  <data name="Language.Fr" xml:space="preserve"><value>Français</value></data>
+  <data name="Language.En" xml:space="preserve"><value>English</value></data>
+  <data name="NoKey" xml:space="preserve"><value>(none)</value></data>
+  <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTICS</value></data>
+  <data name="Debug.HidDevices" xml:space="preserve"><value>Apple HID devices</value></data>
+  <data name="Debug.BleScan" xml:space="preserve"><value>Scan Bluetooth LE…</value></data>
+  <data name="Debug.Log" xml:space="preserve"><value>LOG</value></data>
+  <data name="Debug.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Ble.Title" xml:space="preserve"><value>Bluetooth LE scanner</value></data>
+  <data name="Ble.Intro" xml:space="preserve"><value>Hold Menu + Volume + on the remote (~5 to 10 s, right next to the PC): a new row should appear. The Siri Remote advertises the Apple manufacturer (0x004C) and its serial number as its name. Double-click the row (or “Pair”) to pair it without going through Windows Settings.</value></data>
+  <data name="Ble.Pair" xml:space="preserve"><value>Pair</value></data>
+  <data name="Ble.SystemPair" xml:space="preserve"><value>Pair (system)</value></data>
+  <data name="Ble.SystemPairTip" xml:space="preserve"><value>Pairing handled by Windows, as in Settings</value></data>
+  <data name="Ble.Copy" xml:space="preserve"><value>Copy result</value></data>
+  <data name="Ble.OnlyLikely" xml:space="preserve"><value>"Apple HID" only (otherwise show all)</value></data>
+  <data name="Ble.ColName" xml:space="preserve"><value>Name</value></data>
+  <data name="Ble.ColAddress" xml:space="preserve"><value>Address</value></data>
+  <data name="Ble.ColSignal" xml:space="preserve"><value>Signal</value></data>
+  <data name="Ble.ColMaker" xml:space="preserve"><value>Manufacturer</value></data>
+  <data name="Ble.ColHints" xml:space="preserve"><value>Hints</value></data>
+  <data name="Ble.Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Ble.Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Ble.Relaunch" xml:space="preserve"><value>Restart</value></data>
+  <data name="Ble.Unnamed" xml:space="preserve"><value>(unnamed)</value></data>
+  <data name="Ble.Count" xml:space="preserve"><value>{0} device(s), {1} candidate(s)</value></data>
+  <data name="Ble.SelectRow" xml:space="preserve"><value>Select a row to pair.</value></data>
+  <data name="Ble.Pairing" xml:space="preserve"><value>Pairing {0} ({1})…</value></data>
+  <data name="Ble.AlreadyTitle" xml:space="preserve"><value>Already paired</value></data>
+  <data name="Ble.AlreadyAsk" xml:space="preserve"><value>Windows considers {0} ({1}) already paired.
+
+If the remote is in pairing mode, that link is stale: Windows then sees no HID device.
+
+Remove this pairing and pair again?</value></data>
+  <data name="Ble.Unpairing" xml:space="preserve"><value>Removing the old pairing…</value></data>
+  <data name="Ble.UnpairFailed" xml:space="preserve"><value>Could not remove the pairing: {0}.</value></data>
+  <data name="Ble.PairFailed" xml:space="preserve"><value>Pairing failed: {0}</value></data>
+  <data name="Ble.TableHeader" xml:space="preserve"><value>Name | Address | Signal | Manufacturer | Hints</value></data>
+  <data name="Ble.Copied" xml:space="preserve"><value>Result copied to the clipboard.</value></data>
+  <data name="Ble.CopyFailed" xml:space="preserve"><value>Copy failed: {0}</value></data>
+  <data name="Ble.NoteSerial" xml:space="preserve"><value>name = serial no.?</value></data>
+  <data name="Ble.ScanNoRadio" xml:space="preserve"><value>Scan impossible: Bluetooth is off or no adapter is available.</value></data>
+  <data name="Ble.ScanNoLe" xml:space="preserve"><value>Scan impossible: this adapter does not support Bluetooth LE.</value></data>
+  <data name="Ble.ScanOffUser" xml:space="preserve"><value>Scan impossible: Bluetooth is turned off in Windows.</value></data>
+  <data name="Ble.ScanOffPolicy" xml:space="preserve"><value>Scan impossible: Bluetooth is disabled by a policy.</value></data>
+  <data name="Ble.ScanStopped" xml:space="preserve"><value>Scan stopped ({0}).</value></data>
+  <data name="Ble.DeviceNotFound" xml:space="preserve"><value>Device not found (no longer in pairing mode?).</value></data>
+  <data name="Ble.AlreadyPaired" xml:space="preserve"><value>Already paired.</value></data>
+  <data name="Ble.KindSystem" xml:space="preserve"><value>system</value></data>
+  <data name="Ble.KindApp" xml:space="preserve"><value>app</value></data>
+  <data name="Ble.PairKind" xml:space="preserve"><value> ({0} in {1:0.0} s</value></data>
+  <data name="Ble.PairKindMethod" xml:space="preserve"><value>, method: {0})</value></data>
+  <data name="Ble.Paired" xml:space="preserve"><value>Paired{0}. {1}</value></data>
+  <data name="Ble.PairFailedKind" xml:space="preserve"><value>Pairing failed: {0}{1}.</value></data>
+  <data name="Ble.DiscoverFailed" xml:space="preserve"><value>Service discovery failed ({0}): Windows will not create the HID device.</value></data>
+  <data name="Ble.Discovered" xml:space="preserve"><value>{0} GATT service(s) discovered. The HID device should appear in “Apple HID devices”.</value></data>
+  <data name="Guide.ResetTitle" xml:space="preserve"><value>RESET THE REMOTE</value></data>
+  <data name="Guide.Reset1" xml:space="preserve"><value>Place the remote close to the PC (a few centimetres).</value></data>
+  <data name="Guide.Reset2" xml:space="preserve"><value>Hold TV + Volume − together, as shown by the pulsing circles.</value></data>
+  <data name="Guide.Reset3" xml:space="preserve"><value>Release after about 5 seconds: the remote forgets its pairing.</value></data>
+  <data name="Guide.Reset4" xml:space="preserve"><value>If it does not respond, plug it into its Lightning cable for 30 minutes and try again.</value></data>
+  <data name="Guide.Hold" xml:space="preserve"><value>Hold for about 5 seconds</value></data>
+  <data name="Guide.PairTitle" xml:space="preserve"><value>PUT IT IN PAIRING MODE</value></data>
+  <data name="Guide.Pair1" xml:space="preserve"><value>In Settings, click “Pair (Bluetooth)…”.</value></data>
+  <data name="Guide.Pair2" xml:space="preserve"><value>Hold Menu + Volume + together, as shown by the pulsing circles.</value></data>
+  <data name="Guide.Pair3" xml:space="preserve"><value>Release after about 5 seconds: the app detects the remote and connects to it.</value></data>
+  <data name="Guide.Pair4" xml:space="preserve"><value>Right after pairing, one or two disconnections are normal.</value></data>
+  <data name="Dir.Up" xml:space="preserve"><value>up</value></data>
+  <data name="Dir.Down" xml:space="preserve"><value>down</value></data>
+  <data name="Dir.Left" xml:space="preserve"><value>left</value></data>
+  <data name="Dir.Right" xml:space="preserve"><value>right</value></data>
+  <data name="Src.Flick" xml:space="preserve"><value>flick</value></data>
+  <data name="Src.Glide" xml:space="preserve"><value>glide</value></data>
+  <data name="Log.Focus" xml:space="preserve"><value>focus {0} ({1})</value></data>
+  <data name="Log.MapIgnored" xml:space="preserve"><value>Mapping ignored ({0})</value></data>
+  <data name="Log.MapNotSaved" xml:space="preserve"><value>Mapping not saved ({0})</value></data>
+  <data name="Log.KeyboardOn" xml:space="preserve"><value>Virtual keyboard enabled.</value></data>
+  <data name="Log.KeyboardOff" xml:space="preserve"><value>Virtual keyboard disabled.</value></data>
+  <data name="Log.PairDirect" xml:space="preserve"><value>Pairing: hold Menu + Volume + for ~5 s, near the PC.</value></data>
+  <data name="Log.PairSettings" xml:space="preserve"><value>Hold Menu + Volume + for ~5 s near the PC, then add it in Settings &gt; Bluetooth.</value></data>
+  <data name="Log.OpenBtFailed" xml:space="preserve"><value>Could not open the Bluetooth settings: {0}</value></data>
+  <data name="Log.DriverReboot" xml:space="preserve"><value>Driver installed: restart the PC to finish.</value></data>
+  <data name="Log.DriverInstalled" xml:space="preserve"><value>WinUSB driver installed.</value></data>
+  <data name="Log.DriverRestored" xml:space="preserve"><value>Original driver restored.</value></data>
+  <data name="Log.FilterInstalled" xml:space="preserve"><value>Bluetooth filter installed.</value></data>
+  <data name="Log.FilterRemoved" xml:space="preserve"><value>Bluetooth filter removed.</value></data>
+  <data name="Log.NoHid" xml:space="preserve"><value>No Apple HID device seen by Windows: the remote is not paired/connected.</value></data>
+  <data name="Log.HidCount" xml:space="preserve"><value>{0} Apple HID collection(s):</value></data>
+  <data name="Log.HidGen1" xml:space="preserve"><value>   &lt;- Siri Remote gen 1</value></data>
+  <data name="Log.EnumFailed" xml:space="preserve"><value>Enumeration failed: {0}</value></data>
+  <data name="Log.BlePaired" xml:space="preserve"><value>Pairing succeeded: connecting automatically as soon as Windows exposes the remote.</value></data>
+  <data name="Log.DefaultMap" xml:space="preserve"><value>Default mapping.</value></data>
+  <data name="Driver.Checking" xml:space="preserve"><value>Adapter driver: checking…</value></data>
+  <data name="Filter.Installed" xml:space="preserve"><value>Bluetooth filter (AppleRemoteDriver): installed.</value></data>
+  <data name="Filter.NotInstalled" xml:space="preserve"><value>Bluetooth filter (AppleRemoteDriver): not installed.</value></data>
+  <data name="Driver.Absent" xml:space="preserve"><value>No USB Bluetooth adapter found.</value></data>
+  <data name="Driver.WinUsb" xml:space="preserve"><value>Current driver: WinUSB (direct Bluetooth possible; Windows no longer uses the adapter).</value></data>
+  <data name="Driver.Original" xml:space="preserve"><value>Current driver: original (Windows Bluetooth stack).</value></data>
+  <data name="Driver.Unknown" xml:space="preserve"><value>Adapter driver: unknown state ({0})</value></data>
+  <data name="Driver.DialogTitle" xml:space="preserve"><value>Adapter driver</value></data>
+  <data name="Driver.InstallAsk" xml:space="preserve"><value>Install WinUSB on the Bluetooth adapter?
+
+Windows will no longer be able to use it (no Bluetooth mouse/headset) until the original driver is restored. A self-signed certificate will be added to this computer's trusted authorities (like Zadig). An administrator confirmation (UAC) will appear.</value></data>
+  <data name="Driver.RestoreAsk" xml:space="preserve"><value>Restore the original driver of the Bluetooth adapter?
+
+The WinUSB driver is removed and Windows takes the adapter back (direct Bluetooth stops). An administrator confirmation (UAC) will appear.</value></data>
+  <data name="Driver.FilterInstallAsk" xml:space="preserve"><value>Install the Bluetooth filter (AppleRemoteDriver) under the adapter driver?
+
+Experimental kernel driver: requires test-signing mode, and a bug can cause a blue screen. The adapter must be on its original driver (not WinUSB). An administrator confirmation (UAC) will appear.</value></data>
+  <data name="Driver.FilterRemoveAsk" xml:space="preserve"><value>Remove the Bluetooth filter (AppleRemoteDriver) from the adapter?
+
+An administrator confirmation (UAC) will appear.</value></data>
+  <data name="Driver.Failed" xml:space="preserve"><value>Failed (code {0}).</value></data>
+  <data name="Driver.ElevationDenied" xml:space="preserve"><value>Elevation denied.</value></data>
+  <data name="Driver.UnknownVerb" xml:space="preserve"><value>Unknown operation: {0}</value></data>
+  <data name="Status.Stopped" xml:space="preserve"><value>Stopped.</value></data>
+  <data name="Status.BtUnavailable" xml:space="preserve"><value>Direct Bluetooth unavailable ({0}): using Windows HID.</value></data>
+  <data name="Status.BtError" xml:space="preserve"><value>Direct Bluetooth error: {0}</value></data>
+  <data name="Status.WaitHid" xml:space="preserve"><value>Waiting for the remote: pair it (Menu + Volume + 5 s) or press a button.</value></data>
+  <data name="Status.Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Status.CannotOpen" xml:space="preserve"><value>Cannot open the remote (error {0}): another program may be holding it.</value></data>
+  <data name="Status.Unreachable" xml:space="preserve"><value>Remote present but unreachable (asleep?): press a button. (unlock refused, Windows error {0})</value></data>
+  <data name="Status.ConnectedHid" xml:space="preserve"><value>Connected: {0} (unlocked)</value></data>
+  <data name="Status.Disconnected" xml:space="preserve"><value>Disconnected: press a button to wake it.</value></data>
+  <data name="Status.WaitBonded" xml:space="preserve"><value>Waiting for the remote: press a button.</value></data>
+  <data name="Status.WaitPairing" xml:space="preserve"><value>Waiting for a remote in pairing mode: hold Menu + Volume + for ~5 s, near the PC.</value></data>
+  <data name="Status.Found" xml:space="preserve"><value>Remote found ({0}): pairing…</value></data>
+  <data name="Status.ConnectedDirect" xml:space="preserve"><value>Connected: Siri Remote (direct Bluetooth, unlocked)</value></data>
+  <data name="Status.DisconnectedReason" xml:space="preserve"><value>Disconnected (reason 0x{0:X2}): press a button to wake it.</value></data>
+  <data name="Status.KeysRefused" xml:space="preserve"><value>Keys refused by the remote (0x{0:X2}): pairing again…</value></data>
+  <data name="Status.PairingFirst" xml:space="preserve"><value>Pairing… (first time: remote in pairing mode, Menu + Volume + ~5 s)</value></data>
+  <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Battery unreadable: {0}</value></data>
+  <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} not found: put it next to the application (or build AppleRemote.DriverInstaller).</value></data>
+  <data name="Status.Relocked" xml:space="preserve"><value>Remote woke up: unlocked again.</value></data>
+</root>

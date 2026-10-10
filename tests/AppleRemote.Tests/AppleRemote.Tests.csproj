@@ -1,0 +1,33 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AppleRemote.Core\AppleRemote.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Real capture of an A1962 (open-appleremote, MIT): report bytes, relative times, step labels. -->
+    <None Update="sample.jsonl" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Output of the reference Python code (decode.py + gestures.py) on this same capture. -->
+    <None Update="golden.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
