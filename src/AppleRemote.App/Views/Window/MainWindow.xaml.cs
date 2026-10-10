@@ -16,6 +16,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public MainWindow()
     {
         InitializeComponent();
+#if !DEBUG_PAGE
+        RootNavigation.FooterMenuItems.Remove(DebugItem);
+#endif
         DataContext = _viewModel = new MainViewModel(new Dialogs(this));
         TrayMenu.DataContext = _viewModel;   // the notification-area menu doesn't inherit the window's DataContext
         // The pages (Remote, Settings, Debug) share the view-model and keep their state between visits.

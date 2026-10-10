@@ -37,6 +37,11 @@
         </ResourceDictionary>
     </Page.Resources>
 
+    <Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
     <Grid Margin="18,6,18,18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -89,9 +94,6 @@
             <Button Content="{l:T Settings.DefaultMap}" Command="{Binding ResetMapCommand}" />
         </StackPanel>
 
-        <TextBlock Text="{l:T Settings.Pairing}" Style="{StaticResource Section}" />
-        <Button Content="{l:T Settings.PairButton}" Command="{Binding PairCommand}" HorizontalAlignment="Left" />
-
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,2">
             <TextBlock Text="{l:T Settings.Driver}" Style="{StaticResource Section}" Margin="0" VerticalAlignment="Center" />
             <Button Command="{Binding RefreshDriverCommand}" IsEnabled="{Binding DriverIdle}" ToolTip="{l:T Settings.Refresh}"
@@ -127,5 +129,20 @@
             </StackPanel>
         </Grid>
         </StackPanel>
+    </Grid>
+
+    <!-- Footer banner: build, repository, license -->
+    <Border Grid.Row="1" Padding="18,8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" TextElement.Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+            <TextBlock VerticalAlignment="Center"><Run Text="{l:T Settings.Version}" /> <Run Text="{Binding AppVersion, Mode=OneWay}" /></TextBlock>
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <ui:HyperlinkButton Content="github.com/AnthoDingo/AppleRemoteWin" NavigateUri="https://github.com/AnthoDingo/AppleRemoteWin" Padding="0" />
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <TextBlock VerticalAlignment="Center"><Run Text="{l:T Settings.License}" /> AGPL-3.0-or-later</TextBlock>
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <ui:HyperlinkButton Content="{l:T Settings.Components}" Click="Components_Click" Padding="0" />
+        </StackPanel>
+    </Border>
     </Grid>
 </Page>

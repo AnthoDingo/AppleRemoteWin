@@ -40,6 +40,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     const double PadSize = 360, XMin = -1900, YMin = -1150, Span = 1800, DotSize = 30;
 
     readonly Settings _settings = Settings.Load();
+    UpdateService? _updates;
     readonly RemoteSession _session;
     readonly IDialogs _dialogs;
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
@@ -51,6 +52,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>BLE devices seen advertising with Apple manufacturer data + HID service ("Apple HID").</summary>
     [ObservableProperty] IReadOnlyList<string> _nearbyDevices = [];
+    public string AppVersion { get; } = typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "";
     bool _wasDown;
 
     static readonly string NoKey = Loc.T("NoKey");
@@ -191,11 +193,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         RefreshButtons();
         _scanner.Start();
         _scanTimer.Start();
+        (_updates = new UpdateService(_settings, s => _ui.InvokeAsync(() => AddLog(s)))).Start();
     }
 
     public void Dispose()
     {
         _scanTimer.Stop();
+        _updates?.Dispose();
         _scanner.Dispose();
         _settings.Save();
         _session.Dispose();

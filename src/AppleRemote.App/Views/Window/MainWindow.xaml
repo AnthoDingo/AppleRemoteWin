@@ -57,7 +57,7 @@
                     <ui:SymbolIcon Symbol="Settings24" />
                 </ui:NavigationViewItem.Icon>
             </ui:NavigationViewItem>
-            <ui:NavigationViewItem Content="{l:T Nav.Debug}" TargetPageType="{x:Type views:DebugPage}">
+            <ui:NavigationViewItem x:Name="DebugItem" Content="{l:T Nav.Debug}" TargetPageType="{x:Type views:DebugPage}">
                 <ui:NavigationViewItem.Icon>
                     <ui:SymbolIcon Symbol="Bug24" />
                 </ui:NavigationViewItem.Icon>

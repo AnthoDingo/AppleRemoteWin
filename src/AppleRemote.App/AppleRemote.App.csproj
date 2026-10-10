@@ -13,8 +13,16 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.App</RootNamespace>
     <AssemblyName>AppleRemote</AssemblyName>
+    <Version>1.0.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- Debug page and its menu entry: off by default, enabled only by a Debug build. -->
+    <EnableDebugPage>false</EnableDebugPage>
+    <EnableDebugPage Condition="'$(Configuration)' == 'Debug'">true</EnableDebugPage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(EnableDebugPage)' == 'true'">
+    <DefineConstants>$(DefineConstants);DEBUG_PAGE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

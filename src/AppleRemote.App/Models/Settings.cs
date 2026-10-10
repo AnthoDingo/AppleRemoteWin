@@ -15,6 +15,8 @@ public sealed class Settings
     public bool CloseToTray { get; set; } = true;
     /// <summary>"auto" (Windows language), "fr" or "en"; applied at startup.</summary>
     public string Language { get; set; } = "auto";
+    /// <summary>Last release tag a toast was shown for (one notification per version).</summary>
+    public string? LastNotifiedVersion { get; set; }
 
     public static string FilePath => System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppleRemote", "settings.json");

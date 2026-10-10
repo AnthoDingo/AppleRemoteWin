@@ -32,6 +32,11 @@
   <data name="Settings.DefaultMap" xml:space="preserve"><value>Mapping par défaut</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>APPAIRAGE</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Appairer (Bluetooth)…</value></data>
+  <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Settings.License" xml:space="preserve"><value>Licence</value></data>
+  <data name="Settings.Components" xml:space="preserve"><value>Composants et licences</value></data>
+  <data name="Update.Title" xml:space="preserve"><value>Mise à jour disponible</value></data>
+  <data name="Update.Body" xml:space="preserve"><value>Siri Remote {0} est disponible. Cliquez pour ouvrir la page de la version.</value></data>
   <data name="Settings.Driver" xml:space="preserve"><value>PILOTE DE L'ADAPTATEUR BLUETOOTH</value></data>
   <data name="Settings.InstallWinUsb" xml:space="preserve"><value>Installer WinUSB…</value></data>
   <data name="Settings.RestoreDriver" xml:space="preserve"><value>Restaurer le pilote d'origine…</value></data>
