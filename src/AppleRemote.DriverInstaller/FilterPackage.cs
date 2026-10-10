@@ -39,7 +39,12 @@ static class FilterPackage
         RepairEnumerators();
         if (!FilterInstaller.IsInstalled())
             throw new InvalidOperationException("Paquet installé, mais le filtre n'est pas dans les LowerFilters de l'adaptateur.");
-        return code == RebootNeeded ? RebootNeeded : Ok;
+        // pnputil répond 3010 dès qu'un fichier du paquet était chargé ; le redémarrage du périphérique ci-dessus a rechargé le pilote.
+        // Le redémarrage du PC n'est demandé que si le service du filtre ne tourne pas réellement.
+        if (!WaitForService("Running", 5))
+            return RebootNeeded;
+        if (code == RebootNeeded) Say("pnputil demandait un redémarrage : inutile, le pilote est déjà chargé.");
+        return Ok;
     }
 
     /// <summary>Retire le paquet (s'il est installé) et remet l'adaptateur sans filtre.</summary>
@@ -54,7 +59,20 @@ static class FilterPackage
         if (published.Length > 0) { RestartAdapter(); RepairEnumerators(); }
         if (FilterInstaller.IsInstalled())
             throw new InvalidOperationException("Le filtre est toujours dans les LowerFilters (installé par une ancienne méthode ?).");
-        return Ok;
+        // Le filtre a quitté la pile : son service doit s'arrêter après le redémarrage du périphérique. Sinon seulement, redémarrage du PC.
+        return published.Length == 0 || WaitForService("Stopped", 8) ? Ok : RebootNeeded;
+    }
+
+    /// <summary>Attend que le service AppleRemoteDriver soit dans l'état voulu ("Running", "Stopped") ; un service absent compte comme arrêté.</summary>
+    static bool WaitForService(string wanted, int seconds)
+    {
+        for (int i = 0; i <= seconds; i++)
+        {
+            string state = Ps("(Get-Service AppleRemoteDriver -ErrorAction SilentlyContinue).Status").Trim();
+            if (state.Equals(wanted, StringComparison.OrdinalIgnoreCase) || (state.Length == 0 && wanted == "Stopped")) return true;
+            Thread.Sleep(1000);
+        }
+        return false;
     }
 
     static void RequireTestSigning()
@@ -72,6 +90,7 @@ static class FilterPackage
         if (requested is not null) candidates.Add(requested);
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
         {
+            candidates.Add(Path.Combine(dir.FullName, "driver")); // publication : <dossier de l'application>\driver\
             candidates.Add(dir.FullName);
             foreach (string config in new[] { "release", "debug" })
                 candidates.Add(Path.Combine(dir.FullName, "src", "AppleRemoteDriver", "target", config, "AppleRemoteDriver_package"));

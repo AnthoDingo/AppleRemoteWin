@@ -17,6 +17,7 @@
   <data name="Remote.State" xml:space="preserve"><value>STATE</value></data>
   <data name="Remote.Gesture" xml:space="preserve"><value>GESTURE</value></data>
   <data name="Remote.Nearby" xml:space="preserve"><value>NEARBY APPLE HID DEVICES</value></data>
+  <data name="Remote.Connected" xml:space="preserve"><value>connected</value></data>
   <data name="Remote.NearbyNone" xml:space="preserve"><value>No device.</value></data>
   <data name="Remote.Battery" xml:space="preserve"><value>Battery: {0}%</value></data>
   <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Battery: —</value></data>
@@ -182,4 +183,5 @@ An administrator confirmation (UAC) will appear.</value></data>
   <data name="Status.GattLost" xml:space="preserve"><value>Bluetooth filter: link lost after {0:0.0} s, {1} report(s) received.</value></data>
   <data name="Status.GattReports" xml:space="preserve"><value>Bluetooth filter: {0} report(s) received, last = {1}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} not found: put it next to the application (or build AppleRemote.DriverInstaller).</value></data>
+  <data name="Status.HidReport" xml:space="preserve"><value>First report received from the remote: {0}</value></data>
 </root>

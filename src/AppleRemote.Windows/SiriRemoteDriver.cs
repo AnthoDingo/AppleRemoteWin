@@ -62,6 +62,18 @@ public sealed class SiriRemoteDriver
         }
     }
 
+    /// <summary>
+    /// 0xF0 = 0xAF par HidD_SetFeature ; Windows le refuse parfois (erreur 87) : repli sur le déverrouillage GATT du filtre.
+    /// Retourne aussi l'erreur Windows du premier essai, pour le message d'état.
+    /// </summary>
+    static async Task<(bool Ok, int Error)> UnlockAsync(HidDeviceInfo info, SafeFileHandle handle)
+    {
+        if (HidEnumerator.Unlock(handle, info.FeatureLength)) return (true, 0);
+        int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+        try { return (await FilterUnlock.TryAsync(info.Path), error); }
+        catch (Exception) { return (false, error); } // WinRT indisponible ou télécommande partie : même traitement qu'un refus
+    }
+
     async Task RunConnectionAsync(HidDeviceInfo info, CancellationToken ct)
     {
         using SafeFileHandle handle = HidEnumerator.Open(info.Path);
@@ -77,12 +89,8 @@ public sealed class SiriRemoteDriver
         int error = 0;
         for (int attempt = 0; attempt < 3 && !unlocked && !ct.IsCancellationRequested; attempt++)
         {
-            unlocked = HidEnumerator.Unlock(handle, info.FeatureLength);
-            if (!unlocked)
-            {
-                error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                await Task.Delay(300, ct);
-            }
+            (unlocked, error) = await UnlockAsync(info, handle);
+            if (!unlocked) await Task.Delay(300, ct);
         }
         if (!unlocked)
         {
@@ -97,6 +105,7 @@ public sealed class SiriRemoteDriver
         int length = Math.Max(info.InputLength, 21);
         using var linkCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         long lastReport = Environment.TickCount64;
+        bool seenReport = false;
 
         // Sonde : si rien n'arrive depuis un moment, un déverrouillage qui échoue = liaison tombée -> reconnexion.
         var probe = Task.Run(async () =>
@@ -107,7 +116,7 @@ public sealed class SiriRemoteDriver
                 {
                     await Task.Delay(ProbeAfterMs, linkCts.Token);
                     if (Environment.TickCount64 - Volatile.Read(ref lastReport) < ProbeAfterMs) continue;
-                    if (!HidEnumerator.Unlock(handle, info.FeatureLength))
+                    if (!(await UnlockAsync(info, handle)).Ok)
                     {
                         linkCts.Cancel();
                         return;
@@ -127,6 +136,7 @@ public sealed class SiriRemoteDriver
                 int n = await stream.ReadAsync(buffer.AsMemory(0, length), linkCts.Token);
                 if (n <= 0) throw new IOException("fin du flux HID");
                 Volatile.Write(ref lastReport, Environment.TickCount64);
+                if (!seenReport) { seenReport = true; Status(Loc.T("Status.HidReport", Convert.ToHexString(buffer, 0, n))); }
                 _onReport(HostNow, buffer.AsSpan(0, n).ToArray());
             }
         }

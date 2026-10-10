@@ -150,9 +150,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var input in KeyMap.Inputs) Bindings[input] = new KeyChoice(input, NoKey, OnBindingChanged);
         SyncBindings();
 
-        _scanTimer.Tick += (_, _) =>
-            NearbyDevices = _scanner.Snapshot().Where(d => d.AppleHid)
-                .Select(d => $"Apple Siri Remote (1st)   {d.AddressText}   {d.Rssi} dBm").ToList();
+        _scanTimer.Tick += async (_, _) =>
+        {
+            var hid = await Task.Run(() =>
+            {
+                try { return HidEnumerator.ListApple(); }
+                catch { return []; }
+            });
+            // Une même télécommande expose plusieurs collections HID : une ligne par produit.
+            var connected = hid.DistinctBy(d => (d.VendorId, d.ProductId))
+                .Select(d => $"{(d.IsSiriRemoteGen1 ? "Siri Remote (1st)" : d.Product.Length > 0 ? d.Product : $"HID {d.VendorId:X4}:{d.ProductId:X4}")}   {Loc.T("Remote.Connected")}");
+            var nearby = _scanner.Snapshot().Where(d => d.AppleHid)
+                .Select(d => $"Siri Remote (1st)   {d.AddressText}   {d.Rssi} dBm");
+            NearbyDevices = connected.Concat(nearby).ToList();
+        };
         _keyboardEnabled = _settings.KeyboardEnabled;
         _language = _settings.Language;
         _closeToTray = _settings.CloseToTray;
@@ -476,7 +487,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     void AddLog(string line)
     {
-        Log.Add($"{DateTime.Now:HH:mm:ss}  {line}");
+        string stamped = $"{DateTime.Now:HH:mm:ss}  {line}";
+        Log.Add(stamped);
         while (Log.Count > 300) Log.RemoveAt(0);
+        // Copie dans %TEMP%\AppleRemote.log : lisible sans l'interface (diagnostic à distance, session de test sur VM).
+        try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "AppleRemote.log"), stamped + Environment.NewLine); }
+        catch (IOException) { }
     }
 }

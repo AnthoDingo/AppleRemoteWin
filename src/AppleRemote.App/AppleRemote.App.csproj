@@ -47,7 +47,18 @@
     <ItemGroup Condition="'$(DriverExitCode)' == '0'">
       <DriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
-    <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)" Condition="'$(DriverExitCode)' == '0'" />
+    <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)driver\" Condition="'$(DriverExitCode)' == '0'" />
+  </Target>
+
+  <!-- Publication : le paquet du pilote va TOUJOURS dans <PublishDir>driver\ (jamais à la racine, où les fichiers peuvent être
+       verrouillés par la VM de test qui lit le dossier partagé). Les 4 fichiers vont ensemble : le .cat signe ce .sys. -->
+  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' And Exists('$(DriverPackage)AppleRemoteDriver.sys')">
+    <ItemGroup>
+      <PublishedDriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
+    </ItemGroup>
+    <!-- Un fichier tenu ouvert (VMware, partage de la VM) ne doit pas faire échouer la publication : avertissement, et le paquet reste
+         à vérifier (cmp avec le dossier target). -->
+    <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 
 </Project>

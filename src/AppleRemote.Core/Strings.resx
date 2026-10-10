@@ -17,6 +17,7 @@
   <data name="Remote.State" xml:space="preserve"><value>ÉTAT</value></data>
   <data name="Remote.Gesture" xml:space="preserve"><value>GESTE</value></data>
   <data name="Remote.Nearby" xml:space="preserve"><value>APPAREILS APPLE HID À PROXIMITÉ</value></data>
+  <data name="Remote.Connected" xml:space="preserve"><value>connecté</value></data>
   <data name="Remote.NearbyNone" xml:space="preserve"><value>Aucun appareil.</value></data>
   <data name="Remote.Battery" xml:space="preserve"><value>Batterie : {0} %</value></data>
   <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Batterie : —</value></data>
@@ -182,4 +183,5 @@ Une confirmation administrateur (UAC) va s'afficher.</value></data>
   <data name="Status.GattLost" xml:space="preserve"><value>Filtre Bluetooth : liaison perdue après {0:0.0} s, {1} rapport(s) reçu(s).</value></data>
   <data name="Status.GattReports" xml:space="preserve"><value>Filtre Bluetooth : {0} rapport(s) reçu(s), dernier = {1}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} introuvable : placez-le à côté de l'application (ou compilez AppleRemote.DriverInstaller).</value></data>
+  <data name="Status.HidReport" xml:space="preserve"><value>Premier rapport reçu de la télécommande : {0}</value></data>
 </root>
