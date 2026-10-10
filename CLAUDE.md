@@ -89,8 +89,12 @@ Required SDK: **.NET 10**. Run the tests after any change to `Core`.
   unlimited `NumberOfPresentedRequests` (otherwise BTHUSB init timeout, code 10); **extension** INF (a full driver
   evicts `BtFilter` from the Qualcomm driver: code 10). Debugger-free diagnosis: `Parameters` (`Stage` = 3, `Hit*`).
 - **Filter installation** (`AppleRemote.DriverInstaller`, or the app's button, which closes the session first): updates
-  over the old package. Removing the loaded filter, or with the remote open in the app, leaves the adapter
-  "pending restart" (`restart-device` refused, code 50): the PC must then be restarted. The `BTH\MS_*` enumerators
+  over the old package; install, uninstall and reinstall without a PC restart (validated 2026-10-10). `bthserv` and
+  `DeviceAssociationService` keep the adapter open and veto its removal (Kernel-PnP event 225) whenever pnputil binds,
+  unbinds or restarts the driver: Windows then leaves the adapter "pending restart" (`restart-device` refused, code 50)
+  until the next boot. The installer disables both for the whole pnputil operation (stopping is not enough: `bthserv`
+  is trigger-started and comes straight back), then restores their startup type and state. A handle still open on the
+  remote (the app's session) can veto too. The `BTH\MS_*` enumerators
   sometimes stay at code 19 (0xC0000034) after an adapter restart: the installer recreates them.
 - **`tools/siri_bumble.py` validated on hardware** (2026-10-10, QCA61x4A `0CF3:E007` switched to WinUSB with Zadig, ROM
   firmware, PC restart needed): pairing, encrypted reconnection with the stored keys after sleep,

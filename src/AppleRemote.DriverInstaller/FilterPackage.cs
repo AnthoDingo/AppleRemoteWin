@@ -35,13 +35,16 @@ static class FilterPackage
         // Update over the old package without uninstalling it first: removing a loaded filter leaves the adapter
         // "pending PC restart", and Windows then refuses to restart it. The newest package wins.
         string[] previous = PublishedPackages();
-        int code = Run("pnputil", $"/add-driver \"{Path.Combine(dir, InfName)}\" /install").ExitCode;
-        const int AlreadyInstalled = 259; // ERROR_NO_MORE_ITEMS: package already in the store and already bound to the adapter
-        if (code == AlreadyInstalled) code = 0;
-        if (code is not (0 or RebootNeeded))
-            throw new InvalidOperationException($"pnputil /add-driver failed (code {code}). Is adapter {AdapterHardwareId} present?");
-
-        if (!RestartAdapter())
+        var (code, restarted) = WithBluetoothServicesStopped(() =>
+        {
+            int exit = Run("pnputil", $"/add-driver \"{Path.Combine(dir, InfName)}\" /install").ExitCode;
+            const int AlreadyInstalled = 259; // ERROR_NO_MORE_ITEMS: package already in the store and already bound to the adapter
+            if (exit == AlreadyInstalled) exit = 0;
+            if (exit is not (0 or RebootNeeded))
+                throw new InvalidOperationException($"pnputil /add-driver failed (code {exit}). Is adapter {AdapterHardwareId} present?");
+            return (exit, RestartAdapter());
+        });
+        if (!restarted)
             return RebootNeeded; // the package is in place: it will load on next boot
         RepairEnumerators();
 
@@ -67,13 +70,17 @@ static class FilterPackage
     public static int Uninstall()
     {
         string[] published = PublishedPackages();
-        foreach (string oem in published)
-        {
-            Say($"Removing package {oem}");
-            Check(Run("pnputil", $"/delete-driver {oem} /uninstall /force"), $"pnputil /delete-driver {oem}");
-        }
         if (published.Length == 0) return Ok;
-        if (!RestartAdapter()) return RebootNeeded;
+        bool restarted = WithBluetoothServicesStopped(() =>
+        {
+            foreach (string oem in published)
+            {
+                Say($"Removing package {oem}");
+                Check(Run("pnputil", $"/delete-driver {oem} /uninstall /force"), $"pnputil /delete-driver {oem}");
+            }
+            return RestartAdapter();
+        });
+        if (!restarted) return RebootNeeded;
         RepairEnumerators();
         if (FilterInstaller.IsInstalled())
             throw new InvalidOperationException("The filter is still in the LowerFilters (installed by an older method?).");
@@ -123,29 +130,25 @@ static class FilterPackage
     }
 
     /// <summary>
-    /// Restarts the adapter to (un)load the filter. False if Windows refuses (adapter pending a PC restart,
-    /// or a handle held open by an application blocking the stack teardown): the PC must then be rebooted.
+    /// Runs <paramref name="action"/> with the Windows Bluetooth services down. They keep the adapter open and veto its
+    /// removal (Kernel-PnP event 225) whenever pnputil binds, unbinds or restarts the driver; pnputil then answers 3010
+    /// and Windows marks the adapter "restart required" until the next boot. Stopping is not enough: bthserv is
+    /// trigger-started and Windows relaunches it at once, so each one is disabled for the duration, then its startup
+    /// type and state are restored.
     /// </summary>
-    static bool RestartAdapter()
+    static T WithBluetoothServicesStopped<T>(Func<T> action)
     {
-        string id = Ps($"(Get-PnpDevice -PresentOnly | Where-Object InstanceId -like '{AdapterHardwareId}*' | Select-Object -First 1).InstanceId").Trim();
-        if (id.Length == 0) throw new InvalidOperationException($"Adapter {AdapterHardwareId} not found.");
-        // Windows Bluetooth services keep the adapter open and veto its removal (Kernel-PnP event 225); pnputil
-        // then answers 3010 and Windows marks the adapter "restart required" until the next boot. So they are taken
-        // down BEFORE the adapter restart. Stopping is not enough: bthserv is trigger-started and Windows relaunches it
-        // during the restart, so each one is disabled for the duration, then its startup type and state are restored.
         string[] holders = ["bthserv", "DeviceAssociationService"];
         var saved = holders
             .Select(s => (Name: s, State: Ps($"(Get-Service {s} -ErrorAction SilentlyContinue).Status").Trim(),
                           StartType: Ps($"(Get-Service {s} -ErrorAction SilentlyContinue).StartType").Trim()))
             .Where(s => s.StartType.Length > 0)
             .ToArray();
-        (int ExitCode, string Output) result;
         try
         {
             foreach (var s in saved)
                 Ps($"Set-Service {s.Name} -StartupType Disabled -ErrorAction SilentlyContinue; Stop-Service {s.Name} -Force -ErrorAction SilentlyContinue");
-            result = Run("pnputil", $"/restart-device \"{id}\"");
+            return action();
         }
         finally
         {
@@ -155,6 +158,18 @@ static class FilterPackage
                 if (s.State == "Running") Ps($"Start-Service {s.Name} -ErrorAction SilentlyContinue");
             }
         }
+    }
+
+    /// <summary>
+    /// Restarts the adapter to (un)load the filter. False if Windows refuses (adapter pending a PC restart,
+    /// or a handle held open by an application blocking the stack teardown): the PC must then be rebooted.
+    /// Call it inside <see cref="WithBluetoothServicesStopped"/>.
+    /// </summary>
+    static bool RestartAdapter()
+    {
+        string id = Ps($"(Get-PnpDevice -PresentOnly | Where-Object InstanceId -like '{AdapterHardwareId}*' | Select-Object -First 1).InstanceId").Trim();
+        if (id.Length == 0) throw new InvalidOperationException($"Adapter {AdapterHardwareId} not found.");
+        var result = Run("pnputil", $"/restart-device \"{id}\"");
         if (result.ExitCode != 0) // 3010 included: the stack was not reloaded
         {
             Say($"Adapter restart refused (code {result.ExitCode}): {result.Output.Trim()}");
