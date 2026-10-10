@@ -204,8 +204,8 @@ public class SiriRemoteBleTests
                 status =>
                 {
                     lock (statuses) statuses.Add(status);
-                    if (status.StartsWith("Connecté")) connected.TrySetResult();
-                    if (status.StartsWith("Déconnectée")) disconnected.TrySetResult();
+                    if (Loc.StartsWith(status, "Status.ConnectedDirect")) connected.TrySetResult();
+                    if (Loc.StartsWith(status, "Status.DisconnectedReason")) disconnected.TrySetResult();
                 },
                 level => { lock (battery) battery.Add(level); });
 
@@ -227,7 +227,7 @@ public class SiriRemoteBleTests
             await run;
             Assert.Equal(new[] { "fce0206002", "fc0020", "" }, reports);         // "": link lost, release everything
             Assert.Equal(new[] { 87, 86 }, battery);                             // read on connection, then notified
-            Assert.DoesNotContain(statuses, s => s.StartsWith("Erreur"));
+            Assert.DoesNotContain(statuses, s => Loc.StartsWith(s, "Status.Error") || Loc.StartsWith(s, "Status.BtError"));
         }
         finally
         {
