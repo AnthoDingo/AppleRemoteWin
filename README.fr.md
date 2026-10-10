@@ -52,6 +52,46 @@ valeur = nom de touche, code VK 1-254, ou `null` pour désactiver ; noms : `Keys
 
 Les fenêtres lancées **en administrateur** ignorent les touches d'un programme non élevé (UIPI) : lancez alors l'app en administrateur.
 
+## Installer le filtre noyau (test-signing)
+
+Le filtre `AppleRemoteDriver` est signé avec un **certificat de test**, pas un certificat émis par Microsoft : Windows ne le charge
+qu'en mode test-signing. Sans le filtre, la pile Bluetooth de Windows lâche la télécommande (voir `CLAUDE.md`) ; l'alternative est le
+mode Bluetooth direct (adaptateur USB sous WinUSB), qui n'a besoin d'aucun pilote noyau.
+
+1. **Désactiver Secure Boot** dans l'UEFI (le test-signing est refusé tant qu'il est actif). Vérifier avec `Confirm-SecureBootUEFI` dans PowerShell.
+   Attention : certains anti-triche et configurations BitLocker en dépendent.
+2. Dans un terminal **administrateur**, activer le test-signing puis **redémarrer le PC** :
+   ```
+   bcdedit /set testsigning on
+   ```
+   Un filigrane « Mode test » apparaît sur le bureau.
+3. Lancer l'application puis utiliser son bouton **d'installation du filtre** (ou `AppleRemote.DriverInstaller`, en administrateur). Il approuve
+   le `WDRLocalTestCert.cer` fourni (magasins Racine et Éditeurs approuvés) et installe le paquet du dossier `driver\` avec `pnputil`.
+   Garder ensemble les 4 fichiers de `driver\` (`.sys`, `.inf`, `.cat`, `.cer`). Aucun redémarrage n'est nécessaire ensuite.
+4. Réappairer la télécommande si besoin.
+
+Pour annuler : désinstaller le filtre depuis l'app, retirer le certificat si souhaité (`certmgr.msc`, « Autorités de certification
+racines de confiance » et « Éditeurs approuvés »), puis `bcdedit /set testsigning off`, redémarrer et réactiver Secure Boot.
+
+### Signer le filtre soi-même
+
+Le paquet publié est signé avec le certificat de test de l'auteur. Pour ne pas lui faire confiance, compilez et signez le filtre
+avec votre propre certificat (la clé privée ne quitte jamais votre PC) :
+
+1. Installer les prérequis : Rust, [cargo-make](https://github.com/sagiegurari/cargo-make), le Windows Driver Kit (WDK) et
+   LLVM (`LIBCLANG_PATH=C:\Program Files\LLVM\bin`).
+2. Activer le test-signing comme ci-dessus (étapes 1 et 2).
+3. Dans `src/AppleRemoteDriver`, lancer :
+   ```
+   cargo make --profile release
+   ```
+   Le build crée un `WDRLocalTestCert` auto-signé dans votre propre magasin de certificats (`WDRTestCertStore`), signe le `.cat`
+   avec, et écrit le paquet, avec son `.cer`, dans `target\release\AppleRemoteDriver_package\`.
+   (Un build Release de `AppleRemote.App` fait la même chose et copie le paquet dans `driver\`.)
+4. Installer ce paquet avec l'app ou `AppleRemote.DriverInstaller` : il approuve le `.cer` placé à côté du `.sys`, qui est désormais le vôtre.
+
+Chaque recompilation retamponne l'INF et resigne le `.cat` : installer toujours les quatre fichiers issus du même build.
+
 ## Build
 
 ```

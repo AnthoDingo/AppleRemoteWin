@@ -52,6 +52,46 @@ value = key name, VK code 1-254, or `null` to disable; names: `Keys.cs`).
 
 Windows running **as administrator** ignore key presses from a non-elevated program (UIPI): run the app as administrator in that case.
 
+## Installing the kernel filter (test-signing)
+
+The `AppleRemoteDriver` filter is signed with a **test certificate**, not a Microsoft-issued one, so Windows only loads it
+in test-signing mode. Without the filter, the Windows Bluetooth stack drops the remote (see `CLAUDE.md`); the alternative is the
+direct Bluetooth mode (USB adapter under WinUSB), which needs no kernel driver.
+
+1. **Turn Secure Boot off** in the UEFI settings (test-signing is refused while it is on). Check with `Confirm-SecureBootUEFI` in PowerShell.
+   Note that some anti-cheat software and BitLocker setups depend on it.
+2. In an **administrator** terminal, enable test-signing, then **restart the PC**:
+   ```
+   bcdedit /set testsigning on
+   ```
+   A "Test Mode" watermark appears on the desktop.
+3. Run the app, then use its **install filter** button (or `AppleRemote.DriverInstaller`, as administrator). It trusts the bundled
+   `WDRLocalTestCert.cer` (Root and TrustedPublisher stores) and installs the package from the `driver\` folder with `pnputil`.
+   Keep the 4 files of `driver\` together (`.sys`, `.inf`, `.cat`, `.cer`). No PC restart is needed after that.
+4. Pair the remote again if needed.
+
+To undo: uninstall the filter from the app, remove the certificate if you wish (`certmgr.msc`, "Trusted Root Certification
+Authorities" and "Trusted Publishers"), then `bcdedit /set testsigning off`, restart, and turn Secure Boot back on.
+
+### Signing the filter yourself
+
+The released package is signed with the author's test certificate. If you prefer not to trust it, build and sign the filter
+with a certificate of your own (the private key never leaves your PC):
+
+1. Install the prerequisites: Rust, [cargo-make](https://github.com/sagiegurari/cargo-make), the Windows Driver Kit (WDK) and
+   LLVM (`LIBCLANG_PATH=C:\Program Files\LLVM\bin`).
+2. Enable test-signing as above (steps 1 and 2).
+3. In `src/AppleRemoteDriver`, run:
+   ```
+   cargo make --profile release
+   ```
+   The build creates a self-signed `WDRLocalTestCert` in your own certificate store (`WDRTestCertStore`), signs the `.cat`
+   with it and writes the package, with its `.cer`, to `target\release\AppleRemoteDriver_package\`.
+   (A Release build of `AppleRemote.App` does the same and copies the package to `driver\`.)
+4. Install that package with the app or `AppleRemote.DriverInstaller`: it trusts the `.cer` next to the `.sys`, which is now yours.
+
+Every rebuild re-stamps the INF and re-signs the `.cat`: always install the four files from the same build.
+
 ## Build
 
 ```
