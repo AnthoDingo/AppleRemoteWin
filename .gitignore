@@ -35,3 +35,6 @@ PublishProfiles/
 # Outils locaux
 .claude/
 graphify-out/
+
+# Rust (src/AppleRemoteDriver)
+target/

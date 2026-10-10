@@ -92,3 +92,5 @@ GNU AGPL v3 ou ultérieure (`AGPL-3.0-or-later`), voir `LICENSE`.
 
 `Decoder.cs` et `Gestures.cs` sont des ports de [open-appleremote](https://github.com/a-funk/open-appleremote), publié sous licence MIT :
 son avis de copyright est conservé dans `LICENSE-MIT-open-appleremote`.
+
+Le pilote noyau de `src/AppleRemoteDriver` est un composant séparé sous licence MIT : voir son `LICENSE` et son `README.md`.
