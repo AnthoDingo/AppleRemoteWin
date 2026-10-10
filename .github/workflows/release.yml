@@ -147,14 +147,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-      - name: Assemble layout and compile
+      - name: Assemble layout
         shell: bash
         run: |
           mkdir stage
           cp -r app-${{ matrix.rid }}/. stage
           cp -rn installer-${{ matrix.rid }}/. stage
           if [ "${{ matrix.arch }}" = x64 ]; then mkdir stage/driver; cp driver-win-x64/* stage/driver; fi
-          iscc //DAppVersion=${{ needs.version.outputs.version }} //DSourceDir="$PWD/stage" //DArch=${{ matrix.arch }} installer/AppleRemote.iss
+      # pwsh, not bash: Git Bash rewrites the /D switches and hands iscc a POSIX path (/d/a/...).
+      - name: Compile setup
+        shell: pwsh
+        run: iscc "/DAppVersion=${{ needs.version.outputs.version }}" "/DSourceDir=$PWD\stage" "/DArch=${{ matrix.arch }}" installer\AppleRemote.iss
       - uses: actions/upload-artifact@v4
         with:
           name: setup-${{ matrix.rid }}
