@@ -26,7 +26,7 @@
             <Grid Width="190" Height="440" VerticalAlignment="Top" ClipToBounds="True" Margin="0,0,20,0">
                 <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
                     <Grid Width="380" Height="1200">
-                        <local:RemoteDrawing />
+                        <local:RemoteDrawing IsEnabled="False" />
                         <Canvas>
                                     <Ellipse Canvas.Left="189" Canvas.Top="360" Width="160" Height="160" Stroke="#4C8DFF" StrokeThickness="8"
                                              Fill="#334C8DFF" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False">
@@ -96,7 +96,7 @@
             <Grid Width="190" Height="440" VerticalAlignment="Top" ClipToBounds="True" Margin="0,0,20,0">
                 <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
                     <Grid Width="380" Height="1200">
-                        <local:RemoteDrawing />
+                        <local:RemoteDrawing IsEnabled="False" />
                         <Canvas>
                                     <Ellipse Canvas.Left="32" Canvas.Top="360" Width="160" Height="160" Stroke="#4C8DFF" StrokeThickness="8"
                                              Fill="#334C8DFF" RenderTransformOrigin="0.5,0.5" IsHitTestVisible="False">

@@ -45,7 +45,7 @@
             <!-- Rien sous Lecture/Volume : on coupe la télécommande -->
             <Grid Width="190" Height="440" Margin="250,50,250,0" VerticalAlignment="Top" ClipToBounds="True">
                 <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
-                    <local:RemoteDrawing />
+                    <local:RemoteDrawing IsEnabled="False" />
                 </Viewbox>
             </Grid>
             <Canvas>
