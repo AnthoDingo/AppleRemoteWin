@@ -117,7 +117,7 @@ jobs:
         shell: bash
         run: |
           cargo fetch --locked
-          mk=$(ls -d "$HOME"/.cargo/registry/src/*/wdk-build-0.3.0)/rust-driver-makefile.toml
+          mk=$(cygpath -m "$(ls -d "$HOME"/.cargo/registry/src/*/wdk-build-0.3.0)")/rust-driver-makefile.toml
           sed -i "s|^extend = .*|extend = [{ path = \"$mk\" }]|" Makefile.toml
       - name: Build and sign
         working-directory: src/AppleRemoteDriver
