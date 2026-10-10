@@ -1,0 +1,36 @@
+name: Hardware compatibility report
+description: Report whether a Bluetooth adapter or remote works (or not) with the direct driver
+labels: [hardware]
+body:
+  - type: input
+    id: adapter
+    attributes:
+      label: Bluetooth adapter
+      description: Model, chipset and USB ID (VID:PID)
+      placeholder: Qualcomm QCA61x4A (0CF3:E007)
+    validations:
+      required: true
+  - type: input
+    id: remote
+    attributes:
+      label: Remote model
+      placeholder: Siri Remote gen 1 (A1513 / A1962)
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Works fully
+        - Partially works
+        - Does not work
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Driver used (e.g. Zadig/WinUSB), firmware notes, which steps worked (pairing, reconnect, buttons, touchpad, voice), errors seen.
+    validations:
+      required: true

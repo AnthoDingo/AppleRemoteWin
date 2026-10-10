@@ -1,0 +1,91 @@
+name: Release
+
+# Accepted versions: v1.0.0, v1.0.0-RC1, 1.0.0, 1.0.0-RC1 (RC is case-insensitive).
+# Push a tag, or run manually with the version. A "-RC<n>" suffix publishes a pre-release.
+on:
+  push:
+    tags: ["v[0-9]*", "[0-9]*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, e.g. v1.0.0, 1.0.0-RC1"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Validate version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+    steps:
+      - id: v
+        env:
+          RAW: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          if ! [[ "$RAW" =~ ^v?([0-9]+\.[0-9]+\.[0-9]+(-[Rr][Cc][0-9]+)?)$ ]]; then
+            echo "::error::Invalid version '$RAW' (expected v1.0.0, v1.0.0-RC1, 1.0.0 or 1.0.0-RC1)"
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          echo "tag=$RAW" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$([[ -n "${BASH_REMATCH[2]}" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test tests/AppleRemote.Tests -c Release
+
+  build:
+    name: Build (${{ matrix.rid }})
+    needs: version
+    runs-on: windows-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        rid: [win-x64, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish
+        run: >
+          dotnet publish src/AppleRemote.App -c Release -r ${{ matrix.rid }}
+          --self-contained false -p:PublishSingleFile=true
+          -p:Version=${{ needs.version.outputs.version }} -o out
+      - name: Zip
+        run: Compress-Archive -Path out/* -DestinationPath AppleRemote-${{ needs.version.outputs.version }}-${{ matrix.rid }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zip-${{ matrix.rid }}
+          path: "*.zip"
+
+  release:
+    needs: [version, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: zip-*
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          flags=""
+          [ "$PRERELEASE" = true ] && flags="--prerelease"
+          gh release create "$TAG" *.zip --title "$TAG" --generate-notes --target "$GITHUB_SHA" $flags

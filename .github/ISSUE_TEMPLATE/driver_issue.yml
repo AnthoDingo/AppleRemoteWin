@@ -1,0 +1,71 @@
+name: Direct Bluetooth driver issue
+description: Problem with the user-mode driver (WinUSB adapter, HCI, pairing, connection, reconnection)
+labels: [driver]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For the direct driver only (`UsbHci` + `SiriRemoteBle`, adapter switched to WinUSB).
+        Problems with the Windows Bluetooth stack or the app UI belong in a bug report.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where does it fail?
+      options:
+        - Adapter not detected / cannot open WinUSB
+        - HCI init (reset, LE setup)
+        - Scanning for the remote
+        - Pairing (Just Works)
+        - Connection / encryption
+        - GATT / HID discovery
+        - Unlock (0xF0 0xAF)
+        - Reports / decoding
+        - Reconnection (after sleep or disconnect)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: adapter
+    attributes:
+      label: Adapter and USB ID
+      description: Model, chipset, VID:PID, firmware if known
+      placeholder: Qualcomm QCA61x4A (0CF3:E007)
+    validations:
+      required: true
+  - type: input
+    id: usbdriver
+    attributes:
+      label: How was WinUSB installed?
+      placeholder: Zadig 2.9, PC restarted afterwards
+  - type: input
+    id: remote
+    attributes:
+      label: Remote model
+      placeholder: Siri Remote gen 1 (A1513 / A1962)
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 build 26300
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include HCI status or disconnect reason codes (e.g. 0x13, 0x3E, 0x05/0x06) if shown.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Was the remote freshly paired, or reconnecting with stored keys?
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Debug page output or HCI trace. Remove bond keys (`bonds.json`) before pasting anything.
+      render: text

@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Press "Pair"
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Connection mode
+      description: Direct Bluetooth needs a Bluetooth adapter switched to the WinUSB driver; otherwise the Windows HID stack is used.
+      options:
+        - Direct Bluetooth (WinUSB adapter)
+        - Windows HID stack
+        - Capture replay
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: adapter
+    attributes:
+      label: Bluetooth adapter
+      description: Model and USB ID, e.g. Qualcomm QCA61x4A (0CF3:E007)
+  - type: input
+    id: remote
+    attributes:
+      label: Remote model
+      description: e.g. Siri Remote gen 1 (A1513 / A1962)
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 build 26300
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / capture
+      description: Debug page output, error message, or a `.jsonl` capture. Do not paste anything private.
+      render: text

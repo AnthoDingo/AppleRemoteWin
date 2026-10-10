@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Core is portable: tests run on Linux (fast) and Windows.
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet test tests/AppleRemote.Tests -c Release
+
+  # WPF app + Windows driver, one build per architecture, in parallel.
+  build-app:
+    name: Build app (${{ matrix.rid }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: >
+          dotnet publish src/AppleRemote.App -c Release -r ${{ matrix.rid }}
+          --self-contained false -p:PublishSingleFile=true -o out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AppleRemote-${{ matrix.rid }}
+          path: out/
+          retention-days: 14
+
+  # Bumble probe, tested against a fake remote on virtual controllers (no hardware).
+  python-probe:
+    name: Bumble probe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install bumble
+      - run: python tools/test_siri_bumble.py
