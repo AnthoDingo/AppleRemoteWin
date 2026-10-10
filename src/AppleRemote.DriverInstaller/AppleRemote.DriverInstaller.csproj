@@ -10,6 +10,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Referenced by the app (published with a RID): must not default to self-contained (NETSDK1151). -->
+    <SelfContained>false</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>

@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rid: [win-x64, win-arm64]
+        rid: [win-x64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        rid: [win-x64, win-arm64]
+        rid: [win-x64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -77,7 +77,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        rid: [win-x64, win-arm64]
+        rid: [win-x64]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -144,7 +144,6 @@ jobs:
       matrix:
         include:
           - { rid: win-x64, arch: x64 }
-          - { rid: win-arm64, arch: arm64 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -172,7 +171,7 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          for rid in win-x64 win-arm64; do
+          for rid in win-x64; do
             d="AppleRemote-$VERSION-$rid"
             mkdir "$d"
             cp -r app-$rid/. "$d"
