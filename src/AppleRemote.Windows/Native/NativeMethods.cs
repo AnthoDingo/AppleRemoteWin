@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
@@ -115,7 +118,7 @@ internal static class NativeMethods
 
     // ---- winusb.dll -------------------------------------------------------------------------
 
-    /// <summary>Interface générique présente sur tout périphérique USB ; l'ouvrir atteint le pilote du périphérique (ici WinUSB).</summary>
+    /// <summary>Generic interface present on every USB device; opening it reaches the device's driver (here WinUSB).</summary>
     public static readonly Guid GUID_DEVINTERFACE_USB_DEVICE = new("A5DCBF10-6530-11D2-901F-00C04FB951ED");
 
     public const int UsbdPipeTypeBulk = 2, UsbdPipeTypeInterrupt = 3;
@@ -203,7 +206,7 @@ internal static class NativeMethods
         public IntPtr dwExtraInfo;
     }
 
-    // L'union doit contenir MOUSEINPUT (le plus grand) pour que sizeof(INPUT) soit correct (40 octets en x64).
+    // The union must contain MOUSEINPUT (the largest) so that sizeof(INPUT) is correct (40 bytes on x64).
     [StructLayout(LayoutKind.Explicit)]
     public struct INPUT_UNION
     {

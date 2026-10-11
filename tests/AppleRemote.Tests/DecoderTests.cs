@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
@@ -29,7 +32,7 @@ public class DecoderTests
         Assert.Equal(new[] { new Finger(-188, -673, 3), new Finger(-1185, -900, 3) }, ev.Fingers);
     }
 
-    /// <summary>Windows rembourre chaque report à InputReportByteLength (21) : le décodage doit rester identique.</summary>
+    /// <summary>Windows pads each report to InputReportByteLength (21): decoding must remain identical.</summary>
     [Theory]
     [InlineData("fc010032e0ba019fcdcd5c81218b")]
     [InlineData("fc020032e6d81944ffd51f280a8b5fcbc7313c0f83")]
@@ -66,7 +69,7 @@ public class DecoderTests
         Assert.Empty(drop.Pressed);
         Assert.Equal(new[] { "volup" }, drop.Released);
 
-        // le clic voyage dans les reports tactiles
+        // the click travels in the touch reports
         var touchClick = d.Decode(Hex("fc018032e0ba019fcdcd5c81218c"));
         Assert.Collection(touchClick, e => Assert.IsType<ButtonsEvent>(e), e => Assert.IsType<TouchEvent>(e));
         var click = (ButtonsEvent)touchClick[0];
@@ -92,7 +95,7 @@ public class DecoderTests
     [Fact]
     public void Voice_chunk()
     {
-        // synthétique : mise en page de docs/PROTOCOL.md, octets audio à zéro
+        // synthetic: layout from docs/PROTOCOL.md, audio bytes zeroed
         var report = Hex("fc1010" + "0000" + "00" + "00" + "44" + "b8").Concat(new byte[12]).ToArray();
         var events = new Decoder().Decode(report);
         Assert.IsType<ButtonsEvent>(events[0]);
@@ -111,11 +114,11 @@ public class DecoderTests
     public void Clock_wraps_without_going_backwards()
     {
         var d = new Decoder();
-        // horloge 0xFFF0 puis 0x0010 : 0x20 ticks plus tard = 16 ms
+        // clock 0xFFF0 then 0x0010: 0x20 ticks later = 16 ms
         static byte[] At(int clock) => new byte[]
         {
-            0xFC, 0x01, 0x00, 0x32, (byte)(clock & 0xFF), (byte)(clock >> 8), 0x01,   // en-tête + horloge + drapeaux
-            0x9F, 0xCD, 0xCD, 0x5C, 0x81, 0x21, 0x8B,                                 // un doigt
+            0xFC, 0x01, 0x00, 0x32, (byte)(clock & 0xFF), (byte)(clock >> 8), 0x01,   // header + clock + flags
+            0x9F, 0xCD, 0xCD, 0x5C, 0x81, 0x21, 0x8B,                                 // one finger
         };
         var a = (TouchEvent)d.Decode(At(0xFFF0))[0];
         var b = (TouchEvent)d.Decode(At(0x0010))[0];

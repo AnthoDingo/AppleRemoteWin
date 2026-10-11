@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Collections.Specialized;
 using AppleRemote.App.ViewModels;
 
@@ -9,7 +12,7 @@ public partial class DebugPage
     {
         InitializeComponent();
 
-        // Journal : une ligne par entrée, toujours défilé jusqu'à la dernière (300 lignes max, reconstruit à chaque changement).
+        // Log: one line per entry, always scrolled to the last one (300 lines max, rebuilt on every change).
         DataContextChanged += (_, e) =>
         {
             if (e.NewValue is not MainViewModel vm) return;

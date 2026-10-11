@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace AppleRemote;
 
-/// <summary>Adresse Bluetooth : texte « 14:9D:99:26:BF:CC » (octet de poids fort en tête) &lt;-&gt; 6 octets petit-boutistes (HCI).</summary>
+/// <summary>Bluetooth address: text "14:9D:99:26:BF:CC" (most significant byte first) &lt;-&gt; 6 little-endian bytes (HCI).</summary>
 public static class BdAddr
 {
     public static byte[] Parse(string text)
@@ -18,25 +21,25 @@ public static class BdAddr
         string.Join(":", littleEndian[..6].ToArray().Reverse().Select(b => b.ToString("X2")));
 }
 
-/// <summary>Clés d'un appairage LE « legacy » : LTK distribuée par la télécommande, avec son EDIV et son Rand.</summary>
+/// <summary>Keys of a "legacy" LE pairing: LTK distributed by the remote, with its EDIV and Rand.</summary>
 public sealed record BondKeys(byte[] Ltk, ushort Ediv, byte[] Rand);
 
-/// <summary>Clés d'appairage par adresse, dans un fichier JSON (valeurs en hexadécimal, ordre des octets HCI).</summary>
+/// <summary>Pairing keys per address, in a JSON file (hexadecimal values, HCI byte order).</summary>
 public sealed class BondStore(string path)
 {
-    // JsonNode plutôt que la sérialisation par réflexion : fonctionne aussi en publication AOT / application « fichier ».
+    // JsonNode rather than reflection-based serialisation: also works in AOT / single-file publishing.
     public BondKeys? Load(string address) =>
         Read()[address] is JsonObject e
             ? new BondKeys(Convert.FromHexString((string)e["ltk"]!), (ushort)e["ediv"]!, Convert.FromHexString((string)e["rand"]!))
             : null;
 
-    /// <summary>Adresses appairées (une seule télécommande en pratique).</summary>
+    /// <summary>Paired addresses (a single remote in practice).</summary>
     public IReadOnlyList<string> Addresses => Read().Select(e => e.Key).ToList();
 
-    /// <summary>Oublie tous les appairages.</summary>
+    /// <summary>Forgets all bonds.</summary>
     public void Clear() => File.Delete(path);
 
-    /// <summary>Enregistre les clés de l'adresse ; null les oublie.</summary>
+    /// <summary>Stores the address's keys; null forgets them.</summary>
     public void Save(string address, BondKeys? keys)
     {
         JsonObject all = Read();
@@ -54,8 +57,8 @@ public sealed class BondStore(string path)
 }
 
 /// <summary>
-/// Rôle « central » LE au-dessus de <see cref="HciHost"/> : initialisation du contrôleur, connexion à une adresse publique,
-/// chiffrement avec des clés connues, suivi des déconnexions, trames L2CAP. Une seule connexion à la fois.
+/// LE "central" role on top of <see cref="HciHost"/>: controller initialisation, connection to a public address,
+/// encryption with known keys, disconnection tracking, L2CAP frames. One connection at a time.
 /// </summary>
 public sealed class LeCentral
 {
@@ -76,13 +79,13 @@ public sealed class LeCentral
         _hci.AclData += OnAcl;
     }
 
-    /// <summary>Notre adresse publique (6 octets petit-boutistes), lue par <see cref="InitializeAsync"/>.</summary>
+    /// <summary>Our public address (6 little-endian bytes), read by <see cref="InitializeAsync"/>.</summary>
     public byte[] LocalAddress { get; private set; } = new byte[6];
 
-    /// <summary>Déconnexion : (handle, raison HCI). Levé depuis le thread du transport.</summary>
+    /// <summary>Disconnection: (handle, HCI reason). Raised from the transport thread.</summary>
     public event Action<ushort, byte>? Disconnected;
 
-    /// <summary>Trame L2CAP complète reçue (hors canal de signalisation, traité ici) : (handle, canal, données).</summary>
+    /// <summary>Complete L2CAP frame received (except the signalling channel, handled here): (handle, channel, data).</summary>
     public event Action<ushort, ushort, byte[]>? L2capData;
 
     public void SendL2cap(ushort handle, ushort cid, byte[] payload) =>
@@ -91,28 +94,28 @@ public sealed class LeCentral
     public async Task InitializeAsync()
     {
         await _hci.CommandAsync(HciOpcode.Reset);
-        // Masque par défaut + « LE Meta » (bit 61, sans lui aucun événement LE) + « Encryption Key Refresh » (bit 47).
+        // Default mask + "LE Meta" (bit 61, no LE event without it) + "Encryption Key Refresh" (bit 47).
         await _hci.CommandAsync(HciOpcode.SetEventMask, BitConverter.GetBytes(0x2000_9FFF_FFFF_FFFFUL));
         LocalAddress = (await _hci.CommandAsync(HciOpcode.ReadBdAddr))[1..7];
     }
 
     /// <summary>
-    /// Se connecte dès que l'appareil (adresse publique) se manifeste : publicité en mode appairage, ou appui sur un bouton
-    /// après une mise en veille. Attend indéfiniment ; l'annulation abandonne la tentative. Renvoie le handle de connexion.
+    /// Connects as soon as the device (public address) shows up: advertising in pairing mode, or a button press
+    /// after sleep. Waits indefinitely; cancellation abandons the attempt. Returns the connection handle.
     /// </summary>
     public async Task<ushort> ConnectAsync(string address, CancellationToken ct = default)
     {
         var connecting = _connecting = new TaskCompletionSource<ushort>(TaskCreationOptions.RunContinuationsAsynchronously);
         byte[] p =
         [
-            0x60, 0x00, 0x30, 0x00,     // balayage : intervalle 60 ms, fenêtre 30 ms
-            0x00,                       // pas de liste de filtrage : l'adresse ci-dessous
+            0x60, 0x00, 0x30, 0x00,     // scan: 60 ms interval, 30 ms window
+            0x00,                       // no filter list: the address below
             0x00, .. BdAddr.Parse(address),   // adresse publique de l'appareil
-            0x00,                       // notre adresse publique : la télécommande (BT 4.0) se reconnecte mal à une adresse qui change
+            0x00,                       // our public address: the remote (BT 4.0) reconnects poorly to a changing address
             0x0C, 0x00, 0x18, 0x00,     // intervalle de connexion 15–30 ms
             0x00, 0x00,                 // latence 0
             0xC8, 0x00,                 // supervision 2 s
-            0x00, 0x00, 0x00, 0x00,     // durée d'événement : au choix du contrôleur
+            0x00, 0x00, 0x00, 0x00,     // event length: up to the controller
         ];
         await _hci.CommandAsync(HciOpcode.LeCreateConnection, p);
         await using var cancel = ct.Register(() => _ = _hci.CommandAsync(HciOpcode.LeCreateConnectionCancel));
@@ -127,7 +130,7 @@ public sealed class LeCentral
     }
 
     /// <summary>
-    /// Balaye les publicités jusqu'à en trouver une dont les données correspondent ; renvoie l'adresse (publique) de l'émetteur.
+    /// Scans advertisements until one whose data matches is found; returns the sender's (public) address.
     /// </summary>
     public async Task<string> ScanAsync(Func<byte[], bool> match, CancellationToken ct = default)
     {
@@ -135,7 +138,7 @@ public sealed class LeCentral
         _scan = (match, found);
         try
         {
-            // Actif (la réponse de balayage peut porter des données), 60 ms / 30 ms, notre adresse publique, sans filtrage.
+            // Active (the scan response may carry data), 60 ms / 30 ms, our public address, no filtering.
             await _hci.CommandAsync(HciOpcode.LeSetScanParameters, 0x01, 0x60, 0x00, 0x30, 0x00, 0x00, 0x00);
             await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x01, 0x00);
             return await found.Task.WaitAsync(ct);
@@ -143,11 +146,11 @@ public sealed class LeCentral
         finally
         {
             _scan = null;
-            try { await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x00, 0x00); } catch (Exception) { /* contrôleur parti */ }
+            try { await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x00, 0x00); } catch (Exception) { /* controller gone */ }
         }
     }
 
-    /// <summary>Chiffre la liaison avec la LTK de l'appairage ; échoue si la télécommande ne la reconnaît plus.</summary>
+    /// <summary>Encrypts the link with the pairing LTK; fails if the remote no longer recognises it.</summary>
     public async Task EncryptAsync(ushort handle, BondKeys keys)
     {
         var encrypting = _encrypting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -164,14 +167,14 @@ public sealed class LeCentral
     }
 
     public Task DisconnectAsync(ushort handle) =>
-        _hci.CommandAsync(HciOpcode.Disconnect, (byte)handle, (byte)(handle >> 8), 0x13);   // 0x13 : fin demandée par l'utilisateur
+        _hci.CommandAsync(HciOpcode.Disconnect, (byte)handle, (byte)(handle >> 8), 0x13);   // 0x13: terminated by the remote user
 
     void OnAcl(ushort handle, int pb, byte[] data)
     {
         byte[] frame;
         lock (_rx)
         {
-            if (pb != 0b01) _rx.Clear();   // début de trame (sinon : suite de la précédente)
+            if (pb != 0b01) _rx.Clear();   // start of frame (otherwise: continuation of the previous one)
             _rx.AddRange(data);
             if (_rx.Count < 4 || _rx.Count < 4 + (_rx[0] | _rx[1] << 8)) return;
             frame = _rx.ToArray();
@@ -184,8 +187,8 @@ public sealed class LeCentral
     }
 
     /// <summary>
-    /// Signalisation LE : on accepte la demande de paramètres de connexion de la télécommande (sinon elle peut couper)
-    /// et on refuse le reste (« commande non comprise »).
+    /// LE signalling: we accept the remote's connection parameter update request (otherwise it may drop the link)
+    /// and reject the rest ("command not understood").
     /// </summary>
     void OnSignaling(ushort handle, byte[] p)
     {
@@ -193,11 +196,11 @@ public sealed class LeCentral
         byte code = p[0], id = p[1];
         if (code == 0x12 && p.Length >= 12)   // Connection Parameter Update Request
         {
-            SendL2cap(handle, CidSignaling, [0x13, id, 0x02, 0x00, 0x00, 0x00]);   // accepté
+            SendL2cap(handle, CidSignaling, [0x13, id, 0x02, 0x00, 0x00, 0x00]);   // accepted
             _ = _hci.CommandAsync(HciOpcode.LeConnectionUpdate,
                 [(byte)handle, (byte)(handle >> 8), .. p[4..12], 0x00, 0x00, 0x00, 0x00]);
         }
-        else if (code is not (0x01 or 0x13))   // pas un rejet ni une réponse : une demande qu'on ne gère pas
+        else if (code is not (0x01 or 0x13))   // neither a reject nor a response: a request we don't handle
         {
             SendL2cap(handle, CidSignaling, [0x01, id, 0x02, 0x00, 0x00, 0x00]);
         }
@@ -208,7 +211,7 @@ public sealed class LeCentral
         switch (code)
         {
             case EvtLeMeta when p.Length >= 2 && p[0] == LeAdvertisingReport && _scan is { } scan:
-                for (int i = 2, n = 0; n < p[1] && i + 9 <= p.Length; n++)   // type, type d'adresse, adresse, longueur, données, RSSI
+                for (int i = 2, n = 0; n < p[1] && i + 9 <= p.Length; n++)   // type, address type, address, length, data, RSSI
                 {
                     int length = p[i + 8];
                     if (i + 9 + length > p.Length) break;
@@ -222,11 +225,11 @@ public sealed class LeCentral
                 break;
             case EvtEncryptionChange when p.Length >= 4:
                 if (p[0] != 0) _encrypting?.TrySetException(new HciException(HciOpcode.LeEnableEncryption, p[0]));
-                else if (p[3] == 0) _encrypting?.TrySetException(new InvalidOperationException("Chiffrement désactivé par la télécommande."));
+                else if (p[3] == 0) _encrypting?.TrySetException(new InvalidOperationException("Encryption disabled by the remote."));
                 else _encrypting?.TrySetResult();
                 break;
             case EvtDisconnectionComplete when p.Length >= 4 && p[0] == 0:
-                _encrypting?.TrySetException(new InvalidOperationException($"Déconnectée pendant le chiffrement (raison 0x{p[3]:X2})."));
+                _encrypting?.TrySetException(new InvalidOperationException($"Disconnected during encryption (reason 0x{p[3]:X2})."));
                 Disconnected?.Invoke((ushort)(p[1] | p[2] << 8), p[3]);
                 break;
         }

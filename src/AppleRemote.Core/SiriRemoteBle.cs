@@ -1,16 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Diagnostics;
 
 namespace AppleRemote;
 
 /// <summary>
-/// Pilote de la Siri Remote gen 1 par un contrôleur Bluetooth piloté directement (HCI), sans la pile Bluetooth de Windows :
-/// télécommande appairée (adresse du <see cref="BondStore"/>) ou, à défaut, recherche d'une télécommande en mode appairage ;
-/// connexion, chiffrement avec les clés enregistrées (ou appairage s'il n'y en a pas ou qu'elles sont refusées), service HID
-/// (abonnement aux rapports d'entrée, déverrouillage 0xF0 &lt;- 0xAF), niveau de batterie, puis attente de la mise en veille
-/// et reconnexion. Les rapports sortent au format hid.dll (ID en tête : 0xFC…), comme ceux de <c>SiriRemoteDriver</c> :
-/// même décodeur, même session.
+/// Siri Remote gen 1 driver over a directly driven Bluetooth controller (HCI), without the Windows Bluetooth stack:
+/// paired remote (address from the <see cref="BondStore"/>) or, failing that, a search for a remote in pairing mode;
+/// connection, encryption with the stored keys (or pairing if there are none or they are rejected), HID service
+/// (subscription to input reports, 0xF0 &lt;- 0xAF unlock), battery level, then waiting for sleep
+/// and reconnection. Reports come out in hid.dll format (ID first: 0xFC…), like those of <c>SiriRemoteDriver</c>:
+/// same decoder, same session.
 /// </summary>
-/// <param name="onBattery">Niveau de batterie en % : à chaque connexion, puis à chaque changement. Thread du transport.</param>
+/// <param name="onBattery">Battery level in %: on each connection, then on each change. Transport thread.</param>
 public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
     Action<double, byte[]?> onReport, Action<string> onStatus, Action<int>? onBattery = null)
 {
@@ -21,7 +24,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
     static double HostNow => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
 
     /// <summary>
-    /// Publicité d'une Siri Remote en mode appairage : service HID (0x1812) annoncé et données constructeur Apple (0x004C).
+    /// Advertisement of a Siri Remote in pairing mode: HID service (0x1812) announced and Apple manufacturer data (0x004C).
     /// </summary>
     public static bool IsSiriRemoteAdvertisement(byte[] data)
     {
@@ -30,7 +33,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
         {
             int length = data[i], type = data[i + 1];
             if (i + 1 + length > data.Length) break;
-            if (type is 0x02 or 0x03)   // liste (partielle ou complète) de services 16 bits
+            if (type is 0x02 or 0x03)   // list (partial or complete) of 16-bit services
                 for (int j = i + 2; j + 1 <= i + length; j += 2)
                     hid |= (data[j] | data[j + 1] << 8) == HidService;
             if (type == 0xFF && length >= 3)
@@ -39,7 +42,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
         return hid && apple;
     }
 
-    /// <summary>Boucle de connexion : ne rend la main qu'à l'annulation (la connexion en cours est alors fermée).</summary>
+    /// <summary>Connection loop: only returns on cancellation (the current connection is then closed).</summary>
     public async Task RunAsync(CancellationToken ct)
     {
         var central = new LeCentral(hci);
@@ -79,7 +82,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
 
                 gatt = new GattClient(central, handle);
                 var inputs = new Dictionary<ushort, byte>();   // handle de valeur -> ID du rapport
-                ushort battery = 0;                             // handle de valeur du niveau de batterie (0 : aucun)
+                ushort battery = 0;                             // value handle of the battery level (0: none)
                 gatt.Notification += (valueHandle, value) =>
                 {
                     if (inputs.TryGetValue(valueHandle, out byte id)) onReport(HostNow, [id, .. value]);
@@ -95,7 +98,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                try { await central.DisconnectAsync(handle); } catch { /* déjà partie */ }
+                try { await central.DisconnectAsync(handle); } catch { /* already gone */ }
             }
             catch (Exception e)
             {
@@ -106,14 +109,14 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
             finally
             {
                 gatt?.Detach();
-                onReport(HostNow, []);   // relâche boutons et doigts
+                onReport(HostNow, []);   // releases buttons and fingers
             }
         }
     }
 
     /// <summary>
-    /// Chiffre avec les clés enregistrées ; sans clés, ou si la télécommande les refuse (elle a été appairée ailleurs entre-temps),
-    /// appaire « Just Works » sur la même connexion et enregistre la nouvelle LTK.
+    /// Encrypts with the stored keys; without keys, or if the remote rejects them (it was paired elsewhere meanwhile),
+    /// pairs "Just Works" on the same connection and stores the new LTK.
     /// </summary>
     async Task SecureAsync(LeCentral central, ushort handle, string address)
     {
@@ -124,8 +127,8 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
                 await central.EncryptAsync(handle, bond);
                 return;
             }
-            // Seuls 0x06 (clé absente côté télécommande) et 0x05 (échec d'authentification) disent que nos clés ne valent plus.
-            // Le reste (0x3E : liaison perdue…) remonte : on retentera avec les mêmes clés à la prochaine connexion.
+            // Only 0x06 (key missing on the remote) and 0x05 (authentication failure) mean our keys are no longer valid.
+            // Anything else (0x3E: link lost…) bubbles up: we retry with the same keys on the next connection.
             catch (HciException e) when (e.Status is 0x05 or 0x06)
             {
                 onStatus(Loc.T("Status.KeysRefused", e.Status));
@@ -139,7 +142,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
         bonds.Save(address, keys);
     }
 
-    /// <summary>Trouve les rapports HID par leur descripteur Report Reference, s'abonne aux entrées puis déverrouille.</summary>
+    /// <summary>Finds the HID reports through their Report Reference descriptor, subscribes to the inputs then unlocks.</summary>
     static async Task SetUpHidAsync(GattClient gatt, List<GattService> services, Dictionary<ushort, byte> inputs)
     {
         GattService hid = services.FirstOrDefault(s => GattClient.Is(s.Uuid, HidService))
@@ -173,12 +176,12 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
         }
 
         foreach (ushort cccd in subscriptions) await gatt.WriteAsync(cccd, 0x01, 0x00);   // notifications
-        await gatt.WriteAsync(unlock ?? throw new InvalidOperationException("Rapport de déverrouillage 0xF0 introuvable."), UnlockValue);
+        await gatt.WriteAsync(unlock ?? throw new InvalidOperationException("Unlock report 0xF0 not found."), UnlockValue);
     }
 
     /// <summary>
-    /// Niveau de batterie (service 0x180F, caractéristique 0x2A19, en %) : lu une fois, puis suivi par notification si la
-    /// caractéristique le permet. Facultatif : sans lui, la télécommande reste utilisable. Renvoie le handle de valeur (0 : aucun).
+    /// Battery level (service 0x180F, characteristic 0x2A19, in %): read once, then tracked by notification if the
+    /// characteristic allows it. Optional: without it the remote remains usable. Returns the value handle (0: none).
     /// </summary>
     async Task<ushort> SetUpBatteryAsync(GattClient gatt, List<GattService> services)
     {

@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote;
 
-/// <summary>Opcodes HCI utilisés (OGF &lt;&lt; 10 | OCF).</summary>
+/// <summary>HCI opcodes used (OGF &lt;&lt; 10 | OCF).</summary>
 public static class HciOpcode
 {
     public const ushort Disconnect = 0x0406;
@@ -16,18 +19,18 @@ public static class HciOpcode
     public const ushort LeEnableEncryption = 0x2019;
 }
 
-/// <summary>Une commande HCI refusée par le contrôleur (statut non nul).</summary>
+/// <summary>An HCI command rejected by the controller (non-zero status).</summary>
 public sealed class HciException(ushort opcode, byte status)
-    : Exception($"Commande HCI 0x{opcode:X4} refusée par le contrôleur (statut 0x{status:X2}).")
+    : Exception($"HCI command 0x{opcode:X4} rejected by the controller (status 0x{status:X2}).")
 {
     public ushort Opcode { get; } = opcode;
     public byte Status { get; } = status;
 }
 
 /// <summary>
-/// Hôte HCI minimal, indépendant du transport : envoie les commandes et attend leur réponse, reconstitue les paquets
-/// d'événements et de données (ACL) à partir des morceaux reçus. Le transport (WinUSB, tests) fournit l'envoi et
-/// appelle <see cref="ReceiveEventBytes"/> / <see cref="ReceiveAclBytes"/> depuis ses threads de lecture.
+/// Minimal HCI host, transport-independent: sends commands and awaits their response, reassembles event and
+/// data (ACL) packets from the received chunks. The transport (WinUSB, tests) provides sending and
+/// calls <see cref="ReceiveEventBytes"/> / <see cref="ReceiveAclBytes"/> from its reader threads.
 /// </summary>
 public sealed class HciHost(Action<byte[]> sendCommand, Action<byte[]> sendAcl)
 {
@@ -40,19 +43,19 @@ public sealed class HciHost(Action<byte[]> sendCommand, Action<byte[]> sendAcl)
 
     public TimeSpan CommandTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>Événement HCI autre que Command Complete / Command Status : (code, paramètres). Levé depuis le thread du transport.</summary>
+    /// <summary>HCI event other than Command Complete / Command Status: (code, parameters). Raised from the transport thread.</summary>
     public event Action<byte, byte[]>? Event;
 
-    /// <summary>Paquet ACL reçu : (handle de connexion, drapeau PB, données L2CAP). Levé depuis le thread du transport.</summary>
+    /// <summary>ACL packet received: (connection handle, PB flag, L2CAP data). Raised from the transport thread.</summary>
     public event Action<ushort, int, byte[]>? AclData;
 
     /// <summary>
-    /// Envoie une commande et attend sa réponse. Command Complete : renvoie les paramètres de retour (statut en tête).
-    /// Command Status : renvoie un tableau vide, la suite arrive par <see cref="Event"/>. Statut non nul : <see cref="HciException"/>.
+    /// Sends a command and awaits its response. Command Complete: returns the return parameters (status first).
+    /// Command Status: returns an empty array, the rest arrives through <see cref="Event"/>. Non-zero status: <see cref="HciException"/>.
     /// </summary>
     public async Task<byte[]> CommandAsync(ushort opcode, params byte[] parameters)
     {
-        if (parameters.Length > 255) throw new ArgumentException("Paramètres HCI limités à 255 octets.", nameof(parameters));
+        if (parameters.Length > 255) throw new ArgumentException("HCI parameters limited to 255 bytes.", nameof(parameters));
         await _commandGate.WaitAsync();
         try
         {
@@ -69,9 +72,9 @@ public sealed class HciHost(Action<byte[]> sendCommand, Action<byte[]> sendAcl)
     }
 
     /// <summary>
-    /// Envoie des données L2CAP sur une connexion LE, en un seul paquet ACL (drapeau PB 00 : premier fragment, non vidable).
-    /// ponytail: pas de découpage ni de contrôle de flux (Number Of Completed Packets) ; les PDU ATT de la télécommande
-    /// (MTU 23) tiennent dans un paquet et on n'en envoie qu'un à la fois. À ajouter si l'on dépasse le tampon LE (123 octets ici).
+    /// Sends L2CAP data on an LE connection, as a single ACL packet (PB flag 00: first fragment, non-flushable).
+    /// ponytail: no fragmentation or flow control (Number Of Completed Packets); the remote's ATT PDUs
+    /// (MTU 23) fit in one packet and only one is sent at a time. Add if the LE buffer (123 bytes here) is exceeded.
     /// </summary>
     public void SendAcl(ushort handle, byte[] data) =>
         sendAcl([(byte)handle, (byte)(handle >> 8 & 0x0F), (byte)data.Length, (byte)(data.Length >> 8), .. data]);
@@ -108,14 +111,14 @@ public sealed class HciHost(Action<byte[]> sendCommand, Action<byte[]> sendAcl)
 
     void Complete(ushort opcode, byte[] result, byte status)
     {
-        // Opcode 0 (« prêt ») ou réponse sans demande en cours : rien à faire.
+        // Opcode 0 ("ready") or a response with no pending request: nothing to do.
         if (_pending is not { } pending || pending.Opcode != opcode) return;
         if (status != 0) pending.Done.TrySetException(new HciException(opcode, status));
         else pending.Done.TrySetResult(result);
     }
 }
 
-/// <summary>Reconstitue des paquets « en-tête + longueur » à partir d'un flux découpé arbitrairement (transferts USB).</summary>
+/// <summary>Reassembles "header + length" packets from an arbitrarily chunked stream (USB transfers).</summary>
 sealed class PacketAssembler(int headerSize, Func<List<byte>, int> payloadLength)
 {
     readonly List<byte> _buffer = new();

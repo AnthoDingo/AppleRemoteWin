@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Windows;
 using AppleRemote.App.Views;
 
 namespace AppleRemote.App.Models;
 
-/// <summary>Ce dont les view-models ont besoin de l'interface (boîtes de dialogue, presse-papiers, fenêtres).</summary>
+/// <summary>What the view-models need from the UI (dialogs, clipboard, windows).</summary>
 public interface IDialogs
 {
     Task<bool> Confirm(string title, string message);

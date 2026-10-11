@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 AnthoDingo
+
 """
 Siri Remote gen 1 probe through a dedicated USB Bluetooth dongle and the Bumble stack, bypassing the Windows Bluetooth stack.
 

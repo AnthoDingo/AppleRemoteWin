@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// Orchestre pilote HID, décodeur, gestes et clavier virtuel. Les événements sont levés depuis des threads du pool :
-/// l'interface doit les marshaler (Dispatcher). Toute la chaîne est sérialisée par un verrou.
+/// Orchestrates the HID driver, decoder, gestures and virtual keyboard. Events are raised from pool threads:
+/// the UI must marshal them (Dispatcher). The whole chain is serialised by a lock.
 /// </summary>
 public sealed class RemoteSession : IDisposable
 {
@@ -19,7 +22,7 @@ public sealed class RemoteSession : IDisposable
     public event Action<GestureEvent>? Gesture;
     public event Action<string>? Status;
 
-    /// <summary>Niveau de batterie en % (Bluetooth direct seulement), levé depuis un thread du pool.</summary>
+    /// <summary>Battery level in %, raised from a pool thread.</summary>
     public event Action<int>? Battery;
 
     public RemoteSession(KeyMap? map = null)
@@ -60,19 +63,19 @@ public sealed class RemoteSession : IDisposable
 
     public bool IsRunning => _cts is not null;
 
-    /// <summary>Clés d'appairage du Bluetooth direct.</summary>
+    /// <summary>Pairing keys for direct Bluetooth.</summary>
     public string BondsPath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppleRemote", "bonds.json");
 
-    /// <summary>Vrai si la session en cours pilote l'adaptateur en direct (WinUSB) plutôt que le HID de Windows.</summary>
+    /// <summary>True if the running session drives the adapter directly (WinUSB) rather than Windows' HID.</summary>
     public bool UsesBluetoothDirect { get; private set; }
 
-    /// <summary>Oublie l'appairage du Bluetooth direct : au prochain démarrage, recherche d'une télécommande en mode appairage.</summary>
+    /// <summary>Forgets the direct-Bluetooth bond: on next start, looks for a remote in pairing mode.</summary>
     public void ForgetPairing() => new BondStore(BondsPath).Clear();
 
     /// <summary>
-    /// Démarre la lecture de la vraie télécommande : Bluetooth direct si un adaptateur Bluetooth USB est sous WinUSB
-    /// (la pile Bluetooth de Windows ne garde pas la télécommande, cf. CLAUDE.md), sinon le HID de Windows.
+    /// Starts reading the real remote: direct Bluetooth if a USB Bluetooth adapter is under WinUSB
+    /// (the Windows Bluetooth stack doesn't keep the remote, see CLAUDE.md), otherwise Windows' HID.
     /// </summary>
     public void Start()
     {
@@ -98,7 +101,7 @@ public sealed class RemoteSession : IDisposable
         }
         else
         {
-            var driver = new SiriRemoteDriver(Feed, s => Status?.Invoke(s));
+            var driver = new SiriRemoteDriver(Feed, s => Status?.Invoke(s), l => Battery?.Invoke(l));
             _driverTask = Task.Run(() => driver.RunAsync(ct));
         }
         _tickTask = Task.Run(() => TickLoopAsync(ct));

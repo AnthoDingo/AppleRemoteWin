@@ -1,25 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.IO;
 using System.Text.Json;
 
 namespace AppleRemote.App.Models;
 
-/// <summary>Préférences dans %AppData%\AppleRemote\settings.json.</summary>
+/// <summary>Preferences in %AppData%\AppleRemote\settings.json.</summary>
 public sealed class Settings
 {
     public bool KeyboardEnabled { get; set; }
     public string? KeyMapPath { get; set; }
-    /// <summary>Fermer la fenêtre la réduit dans la zone de notification (sinon l'app s'arrête).</summary>
+    /// <summary>Closing the window minimises it to the notification area (otherwise the app exits).</summary>
     public bool CloseToTray { get; set; } = true;
-    /// <summary>« auto » (langue de Windows), « fr » ou « en » ; appliquée au démarrage.</summary>
-    /// <summary>Entrée de la télécommande -> exe à lancer (remplace la touche).</summary>
+    /// <summary>Remote input -> exe to launch (replaces the key).</summary>
     public Dictionary<string, string> Software { get; set; } = new();
-    /// <summary>Entrée de la télécommande -> combinaison « #Win+D » à envoyer (remplace la touche).</summary>
+    /// <summary>Remote input -> "#Win+D" combo to send (replaces the key).</summary>
     public Dictionary<string, string> Combos { get; set; } = new();
-    /// <summary>Entrée de la télécommande -> nom de la macro à exécuter (fichier dans le dossier macros).</summary>
+    /// <summary>Remote input -> name of the macro to run (file in the macros folder).</summary>
     public Dictionary<string, string> Macros { get; set; } = new();
-    /// <summary>Logiciels ajoutés par « Browse », conservés dans le menu.</summary>
+    /// <summary>Software added through "Browse", kept in the menu.</summary>
     public List<string> Apps { get; set; } = new();
+    /// <summary>"auto" (Windows language), "fr" or "en"; applied at startup.</summary>
     public string Language { get; set; } = "auto";
+    /// <summary>Last release tag a toast was shown for (one notification per version).</summary>
+    public string? LastNotifiedVersion { get; set; }
 
     public static string FilePath => System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppleRemote", "settings.json");
@@ -33,7 +38,7 @@ public sealed class Settings
         }
         catch
         {
-            // fichier illisible : valeurs par défaut
+            // unreadable file: defaults
         }
         return new Settings();
     }
@@ -47,7 +52,7 @@ public sealed class Settings
         }
         catch
         {
-            // préférences non critiques
+            // non-critical preferences
         }
     }
 }

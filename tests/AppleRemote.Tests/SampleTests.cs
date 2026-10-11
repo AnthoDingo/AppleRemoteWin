@@ -1,17 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Text.Json;
 using Xunit;
 
 namespace AppleRemote.Tests;
 
 /// <summary>
-/// Rejoue sample.jsonl (vraie capture d'une A1962) dans la chaîne complète, comme <c>pump()</c> du projet Python,
-/// et compare le résultat à golden.json : la sortie du code Python de référence (decode.py + gestures.py) sur la même capture.
+/// Replays sample.jsonl (a real A1962 capture) through the full chain, like the Python project's <c>pump()</c>,
+/// and compares the result to golden.json: the output of the reference Python code (decode.py + gestures.py) on the same capture.
 /// </summary>
 public class SampleTests
 {
     static string Local(string name) => Path.Combine(AppContext.BaseDirectory, name);
 
-    /// <summary>(étape guidée, événement) dans l'ordre d'arrivée.</summary>
+    /// <summary>(guided step, event) in order of arrival.</summary>
     static List<(int Step, object Ev)> Run(out List<(double T, int Step)> marks)
     {
         var m = new List<(double T, int Step)>();
@@ -49,7 +52,7 @@ public class SampleTests
             .SelectMany(e => ((ButtonsEvent)e.Ev).Pressed)
             .ToList();
 
-        Assert.Equal(new[] { "volup", "menu" }, Pressed(0).Take(2));   // la réponse au déverrouillage porte les boutons tenus
+        Assert.Equal(new[] { "volup", "menu" }, Pressed(0).Take(2));   // the unlock response carries the held buttons
         Assert.Equal(Enumerable.Repeat("click", 3), Pressed(10));
         Assert.Equal(Enumerable.Repeat("menu", 3), Pressed(11));
         Assert.Equal(Enumerable.Repeat("tv", 3), Pressed(12));
@@ -64,7 +67,7 @@ public class SampleTests
     {
         var touches = Run(out _).Where(e => e.Ev is TouchEvent).Select(e => (e.Step, T: (TouchEvent)e.Ev)).ToList();
 
-        // l'horloge 16 bits fait un tour dans la capture, et t ne fait que croître
+        // the 16-bit clock wraps once in the capture, and t only increases
         var clocks = touches.Select(x => x.T.Raw[4] | x.T.Raw[5] << 8).ToList();
         Assert.Contains(clocks.Zip(clocks.Skip(1)), p => p.Second < p.First);
         Assert.All(touches.Zip(touches.Skip(1)), p => Assert.True(p.Second.T.T > p.First.T.T));
@@ -76,7 +79,7 @@ public class SampleTests
             if (t.Down && !was) downs[step] = downs.GetValueOrDefault(step) + 1;
             was = t.Down;
         }
-        // 3 swipes haut, 9 bas, 2 petits touchers + 5 flicks, 5 taps, un frôlement + 3 clics, 4 touchers à deux doigts
+        // 3 swipes up, 9 down, 2 small touches + 5 flicks, 5 taps, a brush + 3 clicks, 4 two-finger touches
         Assert.Equal(new SortedDictionary<int, int> { [6] = 3, [7] = 9, [8] = 7, [9] = 5, [10] = 4, [17] = 4 }, downs);
     }
 
@@ -87,7 +90,7 @@ public class SampleTests
         int step = 0;
         foreach (var (s, ev) in Run(out _))
         {
-            if (ev is TouchGesture { Down: true }) step = s;   // un mouvement compte dans l'étape où son toucher a commencé
+            if (ev is TouchGesture { Down: true }) step = s;   // a movement counts in the step where its touch began
             if (ev is MoveGesture m)
             {
                 if (!moves.TryGetValue(step, out var l)) moves[step] = l = new();
@@ -101,8 +104,8 @@ public class SampleTests
         Assert.InRange(moves[6].Count, 1, 2 * 3);
         Assert.InRange(moves[7].Count, 5, 2 * 9);
         Assert.InRange(moves[8].Count, 5, 5 * (1 + Gestures.CoastMax));
-        Assert.DoesNotContain(9, moves.Keys);    // les taps ne bougent pas le focus
-        Assert.DoesNotContain(10, moves.Keys);   // ni les clics
+        Assert.DoesNotContain(9, moves.Keys);    // taps don't move the focus
+        Assert.DoesNotContain(10, moves.Keys);   // nor do clicks
     }
 
     [Fact]
@@ -117,7 +120,7 @@ public class SampleTests
         foreach (var g in gold.EnumerateArray())
         {
             var (step, ev) = actual[i];
-            string where = $"événement {i} (étape {step}) : {ev}";
+            string where = $"event {i} (step {step}): {ev}";
             Assert.True(g[0].GetInt32() == step, where);
 
             switch (g[1].GetString())
@@ -148,7 +151,7 @@ public class SampleTests
                     Assert.True(Math.Abs(tl.X - g[2].GetDouble()) <= 0.0011 && Math.Abs(tl.Y - g[3].GetDouble()) <= 0.0011, where);
                     break;
                 default:
-                    Assert.Fail($"type de référence inconnu : {g[1]}");
+                    Assert.Fail($"unknown reference type: {g[1]}");
                     break;
             }
             i++;

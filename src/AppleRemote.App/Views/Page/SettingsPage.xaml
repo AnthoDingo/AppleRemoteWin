@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <Page xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" xmlns:l="clr-namespace:AppleRemote.App" xmlns:c="clr-namespace:AppleRemote.App.Controls" x:Class="AppleRemote.App.Views.SettingsPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -33,6 +37,11 @@
         </ResourceDictionary>
     </Page.Resources>
 
+    <Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
     <Grid Margin="18,6,18,18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
@@ -40,12 +49,12 @@
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" Margin="0,0,32,0">
         <TextBlock Text="{l:T Settings.RemoteKeys}" Style="{StaticResource Section}" />
-        <!-- Télécommande à l'échelle 0,5 (190 × 600) ; combobox et lignes sont calées à la main sur ses boutons. -->
+        <!-- Remote at 0.5 scale (190 × 600); comboboxes and lines are hand-aligned on its buttons. -->
         <Grid Width="690" Height="500" HorizontalAlignment="Center" Margin="0,0,0,14">
-            <!-- Rien sous Lecture/Volume : on coupe la télécommande -->
+            <!-- Nothing under Play/Volume: the remote is cut off there -->
             <Grid Width="190" Height="440" Margin="250,50,250,0" VerticalAlignment="Top" ClipToBounds="True">
                 <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
-                    <local:RemoteDrawing />
+                    <local:RemoteDrawing IsEnabled="False" />
                 </Viewbox>
             </Grid>
             <Canvas>
@@ -85,9 +94,6 @@
             <Button Content="{l:T Settings.DefaultMap}" Command="{Binding ResetMapCommand}" />
         </StackPanel>
 
-        <TextBlock Text="{l:T Settings.Pairing}" Style="{StaticResource Section}" />
-        <Button Content="{l:T Settings.PairButton}" Command="{Binding PairCommand}" HorizontalAlignment="Left" />
-
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,2">
             <TextBlock Text="{l:T Settings.Driver}" Style="{StaticResource Section}" Margin="0" VerticalAlignment="Center" />
             <Button Command="{Binding RefreshDriverCommand}" IsEnabled="{Binding DriverIdle}" ToolTip="{l:T Settings.Refresh}"
@@ -123,5 +129,20 @@
             </StackPanel>
         </Grid>
         </StackPanel>
+    </Grid>
+
+    <!-- Footer banner: build, repository, license -->
+    <Border Grid.Row="1" Padding="18,8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" TextElement.Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+            <TextBlock VerticalAlignment="Center"><Run Text="{l:T Settings.Version}" /> <Run Text="{Binding AppVersion, Mode=OneWay}" /></TextBlock>
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <ui:HyperlinkButton Content="github.com/AnthoDingo/AppleRemoteWin" NavigateUri="https://github.com/AnthoDingo/AppleRemoteWin" Padding="0" />
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <TextBlock VerticalAlignment="Center"><Run Text="{l:T Settings.License}" /> AGPL-3.0-or-later</TextBlock>
+            <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
+            <ui:HyperlinkButton Content="{l:T Settings.Components}" Click="Components_Click" Padding="0" />
+        </StackPanel>
+    </Border>
     </Grid>
 </Page>

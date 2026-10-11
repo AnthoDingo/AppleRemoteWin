@@ -1,4 +1,8 @@
-<!-- Styles communs aux pages de la fenêtre principale (fusionnés dans chaque page). -->
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<!-- Styles shared by the main window's pages (merged into each page). -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">

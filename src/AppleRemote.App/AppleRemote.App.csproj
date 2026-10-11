@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -9,8 +13,16 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.App</RootNamespace>
     <AssemblyName>AppleRemote</AssemblyName>
+    <Version>1.0.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- Debug page and its menu entry: off by default, enabled only by a Debug build. -->
+    <EnableDebugPage>false</EnableDebugPage>
+    <EnableDebugPage Condition="'$(Configuration)' == 'Debug'">true</EnableDebugPage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(EnableDebugPage)' == 'true'">
+    <DefineConstants>$(DefineConstants);DEBUG_PAGE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" />
     <ProjectReference Include="..\AppleRemote.Windows\AppleRemote.Windows.csproj" />
-    <!-- Le programme d'installation du filtre (élévation) est copié à côté de l'exe ; l'application n'en référence aucun type. -->
+    <!-- The filter installer (elevation) is copied next to the exe; the application references none of its types. -->
     <ProjectReference Include="..\AppleRemote.DriverInstaller\AppleRemote.DriverInstaller.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -40,8 +52,8 @@
     <Folder Include="Assets\" />
   </ItemGroup>
 
-  <!-- Release : compile et signe (certificat de test) le filtre noyau AppleRemoteDriver, puis le copie à côté de l'exe.
-       Sans toolchain Rust/WDK, l'étape est ignorée avec un avertissement (AppleRemoteDriver=false pour la sauter). -->
+  <!-- Release: builds and signs (test certificate) the AppleRemoteDriver kernel filter, then copies it next to the exe.
+       Without the Rust/WDK toolchain, the step is skipped with a warning (AppleRemoteDriver=false to skip it). -->
   <PropertyGroup>
     <DriverDir>$(MSBuildThisFileDirectory)..\AppleRemoteDriver\</DriverDir>
     <DriverPackage>$(DriverDir)target\release\AppleRemoteDriver_package\</DriverPackage>
@@ -53,7 +65,18 @@
     <ItemGroup Condition="'$(DriverExitCode)' == '0'">
       <DriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
-    <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)" Condition="'$(DriverExitCode)' == '0'" />
+    <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)driver\" Condition="'$(DriverExitCode)' == '0'" />
+  </Target>
+
+  <!-- Publish: the driver package ALWAYS goes in <PublishDir>driver\ (never at the root, where files can be
+       locked by the test VM reading the shared folder). The 4 files go together: the .cat signs this .sys. -->
+  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' And Exists('$(DriverPackage)AppleRemoteDriver.sys')">
+    <ItemGroup>
+      <PublishedDriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
+    </ItemGroup>
+    <!-- A file held open (VMware, VM share) must not fail the publish: warning only, and the package remains
+         to be checked (cmp against the target folder). -->
+    <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 
 </Project>

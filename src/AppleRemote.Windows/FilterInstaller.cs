@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// Détection (lecture seule, sans droits administrateur) du filtre noyau AppleRemoteDriver.
-/// L'installation et la désinstallation, qui demandent l'élévation, sont dans AppleRemote.DriverInstaller.
+/// Detection (read-only, no administrator rights) of the AppleRemoteDriver kernel filter.
+/// Installation and removal, which require elevation, live in AppleRemote.DriverInstaller.
 /// </summary>
 public static class FilterInstaller
 {
@@ -13,7 +16,7 @@ public static class FilterInstaller
 
     static Guid _bluetoothClass = new("{e0cbf06c-cd8b-4647-bb8a-263b43f0f974}");
 
-    /// <summary>Vrai si le filtre est dans les LowerFilters d'un adaptateur Bluetooth présent.</summary>
+    /// <summary>True if the filter is in the LowerFilters of a present Bluetooth adapter.</summary>
     public static bool IsInstalled()
     {
         IntPtr set = SetupDiGetClassDevs(ref _bluetoothClass, null, IntPtr.Zero, DIGCF_PRESENT);
@@ -33,7 +36,7 @@ public static class FilterInstaller
         finally { SetupDiDestroyDeviceInfoList(set); }
     }
 
-    /// <summary>Adaptateur (USB, PCI…) et non périphérique enfant : les énumérateurs « BTH* » (BTHENUM, BTHLE…) sont des enfants.</summary>
+    /// <summary>An adapter (USB, PCI…) and not a child device: the "BTH*" enumerators (BTHENUM, BTHLE…) are children.</summary>
     static bool IsAdapter(IntPtr set, ref SP_DEVINFO_DATA data) =>
         ReadMultiSz(set, ref data, SPDRP_ENUMERATOR_NAME) is [var enumerator, ..]
         && !enumerator.StartsWith("BTH", StringComparison.OrdinalIgnoreCase);
@@ -59,7 +62,7 @@ public static class FilterInstaller
         public IntPtr Reserved;
     }
 
-    // Unicode obligatoire : sans cela, setupapi renvoie les chaînes en ANSI et le décodage UTF-16 donne du bruit.
+    // Unicode is mandatory: otherwise setupapi returns ANSI strings and the UTF-16 decoding yields garbage.
     [DllImport("setupapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     static extern IntPtr SetupDiGetClassDevs(ref Guid classGuid, string? enumerator, IntPtr hwndParent, uint flags);
 

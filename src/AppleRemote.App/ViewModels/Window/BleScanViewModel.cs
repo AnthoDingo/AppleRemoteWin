@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Text;
 using System.Windows.Threading;
 using AppleRemote.App.Models;
@@ -28,7 +31,7 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(PairCommand))]
     bool _isPairing;
 
-    /// <summary>Levé (thread UI) après un appairage réussi ou si l'appareil l'était déjà.</summary>
+    /// <summary>Raised (UI thread) after a successful pairing or if the device was already paired.</summary>
     public event Action? Paired;
 
     public BleScanViewModel(IDialogs dialogs)
@@ -69,7 +72,7 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
     void Refresh()
     {
         var rows = BuildRows();
-        // La liste est reconstruite à chaque tick : on garde la sélection par adresse.
+        // The list is rebuilt on every tick: the selection is kept by address.
         ulong? selected = Selected?.Key;
         Rows = rows;
         Selected = rows.FirstOrDefault(r => r.Key == selected);
@@ -107,14 +110,14 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         }
 
         IsPairing = true;
-        // Scanner et se connecter en même temps gêne certains adaptateurs : on suspend le scan.
+        // Scanning while connecting upsets some adapters: the scan is suspended.
         bool resume = !_paused;
         _scanner.Stop();
         PairText = Loc.T("Ble.Pairing", row.NameText, row.Address);
         try
         {
             var (status, message) = await BleScanner.PairAsync(row.Key, system);
-            // Appairé côté Windows alors que l'appareil diffuse en mode appairage : lien périmé, sans services GATT (donc sans HID).
+            // Paired on the Windows side while the device advertises in pairing mode: stale link, no GATT services (hence no HID).
             if (status == DevicePairingResultStatus.AlreadyPaired && await _dialogs.Confirm(Loc.T("Ble.AlreadyTitle"),
                     Loc.T("Ble.AlreadyAsk", row.NameText, row.Address)))
             {

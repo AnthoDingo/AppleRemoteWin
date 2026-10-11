@@ -17,6 +17,7 @@
   <data name="Remote.State" xml:space="preserve"><value>STATE</value></data>
   <data name="Remote.Gesture" xml:space="preserve"><value>GESTURE</value></data>
   <data name="Remote.Nearby" xml:space="preserve"><value>NEARBY APPLE HID DEVICES</value></data>
+  <data name="Remote.Connected" xml:space="preserve"><value>connected</value></data>
   <data name="Remote.NearbyNone" xml:space="preserve"><value>No device.</value></data>
   <data name="Remote.Battery" xml:space="preserve"><value>Battery: {0}%</value></data>
   <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Battery: —</value></data>
@@ -31,6 +32,11 @@
   <data name="Settings.DefaultMap" xml:space="preserve"><value>Default mapping</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>PAIRING</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Pair (Bluetooth)…</value></data>
+  <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Settings.License" xml:space="preserve"><value>License</value></data>
+  <data name="Settings.Components" xml:space="preserve"><value>Components and licenses</value></data>
+  <data name="Update.Title" xml:space="preserve"><value>Update available</value></data>
+  <data name="Update.Body" xml:space="preserve"><value>Siri Remote {0} is available. Click to open the release page.</value></data>
   <data name="Settings.Driver" xml:space="preserve"><value>BLUETOOTH ADAPTER DRIVER</value></data>
   <data name="Settings.InstallWinUsb" xml:space="preserve"><value>Install WinUSB…</value></data>
   <data name="Settings.RestoreDriver" xml:space="preserve"><value>Restore the original driver…</value></data>
@@ -201,13 +207,6 @@ An administrator confirmation (UAC) will appear.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Keys refused by the remote (0x{0:X2}): pairing again…</value></data>
   <data name="Status.PairingFirst" xml:space="preserve"><value>Pairing… (first time: remote in pairing mode, Menu + Volume + ~5 s)</value></data>
   <data name="Status.BatteryUnreadable" xml:space="preserve"><value>Battery unreadable: {0}</value></data>
-  <data name="Status.GattNoRemote" xml:space="preserve"><value>Bluetooth filter active: no paired remote found (BLE scanner → Pair).</value></data>
-  <data name="Status.GattConnecting" xml:space="preserve"><value>Bluetooth filter: connecting to remote {0}…</value></data>
-  <data name="Status.GattRetry" xml:space="preserve"><value>Bluetooth filter: {0} — retrying.</value></data>
-  <data name="Status.GattReady" xml:space="preserve"><value>Remote connected (Bluetooth filter).</value></data>
-  <data name="Status.GattWake" xml:space="preserve"><value>Remote asleep or out of range: press a button to wake it…</value></data>
-  <data name="Status.GattUnlocked" xml:space="preserve"><value>Bluetooth filter: unlock sent ({0}) — press a button.</value></data>
-  <data name="Status.GattLost" xml:space="preserve"><value>Bluetooth filter: link lost after {0:0.0} s, {1} report(s) received.</value></data>
-  <data name="Status.GattReports" xml:space="preserve"><value>Bluetooth filter: {0} report(s) received, last = {1}</value></data>
   <data name="Driver.InstallerMissing" xml:space="preserve"><value>{0} not found: put it next to the application (or build AppleRemote.DriverInstaller).</value></data>
+  <data name="Status.Relocked" xml:space="preserve"><value>Remote woke up: unlocked again.</value></data>
 </root>

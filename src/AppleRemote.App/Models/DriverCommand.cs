@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -6,8 +9,8 @@ using AppleRemote.Windows;
 namespace AppleRemote.App.Models;
 
 /// <summary>
-/// Installer/retirer WinUSB demande les droits administrateur alors que l'application tourne « asInvoker » :
-/// elle se relance élevée avec <c>--driver install|restore</c> (voir <see cref="App.OnStartup"/>), le résultat revient par code de sortie.
+/// Installing/removing WinUSB needs administrator rights while the application runs "asInvoker":
+/// it relaunches itself elevated with <c>--driver install|restore</c> (see <see cref="App.OnStartup"/>); the result comes back as the exit code.
 /// </summary>
 public static class DriverCommand
 {
@@ -15,7 +18,7 @@ public static class DriverCommand
 
     static string LogPath => Path.Combine(Path.GetTempPath(), "AppleRemoteDriver.log");
 
-    /// <summary>Côté processus élevé : exécute l'opération et retourne le code de sortie.</summary>
+    /// <summary>Elevated-process side: runs the operation and returns the exit code.</summary>
     public static int Run(string verb)
     {
         try
@@ -38,8 +41,8 @@ public static class DriverCommand
     const string InstallerName = "AppleRemote.DriverInstaller.exe";
 
     /// <summary>
-    /// Le programme d'installation du filtre : à côté de l'exe, sinon sa dernière compilation (Release puis Debug).
-    /// Il porte la logique d'installation et demande lui-même l'élévation (manifeste requireAdministrator).
+    /// The filter installer: next to the exe, otherwise its latest build (Release, then Debug).
+    /// It holds the install logic and requests elevation itself (requireAdministrator manifest).
     /// </summary>
     static string FindInstaller()
     {
@@ -54,12 +57,12 @@ public static class DriverCommand
         throw new FileNotFoundException(Loc.T("Driver.InstallerMissing", InstallerName));
     }
 
-    /// <summary>Côté application : relance élevée et attente. Retourne (code de sortie, message d'erreur éventuel).</summary>
+    /// <summary>Application side: relaunches elevated and waits. Returns (exit code, optional error message).</summary>
     public static async Task<(int Code, string? Error)> RunElevatedAsync(string verb)
     {
         try
         {
-            // Filtre Bluetooth : DriverInstaller (install|uninstall) ; WinUSB : l'application se relance elle-même élevée.
+            // Bluetooth filter: DriverInstaller (install|uninstall); WinUSB: the application relaunches itself elevated.
             var info = verb.StartsWith("filter-")
                 ? new ProcessStartInfo(FindInstaller(), $"{verb["filter-".Length..]} --quiet") { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden }
                 : new ProcessStartInfo(Environment.ProcessPath!, $"--driver {verb}") { UseShellExecute = true, Verb = "runas" };
@@ -72,7 +75,7 @@ public static class DriverCommand
         {
             return (Failed, e.Message);
         }
-        catch (Win32Exception) // UAC refusée
+        catch (Win32Exception) // UAC declined
         {
             return (Failed, Loc.T("Driver.ElevationDenied"));
         }

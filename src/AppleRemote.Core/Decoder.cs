@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+// Port of open-appleremote (MIT, Copyright (c) 2026 open-appleremote contributors): see LICENSE-MIT-open-appleremote.
+
 namespace AppleRemote;
 
 /// <summary>
-/// Décode les reports 0xFC de la Siri Remote gen 1 (A1513/A1962). Port de appleremote/decode.py.
+/// Decodes the 0xFC reports of the Siri Remote gen 1 (A1513/A1962). Port of appleremote/decode.py.
 /// <code>
-/// fc 00 BB                                boutons seuls
-/// fc NN BB 32 CC CC SS + NN x 7 octets    NN doigts ; CC CC = horloge de la télécommande (2000 ticks/s)
-/// fc 10 BB ...                            audio pendant Siri
-/// fc e0 BB 60 02                          réponse au déverrouillage
+/// fc 00 BB                                buttons only
+/// fc NN BB 32 CC CC SS + NN x 7 bytes    NN fingers; CC CC = remote clock (2000 ticks/s)
+/// fc 10 BB ...                            audio during Siri
+/// fc e0 BB 60 02                          unlock response
 /// </code>
-/// Sous Windows, ReadFile renvoie toujours InputReportByteLength octets (rembourrés de zéros) :
-/// le décodeur n'utilise que les octets annoncés par l'octet 1.
+/// On Windows, ReadFile always returns InputReportByteLength bytes (zero-padded):
+/// the decoder only uses the bytes announced by byte 1.
 /// </summary>
 public sealed class Decoder
 {
@@ -44,7 +48,7 @@ public sealed class Decoder
     }
 
     /// <summary>
-    /// Décode un report. <c>null</c> = pas de report (rien). Tableau vide = lien coupé : tout ce qui était tenu est relâché.
+    /// Decodes a report. <c>null</c> = no report (nothing). Empty array = link lost: everything held is released.
     /// </summary>
     public List<RemoteEvent> Decode(byte[]? r)
     {
@@ -72,7 +76,7 @@ public sealed class Decoder
         {
             int clock = r[4] | r[5] << 8;
             if (_clock is int prev)
-                _t += ((clock - prev) & 0xFFFF) / (double)TicksPerSecond; // 16 bits : 32,768 s par tour
+                _t += ((clock - prev) & 0xFFFF) / (double)TicksPerSecond; // 16 bits: 32.768 s per wrap
             _clock = clock;
 
             int n = Math.Min((int)r[1], (r.Length - 7) / 7);

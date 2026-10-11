@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Markup;
 
 namespace AppleRemote.App;
 
-/// <summary>Source de liaison des textes : <see cref="Refresh"/> les réévalue tous (changement de langue en direct).</summary>
+/// <summary>Binding source for texts: <see cref="Refresh"/> re-evaluates all of them (live language change).</summary>
 public sealed class LocSource : INotifyPropertyChanged
 {
     public static LocSource Instance { get; } = new();
@@ -13,7 +16,7 @@ public sealed class LocSource : INotifyPropertyChanged
     public void Refresh() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
 }
 
-/// <summary>Texte traduit en XAML : <c>Text="{l:T Clé}"</c>. Lié à <see cref="LocSource"/> : suit la langue en direct.</summary>
+/// <summary>Translated text in XAML: <c>Text="{l:T Key}"</c>. Bound to <see cref="LocSource"/>: follows the language live.</summary>
 [MarkupExtensionReturnType(typeof(object))]
 public sealed class TExtension(string key) : MarkupExtension
 {

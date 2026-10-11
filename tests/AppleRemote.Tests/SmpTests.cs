@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using Xunit;
 
 namespace AppleRemote.Tests;
 
 public class SmpTests
 {
-    /// <summary>Valeur de la norme (écrite poids fort en tête) -> octets petit-boutistes, comme sur le fil.</summary>
+    /// <summary>Spec value (written most significant first) -> little-endian bytes, as on the wire.</summary>
     static byte[] Le(string hex) => Convert.FromHexString(hex).Reverse().ToArray();
 
     [Fact]

@@ -1,17 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 AnthoDingo
+
 using System.Globalization;
 using System.Resources;
 
 namespace AppleRemote;
 
 /// <summary>
-/// Textes traduits (Strings.resx = français, Strings.en.resx = anglais). La langue suit <see cref="CultureInfo.CurrentUICulture"/> :
-/// l'application la fixe au démarrage (<see cref="SetLanguage"/>). Une clé inconnue est rendue telle quelle.
+/// Translated texts (Strings.resx = French, Strings.en.resx = English). The language follows <see cref="CultureInfo.CurrentUICulture"/> :
+/// the application sets it at startup (<see cref="SetLanguage"/>). An unknown key is returned as is.
 /// </summary>
 public static class Loc
 {
     static readonly ResourceManager Resources = new("AppleRemote.Strings", typeof(Loc).Assembly);
 
-    /// <summary>« fr », « en » ou null/« auto » : langue de Windows (anglais si ce n'est pas le français).</summary>
+    /// <summary>"fr", "en" or null/"auto": Windows language (English if it isn't French).</summary>
     public static void SetLanguage(string? language)
     {
         var culture = language is "fr" or "en"
@@ -24,7 +27,7 @@ public static class Loc
 
     public static string T(string key, params object?[] args) => string.Format(T(key), args);
 
-    /// <summary>Le message commence-t-il comme le texte <paramref name="key"/> (jusqu'au premier paramètre) ? Sert à classer les états.</summary>
+    /// <summary>Does the message start like the text of <paramref name="key"/> (up to the first parameter)? Used to classify states.</summary>
     public static bool StartsWith(string message, string key)
     {
         string format = T(key);
