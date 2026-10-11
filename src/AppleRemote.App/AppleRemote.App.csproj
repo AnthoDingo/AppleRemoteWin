@@ -13,7 +13,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.App</RootNamespace>
     <AssemblyName>AppleRemote</AssemblyName>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Debug page and its menu entry: off by default, enabled only by a Debug build. -->

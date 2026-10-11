@@ -21,7 +21,7 @@ public sealed class Dialogs(Window owner) : IDialogs
         await new Wpf.Ui.Controls.MessageBox
         {
             Owner = owner, Title = title, Content = message,
-            PrimaryButtonText = "Oui", CloseButtonText = "Non",
+            PrimaryButtonText = Loc.T("Dialog.Yes"), CloseButtonText = Loc.T("Dialog.No"),
         }.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
 
     public async Task Warn(string title, string message) =>

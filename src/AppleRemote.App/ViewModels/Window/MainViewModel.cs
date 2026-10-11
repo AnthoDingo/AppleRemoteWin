@@ -4,10 +4,14 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 using AppleRemote.App.Models;
+using AppleRemote.App.Views;
 using AppleRemote.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -34,7 +38,7 @@ public sealed partial class KeyChoice(string input, string key, Action<string, s
     partial void OnKeyChanged(string value) => changed(Input, value);
 }
 
-public sealed partial class MainViewModel : ObservableObject, IDisposable
+public sealed partial class MainViewModel : ObservableObject, IDisposable, IMacroLibrary
 {
     // Observed touch range (≈ 1650–1800 units per axis, not centred on 0) -> 360 px square.
     const double PadSize = 360, XMin = -1900, YMin = -1150, Span = 1800, DotSize = 30;
@@ -44,11 +48,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     readonly RemoteSession _session;
     readonly IDialogs _dialogs;
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
-    const long TrailLifeMs = 400;
+    const long TrailLifeMs = 1000;
     readonly List<(Point Point, long Time)> _trail = new();
     readonly BleScanner _scanner = new();
     readonly DispatcherTimer _scanTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     readonly DispatcherTimer _trailTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
+    readonly DispatcherTimer _gestureTimer = new() { Interval = TimeSpan.FromMilliseconds(TrailLifeMs) };
 
     /// <summary>BLE devices seen advertising with Apple manufacturer data + HID service ("Apple HID").</summary>
     [ObservableProperty] IReadOnlyList<string> _nearbyDevices = [];
@@ -60,6 +65,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public Dictionary<string, KeyChoice> Bindings { get; } = new();
     /// <summary>Chemins des logiciels proposés dans le menu Software : détectés + ajoutés par Browse.</summary>
     public ObservableCollection<string> SoftwareChoices { get; } = new();
+    IEnumerable<string> IMacroLibrary.SoftwareChoices => SoftwareChoices;
     /// <summary>Noms des macros enregistrées (un fichier chacune).</summary>
     public ObservableCollection<string> MacroChoices { get; } = new(Macro.Names());
     CancellationTokenSource? _macroCts;
@@ -172,6 +178,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SyncBindings();
 
         _trailTimer.Tick += (_, _) => FadeTrail();
+        _gestureTimer.Tick += (_, _) => ResetGesture();
         _scanTimer.Tick += async (_, _) =>
         {
             var hid = await Task.Run(() =>
@@ -272,6 +279,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             map.Set(input, Keys.Names.TryGetValue(name, out var k) ? k : null);
         }
         _session.KeyMap = map; // releases held keys
+        SaveMap(map);
+    }
+
+    void SaveMap(KeyMap map)
+    {
         try
         {
             string file = Path.Combine(Path.GetDirectoryName(Settings.FilePath)!, "keymap.json");
@@ -394,8 +406,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     static double PadY(int y) => (1 - Math.Clamp((y - YMin) / Span, 0, 1)) * PadSize;
 
+    /// <summary>Gesture card back to idle: arrow, text and tilt shift.</summary>
+    void ResetGesture()
+    {
+        _gestureTimer.Stop();
+        MoveArrow = "·";
+        GestureText = "—";
+        TileShiftX = TileShiftY = 0;
+    }
+
     void OnGesture(GestureEvent g)
     {
+        _gestureTimer.Stop();
+        _gestureTimer.Start();   // the card fades with the trail: idle TrailLifeMs after the last gesture
         switch (g)
         {
             case TiltGesture tilt:
@@ -424,6 +447,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     void OnStatus(string message)
     {
+        // Battery is optional: its failure is logged but must not hide the connection status.
+        if (Loc.StartsWith(message, "Status.BatteryUnreadable")) { AddLog(message); return; }
         StatusText = message;
         bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect" }.Any(k => Loc.StartsWith(message, k));
         bool warn = new[] { "Status.WaitHid", "Status.WaitBonded", "Status.WaitPairing", "Status.Unreachable", "Status.Disconnected", "Status.DisconnectedReason" }
@@ -450,6 +475,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             foreach (var f in Fingers) f.IsVisible = false;
             ShowButtons(0);
+            ResetGesture();
         }
     }
 
@@ -602,6 +628,123 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settings.KeyMapPath = null;
         _settings.Save();
         AddLog(Loc.T("Log.DefaultMap"));
+    }
+
+    /// <summary>Whole mapping (keys, software, combos, macros) in one JSON file.</summary>
+    [RelayCommand]
+    void ExportMap()
+    {
+        var dlg = new SaveFileDialog { Filter = "JSON|*.json", FileName = "mapping.json" };
+        if (dlg.ShowDialog() != true) return;
+        var o = new JsonObject
+        {
+            ["keys"] = JsonNode.Parse(_session.KeyMap.ToJson()),
+            ["software"] = JsonSerializer.SerializeToNode(_settings.Software),
+            ["combos"] = JsonSerializer.SerializeToNode(_settings.Combos),
+            ["macros"] = JsonSerializer.SerializeToNode(_settings.Macros),
+        };
+        try
+        {
+            File.WriteAllText(dlg.FileName, o.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            AddLog(Loc.T("Log.MapExported", dlg.FileName));
+        }
+        catch (Exception e) { AddLog(Loc.T("Log.MapNotSaved", e.Message)); }
+    }
+
+    [RelayCommand]
+    void ImportMap()
+    {
+        var dlg = new OpenFileDialog { Filter = "JSON|*.json" };
+        if (dlg.ShowDialog() != true) return;
+        KeyMap map;
+        Dictionary<string, string> software, combos, macros;
+        try
+        {
+            var o = JsonNode.Parse(File.ReadAllText(dlg.FileName))!.AsObject();
+            map = KeyMap.FromJson(o["keys"]?.ToJsonString() ?? "{}");
+            software = o["software"]?.Deserialize<Dictionary<string, string>>() ?? new();
+            combos = o["combos"]?.Deserialize<Dictionary<string, string>>() ?? new();
+            macros = o["macros"]?.Deserialize<Dictionary<string, string>>() ?? new();
+        }
+        catch (Exception e)
+        {
+            AddLog(Loc.T("Log.MapIgnored", e.Message));
+            return;
+        }
+        ApplyMap(map, software, combos, macros);
+        AddLog(Loc.T("Log.MapImported", dlg.FileName));
+    }
+
+    void ApplyMap(KeyMap map, Dictionary<string, string> software, Dictionary<string, string> combos, Dictionary<string, string> macros)
+    {
+        _session.KeyMap = map;
+        _settings.Software = software;
+        _settings.Combos = combos;
+        _settings.Macros = macros;
+        foreach (var app in software.Values.Where(a => !SoftwareChoices.Contains(a, StringComparer.OrdinalIgnoreCase)))
+        {
+            SoftwareChoices.Add(app);
+            _settings.Apps.Add(app);
+        }
+        foreach (var m in macros.Values.Where(m => !MacroChoices.Contains(m))) MacroChoices.Add(m);
+        SyncBindings();
+        SaveMap(map);
+    }
+
+    /// <summary>Settings, mapping and macros in one zip. Pairing keys (bonds.json) stay out: they belong to this PC's adapter.</summary>
+    [RelayCommand]
+    void ExportAll()
+    {
+        var dlg = new SaveFileDialog { Filter = "Zip|*.zip", FileName = "AppleRemote.zip" };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            _settings.Save();
+            using var zip = new ZipArchive(File.Create(dlg.FileName), ZipArchiveMode.Create);
+            zip.CreateEntryFromFile(Settings.FilePath, "settings.json");
+            using (var w = new StreamWriter(zip.CreateEntry("keymap.json").Open())) w.Write(_session.KeyMap.ToJson());
+            if (Directory.Exists(Macro.Dir))
+                foreach (var f in Directory.GetFiles(Macro.Dir, "*.json")) zip.CreateEntryFromFile(f, "macros/" + Path.GetFileName(f));
+            AddLog(Loc.T("Log.MapExported", dlg.FileName));
+        }
+        catch (Exception e) { AddLog(Loc.T("Log.MapNotSaved", e.Message)); }
+    }
+
+    [RelayCommand]
+    void ImportAll()
+    {
+        var dlg = new OpenFileDialog { Filter = "Zip|*.zip" };
+        if (dlg.ShowDialog() != true) return;
+        Settings s;
+        KeyMap map;
+        try
+        {
+            using var zip = ZipFile.OpenRead(dlg.FileName);
+            string Read(string name)
+            {
+                using var r = new StreamReader((zip.GetEntry(name) ?? throw new InvalidDataException(name + " missing")).Open());
+                return r.ReadToEnd();
+            }
+            s = JsonSerializer.Deserialize<Settings>(Read("settings.json")) ?? throw new InvalidDataException("settings.json");
+            map = KeyMap.FromJson(Read("keymap.json"));
+            Directory.CreateDirectory(Macro.Dir);
+            // File name only: an entry can never land outside the macros folder.
+            foreach (var e in zip.Entries.Where(e => e.FullName.StartsWith("macros/") && e.Name.EndsWith(".json")))
+                e.ExtractToFile(Path.Combine(Macro.Dir, e.Name), overwrite: true);
+        }
+        catch (Exception e)
+        {
+            AddLog(Loc.T("Log.MapIgnored", e.Message));
+            return;
+        }
+        foreach (var app in s.Apps.Where(File.Exists))
+            if (!SoftwareChoices.Contains(app, StringComparer.OrdinalIgnoreCase)) { SoftwareChoices.Add(app); _settings.Apps.Add(app); }
+        foreach (var m in Macro.Names().Where(m => !MacroChoices.Contains(m))) MacroChoices.Add(m);
+        ApplyMap(map, s.Software, s.Combos, s.Macros);
+        KeyboardEnabled = s.KeyboardEnabled;
+        CloseToTray = s.CloseToTray;
+        Language = s.Language;
+        AddLog(Loc.T("Log.MapImported", dlg.FileName));
     }
 
     [RelayCommand]

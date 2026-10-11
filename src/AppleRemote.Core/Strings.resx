@@ -9,6 +9,7 @@
   <data name="Tray.Quit" xml:space="preserve"><value>Quitter</value></data>
   <data name="Nav.Remote" xml:space="preserve"><value>Télécommande</value></data>
   <data name="Nav.Guide" xml:space="preserve"><value>Tuto</value></data>
+  <data name="Nav.Macros" xml:space="preserve"><value>Macros</value></data>
   <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Nav.Debug" xml:space="preserve"><value>Debug</value></data>
   <data name="Remote.Level.Ok" xml:space="preserve"><value>Connectée</value></data>
@@ -30,6 +31,10 @@
   <data name="Settings.Keyboard" xml:space="preserve"><value>CLAVIER</value></data>
   <data name="Settings.KeyboardCheck" xml:space="preserve"><value>Clavier virtuel</value></data>
   <data name="Settings.DefaultMap" xml:space="preserve"><value>Mapping par défaut</value></data>
+  <data name="Settings.ExportMap" xml:space="preserve"><value>Exporter</value></data>
+  <data name="Settings.ImportMap" xml:space="preserve"><value>Importer</value></data>
+  <data name="Settings.ExportAll" xml:space="preserve"><value>Tout exporter</value></data>
+  <data name="Settings.ImportAll" xml:space="preserve"><value>Tout importer</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>APPAIRAGE</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Appairer (Bluetooth)…</value></data>
   <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
@@ -69,6 +74,10 @@
   <data name="Log.MacroMissing" xml:space="preserve"><value>Macro introuvable ou illisible : {0}</value></data>
   <data name="Pick.DuplicateMacro" xml:space="preserve"><value>Dupliquer la macro</value></data>
   <data name="Macro.Copy" xml:space="preserve"><value>{0} (copie)</value></data>
+  <data name="Macros.New" xml:space="preserve"><value>Nouvelle macro</value></data>
+  <data name="Macros.Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="Macros.Test" xml:space="preserve"><value>Tester la macro</value></data>
+  <data name="Macros.StopTest" xml:space="preserve"><value>Arrêter le test</value></data>
   <data name="Input.Drop" xml:space="preserve"><value>Déposez un fichier ici</value></data>
   <data name="Step.askText" xml:space="preserve"><value>Saisie de texte</value></data>
   <data name="Step.askFile" xml:space="preserve"><value>Choix de fichier</value></data>
@@ -78,6 +87,8 @@
   <data name="Prompt.askDrop" xml:space="preserve"><value>Glissez ici le fichier dont le chemin sera tapé.</value></data>
   <data name="Macro.WebViewError" xml:space="preserve"><value>L'éditeur de blocs ne peut pas démarrer (WebView2) : {0}</value></data>
   <data name="Log.MacroStopped" xml:space="preserve"><value>Macro arrêtée : {0}</value></data>
+  <data name="Dialog.Yes" xml:space="preserve"><value>Oui</value></data>
+  <data name="Dialog.No" xml:space="preserve"><value>Non</value></data>
   <data name="NoKey" xml:space="preserve"><value>(aucune)</value></data>
   <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTIC</value></data>
   <data name="Debug.HidDevices" xml:space="preserve"><value>Périphériques HID Apple</value></data>
@@ -167,6 +178,8 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.EnumFailed" xml:space="preserve"><value>Énumération impossible : {0}</value></data>
   <data name="Log.BlePaired" xml:space="preserve"><value>Appairage réussi : connexion automatique dès que Windows expose la télécommande.</value></data>
   <data name="Log.DefaultMap" xml:space="preserve"><value>Mapping par défaut.</value></data>
+  <data name="Log.MapExported" xml:space="preserve"><value>Mapping exporté : {0}</value></data>
+  <data name="Log.MapImported" xml:space="preserve"><value>Mapping importé : {0}</value></data>
   <data name="Driver.Checking" xml:space="preserve"><value>Pilote de l'adaptateur : vérification…</value></data>
   <data name="Filter.Installed" xml:space="preserve"><value>Filtre Bluetooth (AppleRemoteDriver) : installé.</value></data>
   <data name="Filter.NotInstalled" xml:space="preserve"><value>Filtre Bluetooth (AppleRemoteDriver) : non installé.</value></data>

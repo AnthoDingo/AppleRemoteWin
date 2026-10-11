@@ -97,5 +97,5 @@ public sealed class Macro
     }
 
     /// <summary>Exécute les blocs (thread de l'interface : les fenêtres de saisie s'y ouvrent). Annulable ; s'arrête aussi si une fenêtre de saisie est fermée.</summary>
-    public Task RunAsync(KeyboardInjector injector, CancellationToken ct) => new MacroInterpreter(injector, ct).RunAsync(Workspace);
+    public Task RunAsync(KeyboardInjector injector, CancellationToken ct) => new MacroEngine(new MacroHost(injector), ct).RunAsync(Workspace);
 }

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using AppleRemote.App.Models;
 
 namespace AppleRemote.App.Controls;
@@ -9,7 +10,7 @@ namespace AppleRemote.App.Controls;
 public sealed class KeyPicker : Button
 {
     public static readonly DependencyProperty KeyProperty = DependencyProperty.Register(nameof(Key), typeof(string), typeof(KeyPicker),
-        new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (d, e) => ((KeyPicker)d).Content = Display((string)e.NewValue)));
+        new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (d, e) => ((KeyPicker)d)._label.Text = Display((string)e.NewValue)));
     public static readonly DependencyProperty ChoicesProperty = DependencyProperty.Register(nameof(Choices), typeof(IEnumerable<string>), typeof(KeyPicker));
 
     public static readonly DependencyProperty MacrosProperty = DependencyProperty.Register(nameof(Macros), typeof(IEnumerable<string>), typeof(KeyPicker));
@@ -26,9 +27,24 @@ public sealed class KeyPicker : Button
     public string Key { get => (string)GetValue(KeyProperty); set => SetValue(KeyProperty, value); }
     public IEnumerable<string> Choices { get => (IEnumerable<string>)GetValue(ChoicesProperty); set => SetValue(ChoicesProperty, value); }
 
+    readonly TextBlock _label = new() { Text = Display(""), TextTrimming = TextTrimming.CharacterEllipsis };
+
     public KeyPicker()
     {
-        HorizontalContentAlignment = HorizontalAlignment.Left;
+        SetResourceReference(StyleProperty, typeof(Button)); // implicit styles don't reach subclasses: reuse WPF-UI's button look
+        HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        Padding = new Thickness(11, 5, 11, 5);
+        var chevron = new TextBlock
+        {
+            Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0),
+        };
+        chevron.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        var grid = new Grid { ColumnDefinitions = { new ColumnDefinition(), new ColumnDefinition { Width = GridLength.Auto } } };
+        Grid.SetColumn(chevron, 1);
+        grid.Children.Add(_label);
+        grid.Children.Add(chevron);
+        Content = grid;
         Click += (_, _) => Open();
     }
 

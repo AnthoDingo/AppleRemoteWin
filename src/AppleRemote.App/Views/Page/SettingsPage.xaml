@@ -84,14 +84,27 @@
                   SelectedValue="{Binding Language}" MinWidth="220" HorizontalAlignment="Left" Margin="0,0,0,14" />
 
         <TextBlock Text="{l:T Settings.General}" Style="{StaticResource Section}" />
-        <ui:ToggleSwitch IsChecked="{Binding RunAtStartup}" Content="{l:T Settings.RunAtStartup}" Margin="0,0,0,8" />
-        <ui:ToggleSwitch IsChecked="{Binding CloseToTray}" Content="{l:T Settings.CloseToTray}" Margin="0,0,0,18" />
+        <Grid Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <ui:ToggleSwitch IsChecked="{Binding RunAtStartup}" Content="{l:T Settings.RunAtStartup}" Margin="0,0,0,8" />
+                <ui:ToggleSwitch IsChecked="{Binding CloseToTray}" Content="{l:T Settings.CloseToTray}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                <ui:Button Icon="{ui:SymbolIcon FolderZip24}" Content="{l:T Settings.ExportAll}" Command="{Binding ExportAllCommand}" />
+                <ui:Button Icon="{ui:SymbolIcon ArrowDownload24}" Content="{l:T Settings.ImportAll}" Command="{Binding ImportAllCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+        </Grid>
 
         <TextBlock Text="{l:T Settings.Keyboard}" Style="{StaticResource Section}" />
         <ui:ToggleSwitch IsChecked="{Binding KeyboardEnabled}"
                   Content="{l:T Settings.KeyboardCheck}" Margin="0,0,0,8" />
         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-            <Button Content="{l:T Settings.DefaultMap}" Command="{Binding ResetMapCommand}" />
+            <ui:Button Icon="{ui:SymbolIcon ArrowReset24}" Content="{l:T Settings.DefaultMap}" Command="{Binding ResetMapCommand}" />
+            <ui:Button Icon="{ui:SymbolIcon ArrowExportUp24}" Content="{l:T Settings.ExportMap}" Command="{Binding ExportMapCommand}" Margin="8,0,0,0" />
+            <ui:Button Icon="{ui:SymbolIcon ArrowImport24}" Content="{l:T Settings.ImportMap}" Command="{Binding ImportMapCommand}" Margin="8,0,0,0" />
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,2">

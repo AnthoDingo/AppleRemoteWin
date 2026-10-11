@@ -9,6 +9,7 @@
   <data name="Tray.Quit" xml:space="preserve"><value>Quit</value></data>
   <data name="Nav.Remote" xml:space="preserve"><value>Remote</value></data>
   <data name="Nav.Guide" xml:space="preserve"><value>Guide</value></data>
+  <data name="Nav.Macros" xml:space="preserve"><value>Macros</value></data>
   <data name="Nav.Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Nav.Debug" xml:space="preserve"><value>Debug</value></data>
   <data name="Remote.Level.Ok" xml:space="preserve"><value>Connected</value></data>
@@ -30,6 +31,10 @@
   <data name="Settings.Keyboard" xml:space="preserve"><value>KEYBOARD</value></data>
   <data name="Settings.KeyboardCheck" xml:space="preserve"><value>Virtual keyboard</value></data>
   <data name="Settings.DefaultMap" xml:space="preserve"><value>Default mapping</value></data>
+  <data name="Settings.ExportMap" xml:space="preserve"><value>Export</value></data>
+  <data name="Settings.ImportMap" xml:space="preserve"><value>Import</value></data>
+  <data name="Settings.ExportAll" xml:space="preserve"><value>Export all</value></data>
+  <data name="Settings.ImportAll" xml:space="preserve"><value>Import all</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>PAIRING</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Pair (Bluetooth)…</value></data>
   <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
@@ -69,6 +74,10 @@
   <data name="Log.MacroMissing" xml:space="preserve"><value>Macro not found or unreadable: {0}</value></data>
   <data name="Pick.DuplicateMacro" xml:space="preserve"><value>Duplicate macro</value></data>
   <data name="Macro.Copy" xml:space="preserve"><value>{0} (copy)</value></data>
+  <data name="Macros.New" xml:space="preserve"><value>New macro</value></data>
+  <data name="Macros.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Macros.Test" xml:space="preserve"><value>Test macro</value></data>
+  <data name="Macros.StopTest" xml:space="preserve"><value>Stop test</value></data>
   <data name="Input.Drop" xml:space="preserve"><value>Drop a file here</value></data>
   <data name="Step.askText" xml:space="preserve"><value>Text input</value></data>
   <data name="Step.askFile" xml:space="preserve"><value>File browse</value></data>
@@ -78,6 +87,8 @@
   <data name="Prompt.askDrop" xml:space="preserve"><value>Drop the file whose path will be typed.</value></data>
   <data name="Macro.WebViewError" xml:space="preserve"><value>The block editor cannot start (WebView2): {0}</value></data>
   <data name="Log.MacroStopped" xml:space="preserve"><value>Macro stopped: {0}</value></data>
+  <data name="Dialog.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Dialog.No" xml:space="preserve"><value>No</value></data>
   <data name="NoKey" xml:space="preserve"><value>(none)</value></data>
   <data name="Debug.Diagnostic" xml:space="preserve"><value>DIAGNOSTICS</value></data>
   <data name="Debug.HidDevices" xml:space="preserve"><value>Apple HID devices</value></data>
@@ -167,6 +178,8 @@ Remove this pairing and pair again?</value></data>
   <data name="Log.EnumFailed" xml:space="preserve"><value>Enumeration failed: {0}</value></data>
   <data name="Log.BlePaired" xml:space="preserve"><value>Pairing succeeded: connecting automatically as soon as Windows exposes the remote.</value></data>
   <data name="Log.DefaultMap" xml:space="preserve"><value>Default mapping.</value></data>
+  <data name="Log.MapExported" xml:space="preserve"><value>Mapping exported: {0}</value></data>
+  <data name="Log.MapImported" xml:space="preserve"><value>Mapping imported: {0}</value></data>
   <data name="Driver.Checking" xml:space="preserve"><value>Adapter driver: checking…</value></data>
   <data name="Filter.Installed" xml:space="preserve"><value>Bluetooth filter (AppleRemoteDriver): installed.</value></data>
   <data name="Filter.NotInstalled" xml:space="preserve"><value>Bluetooth filter (AppleRemoteDriver): not installed.</value></data>

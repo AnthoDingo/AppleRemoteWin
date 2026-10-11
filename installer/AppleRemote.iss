@@ -1,10 +1,10 @@
 ; SPDX-License-Identifier: AGPL-3.0-or-later
 ; Inno Setup script. Packages a release layout (the content of an AppleRemote-<version>-<rid>.zip):
-;   iscc /DAppVersion=1.0.0 /DSourceDir=C:\path\to\unzipped /DArch=x64 installer\AppleRemote.iss
+;   iscc /DAppVersion=1.1.0 /DSourceDir=C:\path\to\unzipped /DArch=x64 installer\AppleRemote.iss
 ; Arch: x64 (default) or arm64. The kernel filter ("driver" subfolder) only exists for x64.
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\Publish"
