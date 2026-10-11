@@ -8,6 +8,14 @@ on Windows 11: touch surface, buttons, tvOS-style gestures and a virtual keyboar
 C# port of [a-funk/open-appleremote](https://github.com/a-funk/open-appleremote) (MIT, Python/Linux). The decoder and the
 gesture engine are line-by-line ports of `decode.py` and `gestures.py`; the upstream `docs/PROTOCOL.md` describes the protocol.
 
+## Screenshots
+
+| Remote | Guide |
+|---|---|
+| ![Remote page: state, gesture and nearby devices](docs/screenshots/en-remote.png) | ![Guide page: putting the remote in pairing mode](docs/screenshots/en-guide.png) |
+| **Macros** (Blockly editor) | **Settings** (key mapping, language, Bluetooth driver) |
+| ![Macros page: a macro made of blocks](docs/screenshots/en-macros.png) | ![Settings page: one action per remote button](docs/screenshots/en-settings.png) |
+
 ## "Driver": what is provided
 
 No kernel driver. Windows 11 already ships the HID over GATT driver (`HidBthLE`). Since the remote only exposes vendor-specific

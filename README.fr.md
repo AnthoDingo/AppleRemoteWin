@@ -8,6 +8,14 @@ sur Windows 11 : surface tactile, boutons, gestes façon tvOS et clavier virtuel
 Port C# de [a-funk/open-appleremote](https://github.com/a-funk/open-appleremote) (MIT, Python/Linux). Le décodeur et le
 moteur de gestes sont des ports ligne à ligne de `decode.py` et `gestures.py` ; `docs/PROTOCOL.md` amont décrit le protocole.
 
+## Captures d'écran
+
+| Télécommande | Tuto |
+|---|---|
+| ![Page Télécommande : état, geste et appareils à proximité](docs/screenshots/fr-remote.png) | ![Page Tuto : mettre la télécommande en mode association](docs/screenshots/fr-guide.png) |
+| **Macros** (éditeur Blockly) | **Paramètres** (touches, langue, pilote Bluetooth) |
+| ![Page Macros : une macro faite de blocs](docs/screenshots/fr-macros.png) | ![Page Paramètres : une action par bouton de la télécommande](docs/screenshots/fr-settings.png) |
+
 ## « Driver » : ce qui est fourni
 
 Pas de pilote noyau. Windows 11 apporte déjà le pilote HID over GATT (`HidBthLE`). Comme la télécommande n'expose que des
