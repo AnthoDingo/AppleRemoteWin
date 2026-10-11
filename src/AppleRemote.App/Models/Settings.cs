@@ -15,6 +15,8 @@ public sealed class Settings
     public Dictionary<string, string> Software { get; set; } = new();
     /// <summary>Entrée de la télécommande -> combinaison « #Win+D » à envoyer (remplace la touche).</summary>
     public Dictionary<string, string> Combos { get; set; } = new();
+    /// <summary>Entrée de la télécommande -> nom de la macro à exécuter (fichier dans le dossier macros).</summary>
+    public Dictionary<string, string> Macros { get; set; } = new();
     /// <summary>Logiciels ajoutés par « Browse », conservés dans le menu.</summary>
     public List<string> Apps { get; set; } = new();
     public string Language { get; set; } = "auto";

@@ -26,8 +26,14 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="WPF-UI.Tray" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Éditeur de macro : Blockly 11.2.2 (Apache-2.0) et sa page, servis au WebView2 depuis le dossier de l'exe. -->
+    <Content Include="Blockly\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

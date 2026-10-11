@@ -12,12 +12,16 @@ public sealed class KeyPicker : Button
         new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (d, e) => ((KeyPicker)d).Content = Display((string)e.NewValue)));
     public static readonly DependencyProperty ChoicesProperty = DependencyProperty.Register(nameof(Choices), typeof(IEnumerable<string>), typeof(KeyPicker));
 
+    public static readonly DependencyProperty MacrosProperty = DependencyProperty.Register(nameof(Macros), typeof(IEnumerable<string>), typeof(KeyPicker));
+    public IEnumerable<string> Macros { get => (IEnumerable<string>)GetValue(MacrosProperty); set => SetValue(MacrosProperty, value); }
+
     public static readonly DependencyProperty SoftwareProperty = DependencyProperty.Register(nameof(Software), typeof(IEnumerable<string>), typeof(KeyPicker));
     public IEnumerable<string> Software { get => (IEnumerable<string>)GetValue(SoftwareProperty); set => SetValue(SoftwareProperty, value); }
 
     static string Display(string key) =>
         key.StartsWith(SoftwareApps.Prefix) ? SoftwareApps.NameOf(key[1..])
-        : key.StartsWith(KeyCombos.Prefix) ? KeyCombos.Display(key) : key;
+        : key.StartsWith(KeyCombos.Prefix) ? KeyCombos.Display(key)
+        : key.StartsWith(Macro.Prefix) ? key[Macro.Prefix.Length..] : key;
 
     public string Key { get => (string)GetValue(KeyProperty); set => SetValue(KeyProperty, value); }
     public IEnumerable<string> Choices { get => (IEnumerable<string>)GetValue(ChoicesProperty); set => SetValue(ChoicesProperty, value); }
@@ -26,6 +30,14 @@ public sealed class KeyPicker : Button
     {
         HorizontalContentAlignment = HorizontalAlignment.Left;
         Click += (_, _) => Open();
+    }
+
+    /// <summary>Ouvre l'éditeur ; une macro nouvellement enregistrée est affectée au bouton.</summary>
+    void EditMacro(Macro? existing)
+    {
+        var dlg = new Views.MacroEditorWindow(existing, Software ?? [], Macros ?? []) { Owner = Window.GetWindow(this) };
+        dlg.ShowDialog();
+        if (existing is null && dlg.SavedName is { } name) Key = Macro.Prefix + name;
     }
 
     void Open()
@@ -63,9 +75,30 @@ public sealed class KeyPicker : Button
         };
         soft.Items.Add(browse);
         menu.Items.Add(soft);
-        // Pas encore implémenté : visible mais grisé.
-        foreach (var k in new[] { "Pick.Macro" })
-            menu.Items.Add(new MenuItem { Header = Loc.T(k), IsEnabled = false });
+        var macro = new MenuItem { Header = Loc.T("Pick.Macro") };
+        foreach (var name in Macros ?? [])
+        {
+            var item = new MenuItem { Header = name, IsChecked = Key == Macro.Prefix + name };
+            item.Click += (_, _) => Key = Macro.Prefix + name;
+            macro.Items.Add(item);
+        }
+        if (macro.Items.Count > 0) macro.Items.Add(new Separator());
+        var create = new MenuItem { Header = Loc.T("Pick.NewMacro") };
+        create.Click += (_, _) => EditMacro(null);
+        macro.Items.Add(create);
+        if (Key.StartsWith(Macro.Prefix))
+        {
+            var edit = new MenuItem { Header = Loc.T("Pick.EditMacro") };
+            edit.Click += (_, _) => EditMacro(Macro.Load(Key[Macro.Prefix.Length..]));
+            macro.Items.Add(edit);
+            var dup = new MenuItem { Header = Loc.T("Pick.DuplicateMacro") };
+            dup.Click += (_, _) =>
+            {
+                if (Macro.Duplicate(Key[Macro.Prefix.Length..]) is { } copy) Key = Macro.Prefix + copy;
+            };
+            macro.Items.Add(dup);
+        }
+        menu.Items.Add(macro);
         menu.IsOpen = true;
     }
 }

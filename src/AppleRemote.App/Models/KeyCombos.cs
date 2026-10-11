@@ -37,7 +37,7 @@ public static class KeyCombos
         var keys = new List<KeyCode>();
         foreach (var name in combo[Prefix.Length..].Split('+', StringSplitOptions.RemoveEmptyEntries))
         {
-            if (Modifiers.FirstOrDefault(m => m.Name == name) is { Name: not null } m) keys.Add(new KeyCode(m.Vk));
+            if (Modifiers.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is { Name: not null } m) keys.Add(new KeyCode(m.Vk));
             else if (Keys.Names.TryGetValue(name, out var k)) keys.Add(k);
         }
         foreach (var k in keys) sink.Key(k, true);

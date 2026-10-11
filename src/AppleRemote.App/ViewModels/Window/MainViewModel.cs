@@ -53,6 +53,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public Dictionary<string, KeyChoice> Bindings { get; } = new();
     /// <summary>Chemins des logiciels proposés dans le menu Software : détectés + ajoutés par Browse.</summary>
     public ObservableCollection<string> SoftwareChoices { get; } = new();
+    /// <summary>Noms des macros enregistrées (un fichier chacune).</summary>
+    public ObservableCollection<string> MacroChoices { get; } = new(Macro.Names());
+    CancellationTokenSource? _macroCts;
     bool _syncingBindings;
 
     public ObservableCollection<string> Log { get; } = new();
@@ -144,6 +147,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             catch (Exception e) { AddLog(Loc.T("Log.MapIgnored", e.Message)); }
         }
 
+        Macro.Renamed += OnMacroRenamed;
         _session = new RemoteSession(map);
         _session.Event += ev => _ui.InvokeAsync(() => OnEvent(ev), DispatcherPriority.Render);
         _session.Gesture += g => _ui.InvokeAsync(() => OnGesture(g), DispatcherPriority.Render);
@@ -176,6 +180,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        Macro.Renamed -= OnMacroRenamed;
         _scanTimer.Stop();
         _scanner.Dispose();
         _settings.Save();
@@ -198,6 +203,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var (input, choice) in Bindings)
             choice.Key = _settings.Software.TryGetValue(input, out var app) ? SoftwareApps.Prefix + app
                 : _settings.Combos.TryGetValue(input, out var combo) ? combo
+                : _settings.Macros.TryGetValue(input, out var macro) ? Macro.Prefix + macro
                 : _session.KeyMap.TryGet(input, out var k) ? Keys.NameOf(k) ?? NoKey : NoKey;
         _syncingBindings = false;
     }
@@ -207,7 +213,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_syncingBindings) return;
         var map = _session.KeyMap;
         _settings.Combos.Remove(input);
-        if (name.StartsWith(KeyCombos.Prefix))
+        _settings.Macros.Remove(input);
+        if (name.StartsWith(Macro.Prefix))
+        {
+            string macroName = name[Macro.Prefix.Length..];
+            _settings.Software.Remove(input);
+            _settings.Macros[input] = macroName;
+            if (!MacroChoices.Contains(macroName)) MacroChoices.Add(macroName);
+            map.Set(input, null);
+        }
+        else if (name.StartsWith(KeyCombos.Prefix))
         {
             _settings.Software.Remove(input);
             _settings.Combos[input] = name;
@@ -248,6 +263,38 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!KeyboardEnabled) return;
         if (_settings.Software.TryGetValue(input, out var app)) SoftwareApps.Launch(app);
         else if (_settings.Combos.TryGetValue(input, out var combo)) KeyCombos.Run(_session.Injector, combo);
+        else if (_settings.Macros.TryGetValue(input, out var macroName)) _ = RunMacro(macroName);
+    }
+
+    /// <summary>Une macro a été renommée (nouveau nom) ou supprimée (null) : les boutons qui l'utilisent suivent.</summary>
+    void OnMacroRenamed(string old, string? @new)
+    {
+        foreach (var input in _settings.Macros.Where(p => p.Value.Equals(old, StringComparison.OrdinalIgnoreCase)).Select(p => p.Key).ToList())
+            if (@new is null) _settings.Macros.Remove(input);
+            else _settings.Macros[input] = @new;
+        MacroChoices.Remove(old);
+        if (@new is not null && !MacroChoices.Contains(@new)) MacroChoices.Add(@new);
+        _settings.Save();
+        SyncBindings();
+    }
+
+    /// <summary>Exécute la macro ; un appui pendant qu'une macro tourne l'arrête (une boucle peut ne jamais finir).</summary>
+    async Task RunMacro(string name)
+    {
+        if (_macroCts is { } running)
+        {
+            running.Cancel();
+            AddLog(Loc.T("Log.MacroStopped", name));
+            return;
+        }
+        if (Macro.Load(name) is not { } macro)
+        {
+            AddLog(Loc.T("Log.MacroMissing", name));
+            return;
+        }
+        using var cts = _macroCts = new CancellationTokenSource();
+        try { await macro.RunAsync(_session.Injector, cts.Token); }
+        finally { _macroCts = null; }
     }
 
     void OnEvent(RemoteEvent ev)
@@ -503,6 +550,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _session.KeyMap = KeyMap.Default();
         _settings.Software.Clear();
         _settings.Combos.Clear();
+        _settings.Macros.Clear();
         SyncBindings();
         _settings.KeyMapPath = null;
         _settings.Save();
