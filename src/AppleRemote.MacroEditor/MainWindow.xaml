@@ -1,0 +1,32 @@
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 AnthoDingo
+-->
+<ui:FluentWindow x:Class="AppleRemote.MacroEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:l="clr-namespace:AppleRemote.App;assembly=AppleRemote"
+        xmlns:views="clr-namespace:AppleRemote.App.Views;assembly=AppleRemote"
+        Icon="pack://application:,,,/app.ico" Title="{l:T Nav.Macros}"
+        WindowStartupLocation="CenterScreen" Width="1400" Height="800" MinWidth="860" MinHeight="640"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
+        FontSize="13">
+    <!-- Same page as the app's Macros menu entry, without the rest of the app. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Title="{l:T Nav.Macros}">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/app.ico" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+        <Frame Grid.Row="1" NavigationUIVisibility="Hidden">
+            <Frame.Content>
+                <views:MacrosPage x:Name="Page" />
+            </Frame.Content>
+        </Frame>
+    </Grid>
+</ui:FluentWindow>

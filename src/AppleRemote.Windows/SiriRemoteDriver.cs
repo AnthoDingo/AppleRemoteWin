@@ -35,11 +35,25 @@ public sealed class SiriRemoteDriver
 
     readonly Action<int>? _onBattery;
 
-    async Task ReportBatteryAsync(BluetoothLEDevice? device)
+    /// <summary>
+    /// Battery is optional: a few spaced attempts (right after an unlock the link can still be busy), then the failure
+    /// is reported. Nothing is reported once the connection is over (<paramref name="ct"/> cancelled).
+    /// </summary>
+    async Task ReportBatteryAsync(BluetoothLEDevice? device, CancellationToken ct)
     {
         if (_onBattery is null || device is null) return;
-        try { if (await FilterUnlock.ReadBatteryAsync(device) is { } level) _onBattery(level); }
-        catch (Exception) { /* battery is optional: link dropped or WinRT refused */ }
+        string error = "";
+        for (int attempt = 0; attempt < 3 && !ct.IsCancellationRequested; attempt++)
+        {
+            try
+            {
+                await Task.Delay(1000 * attempt, ct);
+                _onBattery(await FilterUnlock.ReadBatteryAsync(device));
+                return;
+            }
+            catch (Exception e) { error = e.Message; }
+        }
+        if (!ct.IsCancellationRequested) Status(Loc.T("Status.BatteryUnreadable", error));
     }
 
     void Status(string message)
@@ -121,10 +135,9 @@ public sealed class SiriRemoteDriver
 
         Status(Loc.T("Status.ConnectedHid", string.IsNullOrWhiteSpace(info.Product) ? "Siri Remote" : info.Product));
 
-        _ = ReportBatteryAsync(device);
-
         int length = Math.Max(info.InputLength, 21);
         using var linkCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _ = ReportBatteryAsync(device, linkCts.Token);
         long lastReport = Environment.TickCount64;
 
         // The remote often falls asleep then reconnects, and stays mute until it is unlocked again:
@@ -137,7 +150,7 @@ public sealed class SiriRemoteDriver
             {
                 for (int attempt = 0; attempt < 10 && !linkCts.IsCancellationRequested; attempt++)
                 {
-                    if ((await UnlockAsync(info, handle, sender)).Ok) { Status(Loc.T("Status.Relocked")); _ = ReportBatteryAsync(sender); break; }
+                    if ((await UnlockAsync(info, handle, sender)).Ok) { Status(Loc.T("Status.Relocked")); _ = ReportBatteryAsync(sender, linkCts.Token); break; }
                     await Task.Delay(300);
                 }
             }

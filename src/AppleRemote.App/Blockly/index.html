@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Macro</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #202020; }
+  #blocklyDiv { position: absolute; inset: 0; }
+</style>
+<script src="blockly_compressed.js"></script>
+<script src="blocks_compressed.js"></script>
+<script>
+  // Langue de l'interface (?lang=fr|en) : traductions de Blockly puis des blocs de l'application.
+  var lang = new URLSearchParams(location.search).get('lang') === 'fr' ? 'fr' : 'en';
+  document.write('<script src="msg/' + lang + '.js"><\/script>');
+</script>
+</head>
+<body>
+<div id="blocklyDiv"></div>
+<script>
+const T = {
+  fr: {
+    cat_macro: 'Macro', cat_input: 'Saisie', cat_control: 'Contrôle', cat_logic: 'Logique', cat_math: 'Maths', cat_text: 'Texte', cat_vars: 'Variables',
+    combo: 'Combinaison', app: 'Logiciel', wait: 'Attendre', ms: 'ms', type: 'Taper', shell: 'Exécuter', start: 'Au démarrage', shell_code: 'code →', shell_output: 'sortie →',
+    ask_text: 'Demander un texte', ask_file: 'Demander un fichier', ask_drop: 'Fichier glissé-déposé',
+    prompt_text: 'Saisissez un texte.', prompt_file: 'Choisissez un fichier.', prompt_drop: 'Glissez un fichier ici.',
+    tip_combo: 'Appuie une combinaison de touches (cliquer sur l\'icône pour la saisir).',
+    tip_app: 'Lance un logiciel (cliquer sur l\'icône pour le choisir).',
+    tip_wait: 'Attend un délai en millisecondes.', tip_type: 'Tape le texte ou le chemin reçu.',
+    tip_shell: 'Exécute une commande cmd ou PowerShell sans fenêtre et attend sa fin. Facultatif : une variable '
+      + 'après « code » reçoit le code de sortie (0 : succès, -1 : non lancé), une après « sortie » le texte affiché (sortie puis erreurs).',
+    tip_start: 'Point d\'entrée de la macro : seuls les blocs attachés en dessous s\'exécutent.',
+    tip_ask: 'Ouvre une fenêtre et renvoie la réponse ; la macro s\'arrête si la fenêtre est fermée.',
+    pick_combo: 'Saisir la combinaison', pick_app: 'Choisir le logiciel'
+  },
+  en: {
+    cat_macro: 'Macro', cat_input: 'Input', cat_control: 'Control', cat_logic: 'Logic', cat_math: 'Math', cat_text: 'Text', cat_vars: 'Variables',
+    combo: 'Key combo', app: 'Software', wait: 'Wait', ms: 'ms', type: 'Type', shell: 'Run', start: 'When started', shell_code: 'exit code →', shell_output: 'output →',
+    ask_text: 'Ask for text', ask_file: 'Ask for a file', ask_drop: 'Dropped file',
+    prompt_text: 'Enter a text.', prompt_file: 'Choose a file.', prompt_drop: 'Drop a file here.',
+    tip_combo: 'Presses a key combination (click the icon to record it).',
+    tip_app: 'Launches a program (click the icon to choose it).',
+    tip_wait: 'Waits for a delay in milliseconds.', tip_type: 'Types the received text or path.',
+    tip_shell: 'Runs a cmd or PowerShell command without a window and waits for it to finish. Optional: a variable '
+      + 'after "exit code" receives the exit code (0: success, -1: not started), one after "output" the printed text (output then errors).',
+    tip_start: 'Entry point of the macro: only the blocks attached below it run.',
+    tip_ask: 'Opens a window and returns the answer; the macro stops if the window is closed.',
+    pick_combo: 'Record the combination', pick_app: 'Choose the program'
+  }
+}[lang];
+
+const post = m => window.chrome?.webview?.postMessage(m);
+const icon = svg => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+const ICON_KEY = icon('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="4" width="18" height="12" rx="2" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M4 8h2M8 8h2M12 8h2M5 12h10" stroke="#fff" stroke-width="1.5"/></svg>');
+const ICON_APP = icon('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path d="M2 5h6l2 2h8v9H2z" fill="none" stroke="#fff" stroke-width="1.5"/></svg>');
+
+const COLOR = 210, COLOR_ASK = 20, COLOR_START = 60;
+
+// Single entry point: not in the toolbox, cannot be deleted, copied or duplicated (maxInstances).
+Blockly.Blocks['macro_start'] = {
+  init() {
+    this.appendDummyInput().appendField(T.start);
+    this.setNextStatement(true); this.setColour(COLOR_START); this.setTooltip(T.tip_start);
+    this.setDeletable(false);
+    this.hat = 'cap';
+  }
+};
+
+Blockly.Blocks['macro_combo'] = {
+  init() {
+    this.appendDummyInput().appendField(T.combo).appendField(new Blockly.FieldTextInput('Ctrl+C'), 'COMBO')
+      .appendField(new Blockly.FieldImage(ICON_KEY, 20, 20, T.pick_combo, f => post({ type: 'pickCombo', id: f.getSourceBlock().id })));
+    this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(COLOR); this.setTooltip(T.tip_combo);
+  }
+};
+Blockly.Blocks['macro_app'] = {
+  init() {
+    this.appendDummyInput().appendField(T.app).appendField(new Blockly.FieldTextInput(''), 'PATH')
+      .appendField(new Blockly.FieldImage(ICON_APP, 20, 20, T.pick_app, f => post({ type: 'pickApp', id: f.getSourceBlock().id })));
+    this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(COLOR); this.setTooltip(T.tip_app);
+  }
+};
+Blockly.Blocks['macro_wait'] = {
+  init() {
+    this.appendDummyInput().appendField(T.wait).appendField(new Blockly.FieldNumber(1000, 0), 'MS').appendField(T.ms);
+    this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(COLOR); this.setTooltip(T.tip_wait);
+  }
+};
+Blockly.Blocks['macro_type'] = {
+  init() {
+    this.appendValueInput('VALUE').appendField(T.type);
+    this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(COLOR); this.setTooltip(T.tip_type);
+  }
+};
+Blockly.Blocks['macro_shell'] = {
+  init() {
+    this.appendValueInput('COMMAND').appendField(T.shell)
+      .appendField(new Blockly.FieldDropdown([['cmd', 'cmd'], ['PowerShell', 'powershell']]), 'SHELL');
+    this.appendValueInput('CODE').appendField(T.shell_code);
+    this.appendValueInput('OUTPUT').appendField(T.shell_output);
+    this.setInputsInline(true);
+    this.setPreviousStatement(true); this.setNextStatement(true); this.setColour(COLOR); this.setTooltip(T.tip_shell);
+  },
+  // The result slots only take a variable: anything else is pushed back out.
+  onchange() {
+    if (this.isInFlyout) return;
+    for (const name of ['CODE', 'OUTPUT']) {
+      const b = this.getInputTargetBlock(name);
+      if (b && b.type !== 'variables_get') b.unplug();
+    }
+  }
+};
+for (const kind of ['text', 'file', 'drop']) {
+  Blockly.Blocks['macro_ask_' + kind] = {
+    init() {
+      this.appendDummyInput().appendField(T['ask_' + kind]).appendField(new Blockly.FieldTextInput(T['prompt_' + kind]), 'PROMPT');
+      this.setOutput(true, 'String'); this.setColour(COLOR_ASK); this.setTooltip(T.tip_ask);
+    }
+  };
+}
+
+const num = n => ({ shadow: { type: 'math_number', fields: { NUM: n } } });
+const toolbox = {
+  kind: 'categoryToolbox',
+  contents: [
+    { kind: 'category', name: T.cat_macro, colour: COLOR, contents: [
+      { kind: 'block', type: 'macro_combo' }, { kind: 'block', type: 'macro_app' }, { kind: 'block', type: 'macro_wait' },
+      { kind: 'block', type: 'macro_type' },
+      { kind: 'block', type: 'macro_shell' } ] },
+    { kind: 'category', name: T.cat_input, colour: COLOR_ASK, contents: [
+      { kind: 'block', type: 'macro_ask_text' }, { kind: 'block', type: 'macro_ask_file' }, { kind: 'block', type: 'macro_ask_drop' } ] },
+    { kind: 'category', name: T.cat_control, colour: 120, contents: [
+      { kind: 'block', type: 'controls_repeat_ext', inputs: { TIMES: num(10) } },
+      { kind: 'block', type: 'controls_whileUntil' }, { kind: 'block', type: 'controls_if' } ] },
+    { kind: 'category', name: T.cat_logic, colour: 210, contents: [
+      { kind: 'block', type: 'logic_compare' }, { kind: 'block', type: 'logic_operation' },
+      { kind: 'block', type: 'logic_negate' }, { kind: 'block', type: 'logic_boolean' } ] },
+    { kind: 'category', name: T.cat_math, colour: 230, contents: [
+      { kind: 'block', type: 'math_number' }, { kind: 'block', type: 'math_arithmetic' } ] },
+    { kind: 'category', name: T.cat_text, colour: 160, contents: [ { kind: 'block', type: 'text' } ] },
+    { kind: 'category', name: T.cat_vars, colour: 330, custom: 'VARIABLE' }
+  ]
+};
+
+const ws = Blockly.inject('blocklyDiv', {
+  toolbox, trashcan: true, maxInstances: { macro_start: 1 }, grid: { spacing: 24, length: 3, colour: '#444', snap: true },
+  zoom: { controls: true, wheel: true, startScale: 0.9 },
+  theme: Blockly.Theme.defineTheme('dark', {
+    base: Blockly.Themes.Classic,
+    componentStyles: { workspaceBackgroundColour: '#202020', toolboxBackgroundColour: '#2b2b2b', toolboxForegroundColour: '#fff',
+      flyoutBackgroundColour: '#2b2b2b', flyoutForegroundColour: '#ccc', flyoutOpacity: 1, scrollbarColour: '#666', insertionMarkerColour: '#fff' }
+  })
+});
+window.addEventListener('resize', () => Blockly.svgResize(ws));
+
+// A macro is worth saving once something hangs under the start block.
+const hasBlocks = () => ws.getBlocksByType('macro_start', false).some(b => b.getNextBlock());
+ws.addChangeListener(e => {
+  if (e.isUiEvent) return;
+  post({ type: 'change', hasBlocks: hasBlocks() });
+});
+
+// Adds the start block if missing (new macro, or one saved before it existed: the top stack goes under it).
+function ensureStart() {
+  if (ws.getBlocksByType('macro_start', false).length) return;
+  const first = ws.getTopBlocks(true).find(b => b.previousConnection);
+  const start = ws.newBlock('macro_start');
+  start.initSvg(); start.render();
+  if (first) {
+    const xy = first.getRelativeToSurfaceXY();
+    start.moveBy(xy.x, xy.y);
+    start.nextConnection.connect(first.previousConnection);
+  } else start.moveBy(24, 24);
+}
+
+// Appelées par l'application.
+window.loadWorkspace = state => {
+  ws.clear();
+  if (state) Blockly.serialization.workspaces.load(state, ws);
+  ensureStart();
+  ws.clearUndo();
+  post({ type: 'change', hasBlocks: hasBlocks() });
+};
+window.getWorkspace = () => JSON.stringify(Blockly.serialization.workspaces.save(ws));
+window.setField = (id, name, value) => ws.getBlockById(id)?.setFieldValue(value, name);
+
+post({ type: 'ready' });
+</script>
+</body>
+</html>

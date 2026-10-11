@@ -46,14 +46,15 @@ static partial class FilterUnlock
         return result == GattCommunicationStatus.Success;
     }
 
-    /// <summary>Battery level in % read over GATT (reads are not redirected by the filter), or null.</summary>
-    public static async Task<int?> ReadBatteryAsync(BluetoothLEDevice device)
+    /// <summary>Battery level in % read over GATT (reads are not redirected by the filter). Throws with the reason on failure.</summary>
+    public static async Task<int> ReadBatteryAsync(BluetoothLEDevice device)
     {
         var level = await FindBatteryLevelAsync(device, BluetoothCacheMode.Cached)
-                    ?? await FindBatteryLevelAsync(device, BluetoothCacheMode.Uncached);
-        if (level is null) return null;
+                    ?? await FindBatteryLevelAsync(device, BluetoothCacheMode.Uncached)
+                    ?? throw new InvalidOperationException("battery level 0x180F/0x2A19 not found");
         var read = await level.ReadValueAsync(BluetoothCacheMode.Uncached);
-        if (read.Status != GattCommunicationStatus.Success || read.Value.Length == 0) return null;
+        if (read.Status != GattCommunicationStatus.Success || read.Value.Length == 0)
+            throw new InvalidOperationException($"battery level read: {read.Status}, ATT error {read.ProtocolError?.ToString("X2") ?? "none"}");
         return global::Windows.Storage.Streams.DataReader.FromBuffer(read.Value).ReadByte();
     }
 

@@ -50,6 +50,11 @@
                     <ui:SymbolIcon Symbol="Book24" />
                 </ui:NavigationViewItem.Icon>
             </ui:NavigationViewItem>
+            <ui:NavigationViewItem Content="{l:T Nav.Macros}" TargetPageType="{x:Type views:MacrosPage}">
+                <ui:NavigationViewItem.Icon>
+                    <ui:SymbolIcon Symbol="PuzzlePiece24" />
+                </ui:NavigationViewItem.Icon>
+            </ui:NavigationViewItem>
         </ui:NavigationView.MenuItems>
         <ui:NavigationView.FooterMenuItems>
             <ui:NavigationViewItem Content="{l:T Nav.Settings}" TargetPageType="{x:Type views:SettingsPage}">

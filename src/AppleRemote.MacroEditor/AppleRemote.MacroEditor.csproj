@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>AppleRemote.MacroEditor</RootNamespace>
+    <ApplicationIcon>..\AppleRemote.App\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Les fenêtres de l'application (MacroEditorWindow…) réclament pack://application:,,,/app.ico dans l'exe de démarrage. -->
+    <Resource Include="..\AppleRemote.App\app.ico" Link="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Réutilise l'éditeur de l'application : aucune copie de code. -->
+    <ProjectReference Include="..\AppleRemote.App\AppleRemote.App.csproj" />
+  </ItemGroup>
+
+</Project>
