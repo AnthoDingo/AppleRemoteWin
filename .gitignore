@@ -41,3 +41,9 @@ target/
 
 # Inno Setup
 Output/
+
+# ESP-IDF (src/AppleRemoteEsp32)
+src/AppleRemoteEsp32/build/
+src/AppleRemoteEsp32/managed_components/
+src/AppleRemoteEsp32/sdkconfig
+src/AppleRemoteEsp32/sdkconfig.old

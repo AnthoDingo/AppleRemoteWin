@@ -73,6 +73,14 @@ public sealed class RemoteSession : IDisposable
     /// <summary>True if the running session drives the adapter directly (WinUSB) rather than Windows' HID.</summary>
     public bool UsesBluetoothDirect { get; private set; }
 
+    EspDongle? _dongle;
+
+    /// <summary>True if the running session reads an ESP32-S3 dongle (src/AppleRemoteEsp32).</summary>
+    public bool UsesDongle => _dongle is not null;
+
+    /// <summary>Sends <see cref="EspDongle.CommandPair"/>, <see cref="EspDongle.CommandForget"/>… to the dongle.</summary>
+    public bool SendDongleCommand(byte command) => _dongle?.Send(command) ?? false;
+
     /// <summary>Forgets the direct-Bluetooth bond: on next start, looks for a remote in pairing mode.</summary>
     public void ForgetPairing() => new BondStore(BondsPath).Clear();
 
@@ -85,6 +93,16 @@ public sealed class RemoteSession : IDisposable
         if (_cts is not null) return;
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
+
+        // ESP32-S3 dongle first: it holds the remote by itself, no adapter driver or filter needed.
+        if (EspDongle.Find() is not null)
+        {
+            var dongle = _dongle = new EspDongle(Feed, s => Status?.Invoke(s), l => Battery?.Invoke(l));
+            UsesBluetoothDirect = false;
+            _driverTask = Task.Run(() => dongle.RunAsync(ct));
+            _tickTask = Task.Run(() => TickLoopAsync(ct));
+            return;
+        }
 
         UsbHci? hci = null;
         try { hci = UsbHci.Open(AdapterId); }
@@ -120,6 +138,7 @@ public sealed class RemoteSession : IDisposable
         cts.Dispose();
         _cts = null;
         _driverTask = _tickTask = null;
+        _dongle = null;
         lock (_gate) _binder.ReleaseAll();
         Status?.Invoke(Loc.T("Status.Stopped"));
     }

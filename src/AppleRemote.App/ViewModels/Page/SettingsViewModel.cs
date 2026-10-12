@@ -236,7 +236,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty, NotifyPropertyChangedFor(nameof(WinUsbButton)), NotifyPropertyChangedFor(nameof(CanToggleFilter)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _winUsbOn;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(CanToggleFilter))] bool _adapterPresent;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterButton)), NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _filterOn;
-    public bool AnyOn => WinUsbOn || FilterOn;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _dongleOn;
+    public bool AnyOn => WinUsbOn || FilterOn || DongleOn;
+    public string DongleText => Loc.T(DongleOn ? "Settings.DonglePresent" : "Settings.DongleAbsent");
     public bool CanToggleWinUsb => !FilterOn && AdapterPresent; // mutually exclusive: only one of the two at a time
     public bool CanToggleFilter => !WinUsbOn && (AdapterPresent || FilterOn); // without an adapter, only removal remains possible
     public string WinUsbButton => Loc.T(WinUsbOn ? "Settings.RestoreDriver" : "Settings.InstallWinUsb");
@@ -251,6 +253,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             FilterText = Loc.T(FilterOn ? "Filter.Installed" : "Filter.NotInstalled");
         }
         catch (Exception ex) { FilterText = Loc.T("Driver.Unknown", ex.Message); }
+        try { DongleOn = await Task.Run(() => EspDongle.Find() is not null); }
+        catch (Exception) { DongleOn = false; }   // HID enumeration failed: shown as absent
         try
         {
             Adapters = await Task.Run(() => WinUsbDriver.List());

@@ -115,7 +115,13 @@
             <!-- Devices card: nearby "Apple HID" BLE advertisements, fixed height -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" />
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Button Content="{l:T Remote.Pair}" Command="{Binding PairCommand}" Margin="0,0,6,0" />
+                            <Button Content="{l:T Remote.Forget}" Command="{Binding ForgetCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" VerticalAlignment="Center" />
+                    </DockPanel>
                     <Grid Height="110" Margin="0,4,0,0">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding NearbyDevices}">

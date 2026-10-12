@@ -257,8 +257,8 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
         // Battery is optional: its failure is logged but must not hide the connection status.
         if (Loc.StartsWith(message, "Status.BatteryUnreadable")) { _log(message); return; }
         StatusText = message;
-        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect" }.Any(k => Loc.StartsWith(message, k));
-        bool warn = new[] { "Status.WaitHid", "Status.WaitBonded", "Status.WaitPairing", "Status.Unreachable", "Status.Disconnected", "Status.DisconnectedReason" }
+        bool ok = new[] { "Status.ConnectedHid", "Status.ConnectedDirect", "Status.ConnectedDongle" }.Any(k => Loc.StartsWith(message, k));
+        bool warn = new[] { "Status.WaitHid", "Status.WaitBonded", "Status.WaitPairing", "Status.Unreachable", "Status.Disconnected", "Status.DisconnectedReason", "Status.WaitDongle", "Status.DongleIdle" }
             .Any(k => Loc.StartsWith(message, k));
         // "Stopped" only if the session is really stopped: an unknown message keeps the current level.
         StatusLevel = ok ? StatusLevel.Ok : warn ? StatusLevel.Warn : _session.IsRunning ? StatusLevel : StatusLevel.Idle;
@@ -295,6 +295,13 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
     [RelayCommand]
     void Pair()
     {
+        if (_session.UsesDongle)
+        {
+            // ESP32-S3 dongle: it forgets its bond and scans for a remote in pairing mode by itself.
+            _session.SendDongleCommand(EspDongle.CommandPair);
+            _log(Loc.T("Log.PairDirect"));
+            return;
+        }
         if (_session.UsesBluetoothDirect)
         {
             // Direct Bluetooth: forget the bond and restart; the session then looks for a remote in pairing mode.
@@ -308,5 +315,24 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
         _log(Loc.T("Log.PairSettings"));
         try { Process.Start(new ProcessStartInfo("ms-settings:bluetooth") { UseShellExecute = true }); }
         catch (Exception ex) { _log(Loc.T("Log.OpenBtFailed", ex.Message)); }
+    }
+
+    // Forget the remote: the dongle stays idle until "Pair"; direct Bluetooth stops; Windows' HID is managed in Settings.
+    [RelayCommand]
+    void Forget()
+    {
+        if (_session.UsesDongle) _session.SendDongleCommand(EspDongle.CommandForget);
+        else if (_session.UsesBluetoothDirect)
+        {
+            StopSession();
+            _session.ForgetPairing();
+        }
+        else
+        {
+            try { Process.Start(new ProcessStartInfo("ms-settings:bluetooth") { UseShellExecute = true }); }
+            catch (Exception ex) { _log(Loc.T("Log.OpenBtFailed", ex.Message)); }
+            return;
+        }
+        _log(Loc.T("Log.Forget"));
     }
 }

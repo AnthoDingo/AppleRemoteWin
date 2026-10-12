@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 AnthoDingo
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+# Bond kept across reboots
+CONFIG_BT_NIMBLE_NVS_PERSIST=y
+CONFIG_TINYUSB_HID_COUNT=1
