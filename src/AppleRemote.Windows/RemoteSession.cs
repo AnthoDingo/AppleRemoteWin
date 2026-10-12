@@ -67,6 +67,9 @@ public sealed class RemoteSession : IDisposable
     public string BondsPath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppleRemote", "bonds.json");
 
+    /// <summary>PnP instance ID of the adapter to drive directly when several are under WinUSB (null: the first one).</summary>
+    public string? AdapterId { get; set; }
+
     /// <summary>True if the running session drives the adapter directly (WinUSB) rather than Windows' HID.</summary>
     public bool UsesBluetoothDirect { get; private set; }
 
@@ -84,7 +87,7 @@ public sealed class RemoteSession : IDisposable
         var ct = _cts.Token;
 
         UsbHci? hci = null;
-        try { hci = UsbHci.Open(); }
+        try { hci = UsbHci.Open(AdapterId); }
         catch (Exception e) { Status?.Invoke(Loc.T("Status.BtUnavailable", e.Message)); }
 
         UsesBluetoothDirect = hci is not null;

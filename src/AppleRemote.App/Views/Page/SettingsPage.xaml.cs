@@ -6,7 +6,4 @@ namespace AppleRemote.App.Views;
 public partial class SettingsPage
 {
     public SettingsPage() => InitializeComponent();
-
-    void Components_Click(object sender, System.Windows.RoutedEventArgs e) =>
-        new ComponentsWindow { Owner = System.Windows.Window.GetWindow(this) }.ShowDialog();
 }

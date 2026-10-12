@@ -65,19 +65,18 @@ public sealed class UsbHci : IDisposable
         }
     }
 
-    static readonly System.Text.RegularExpressions.Regex IdPattern =
-        new(@"vid_([0-9a-f]{4})&pid_([0-9a-f]{4})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    /// <summary>PnP instance ID of an interface path: <c>\\?\usb#vid_x&amp;pid_y#serial#{guid}</c> -> <c>usb\vid_x&amp;pid_y\serial</c>.</summary>
+    static string InstanceId(string path) => path[4..path.LastIndexOf('#')].Replace('#', '\\');
 
     /// <summary>
-    /// Opens the first USB device under WinUSB whose interface 0 is a Bluetooth controller
-    /// (class 0xE0, subclass 1, protocol 1), whatever its VID/PID.
+    /// Opens a USB device under WinUSB whose interface 0 is a Bluetooth controller (class 0xE0, subclass 1, protocol 1),
+    /// whatever its VID/PID: the one with this PnP instance ID, or the first found if null.
     /// </summary>
-    static bool TryOpenAdapter(out SafeFileHandle file, out IntPtr usb, out UsbId id)
+    static bool TryOpenAdapter(string? instanceId, out SafeFileHandle file, out IntPtr usb)
     {
         foreach (string path in EnumerateUsbPaths())
         {
-            var m = IdPattern.Match(path);
-            if (!m.Success) continue;
+            if (instanceId is not null && !InstanceId(path).Equals(instanceId, StringComparison.OrdinalIgnoreCase)) continue;
             var handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero,
                 OPEN_EXISTING, FILE_FLAG_OVERLAPPED, IntPtr.Zero);
             if (handle.IsInvalid) continue;
@@ -87,7 +86,6 @@ public sealed class UsbHci : IDisposable
             {
                 file = handle;
                 usb = h;
-                id = new UsbId(Convert.ToUInt16(m.Groups[1].Value, 16), Convert.ToUInt16(m.Groups[2].Value, 16));
                 return true;
             }
             if (h != IntPtr.Zero) WinUsb_Free(h);
@@ -95,23 +93,16 @@ public sealed class UsbHci : IDisposable
         }
         file = null!;
         usb = IntPtr.Zero;
-        id = default;
         return false;
     }
 
-    /// <summary>Bluetooth adapter already under WinUSB, or null.</summary>
-    public static UsbId? FindWinUsbAdapter()
+    /// <summary>
+    /// Opens the USB Bluetooth adapter under WinUSB with this PnP instance ID (the one chosen in the settings),
+    /// otherwise the first one under WinUSB.
+    /// </summary>
+    public static UsbHci Open(string? instanceId = null)
     {
-        if (!TryOpenAdapter(out var file, out var usb, out var id)) return null;
-        WinUsb_Free(usb);
-        file.Dispose();
-        return id;
-    }
-
-    /// <summary>Opens the first USB Bluetooth adapter under WinUSB.</summary>
-    public static UsbHci Open()
-    {
-        if (!TryOpenAdapter(out var file, out var usb, out _))
+        if (!(instanceId is not null && TryOpenAdapter(instanceId, out var file, out var usb)) && !TryOpenAdapter(null, out file, out usb))
             throw new InvalidOperationException(
                 "No USB Bluetooth adapter under WinUSB (WinUSB driver installed, PC restarted since, adapter not already in use?).");
         return new UsbHci(file, usb);

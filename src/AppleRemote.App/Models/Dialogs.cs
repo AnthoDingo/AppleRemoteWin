@@ -13,6 +13,7 @@ public interface IDialogs
     Task Warn(string title, string message);
     void CopyText(string text);
     void ShowBleScan(Action onPaired);
+    void ShowComponents();
 }
 
 public sealed class Dialogs(Window owner) : IDialogs
@@ -21,7 +22,7 @@ public sealed class Dialogs(Window owner) : IDialogs
         await new Wpf.Ui.Controls.MessageBox
         {
             Owner = owner, Title = title, Content = message,
-            PrimaryButtonText = "Oui", CloseButtonText = "Non",
+            PrimaryButtonText = Loc.T("Dialog.Yes"), CloseButtonText = Loc.T("Dialog.No"),
         }.ShowDialogAsync() == Wpf.Ui.Controls.MessageBoxResult.Primary;
 
     public async Task Warn(string title, string message) =>
@@ -38,4 +39,6 @@ public sealed class Dialogs(Window owner) : IDialogs
         window.ViewModel.Paired += onPaired;
         window.Show();
     }
+
+    public void ShowComponents() => new ComponentsWindow { Owner = owner }.ShowDialog();
 }

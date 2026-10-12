@@ -19,9 +19,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 #if !DEBUG_PAGE
         RootNavigation.FooterMenuItems.Remove(DebugItem);
 #endif
-        DataContext = _viewModel = new MainViewModel(new Dialogs(this));
-        TrayMenu.DataContext = _viewModel;   // the notification-area menu doesn't inherit the window's DataContext
-        // The pages (Remote, Settings, Debug) share the view-model and keep their state between visits.
+        _viewModel = new MainViewModel(new Dialogs(this));
+        TrayMenu.DataContext = _viewModel.Remote;   // the notification-area menu doesn't inherit the window's DataContext
+        // Each page gets its own view-model and keeps its state between visits.
         RootNavigation.SetPageProviderService(new PageProvider(_viewModel));
         Application.Current.SessionEnding += (_, _) => _quitting = true;   // Windows shutdown: don't hold back the close
     }
@@ -60,8 +60,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         Close();
     }
 
-    /// <summary>Creates each page only once, with the window's view-model as DataContext.</summary>
-    sealed class PageProvider(object dataContext) : INavigationViewPageProvider
+    /// <summary>Creates each page only once, with its view-model as DataContext.</summary>
+    sealed class PageProvider(MainViewModel viewModel) : INavigationViewPageProvider
     {
         readonly Dictionary<Type, FrameworkElement> _pages = new();
 
@@ -70,7 +70,13 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             if (!_pages.TryGetValue(pageType, out var page))
             {
                 page = (FrameworkElement)Activator.CreateInstance(pageType)!;
-                page.DataContext = dataContext;
+                page.DataContext = page switch
+                {
+                    SettingsPage => viewModel.Preferences,
+                    DebugPage => viewModel.Debug,
+                    MacrosPage => viewModel.Macros,
+                    _ => viewModel.Remote, // Remote, and the guide's remote drawings
+                };
                 _pages[pageType] = page;
             }
             return page;

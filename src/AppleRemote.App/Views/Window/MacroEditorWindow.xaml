@@ -1,0 +1,41 @@
+<ui:FluentWindow xmlns:l="clr-namespace:AppleRemote.App" Icon="pack://application:,,,/app.ico" x:Class="AppleRemote.App.Views.MacroEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:c="clr-namespace:AppleRemote.App.Controls"
+        Title="{l:T Macro.Title}"
+        Width="1040" Height="700" MinWidth="720" MinHeight="480"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
+        FontSize="13" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Title="{l:T Macro.Title}" ShowMinimize="False" ShowMaximize="False" />
+        <Grid Grid.Row="1" Margin="16,4,16,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Margin="0,0,0,10">
+                <TextBlock Text="{l:T Macro.Name}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4" />
+                <TextBox x:Name="NameBox" TextChanged="Refresh" />
+            </StackPanel>
+            <c:MacroEditor x:Name="Editor" Grid.Row="1" Changed="Refresh" Failed="Editor_Failed" />
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <Button x:Name="DeleteMacroButton" Content="{l:T Macro.DeleteMacro}" Click="DeleteMacro_Click" Visibility="Collapsed" />
+                <Button Content="{l:T Macro.Cancel}" Click="Cancel_Click" />
+                <ui:Button x:Name="ValidateButton" Content="{l:T Combo.Validate}" Click="Validate_Click" IsEnabled="False"
+                           Appearance="Primary" Padding="10,5" Margin="8,0,0,0" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

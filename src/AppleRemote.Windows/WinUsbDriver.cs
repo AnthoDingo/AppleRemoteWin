@@ -10,9 +10,7 @@ namespace AppleRemote.Windows;
 
 public enum AdapterDriver
 {
-    /// <summary>Adapter missing (unplugged or disabled).</summary>
-    Absent,
-    /// <summary>Pilote d'origine (pile Bluetooth de Windows).</summary>
+    /// <summary>Original driver (Windows Bluetooth stack).</summary>
     Original,
     /// <summary>WinUSB (installed by this application or by Zadig).</summary>
     WinUsb,
@@ -29,29 +27,47 @@ public static class WinUsbDriver
 
     static string HardwareId(ushort vid, ushort pid) => $@"USB\VID_{vid:X4}&PID_{pid:X4}";
 
-    /// <summary>
-    /// First USB Bluetooth adapter present (only one is handled): already under WinUSB, or still under the original driver
-    /// (classe Bluetooth). Absent si aucun.
-    /// </summary>
-    public static (AdapterDriver State, UsbHci.UsbId? Id) Find()
+    /// <summary>A present USB Bluetooth adapter, identified by its PnP instance ID.</summary>
+    public sealed record Adapter(string InstanceId, string Name, UsbHci.UsbId Id, AdapterDriver Driver)
     {
-        if (UsbHci.FindWinUsbAdapter() is { } winusb) return (AdapterDriver.WinUsb, winusb);
-        string hwid = Ps("Get-PnpDevice -Class Bluetooth -PresentOnly -ErrorAction SilentlyContinue | Where-Object InstanceId -like 'USB\\VID_*' | " +
-                         "Select-Object -First 1 -ExpandProperty InstanceId; exit 0").Trim();
-        var m = System.Text.RegularExpressions.Regex.Match(hwid, @"VID_([0-9A-F]{4})&PID_([0-9A-F]{4})");
-        return m.Success
-            ? (AdapterDriver.Original, new UsbHci.UsbId(Convert.ToUInt16(m.Groups[1].Value, 16), Convert.ToUInt16(m.Groups[2].Value, 16)))
-            : (AdapterDriver.Absent, null);
+        public override string ToString() => $"{Name} ({Id})";
     }
 
-    public static AdapterDriver GetState() => Find().State;
+    /// <summary>
+    /// Present USB Bluetooth adapters (USB class E0/01/01), under their original driver or already under WinUSB.
+    /// </summary>
+    public static IReadOnlyList<Adapter> List()
+    {
+        string output = Ps("""
+            [Console]::OutputEncoding = [Text.Encoding]::UTF8
+            Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue |
+                Where-Object { $_.InstanceId -like 'USB\VID_*' -and $_.CompatibleID -contains 'USB\Class_E0&SubClass_01&Prot_01' } |
+                ForEach-Object { "$($_.InstanceId)|$($_.Service)|$($_.FriendlyName)" }
+            exit 0
+            """, Encoding.UTF8);
+        var adapters = new List<Adapter>();
+        foreach (string line in output.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] f = line.Split('|', 3);
+            var m = System.Text.RegularExpressions.Regex.Match(f[0], @"VID_([0-9A-F]{4})&PID_([0-9A-F]{4})");
+            if (f.Length < 3 || !m.Success) continue;
+            adapters.Add(new Adapter(f[0], f[2],
+                new UsbHci.UsbId(Convert.ToUInt16(m.Groups[1].Value, 16), Convert.ToUInt16(m.Groups[2].Value, 16)),
+                f[1].Equals("WinUSB", StringComparison.OrdinalIgnoreCase) ? AdapterDriver.WinUsb : AdapterDriver.Original));
+        }
+        return adapters;
+    }
+
+    static Adapter Get(string instanceId) =>
+        List().FirstOrDefault(a => a.InstanceId.Equals(instanceId, StringComparison.OrdinalIgnoreCase))
+        ?? throw new InvalidOperationException($"Bluetooth adapter {instanceId} not found.");
 
     /// <summary>Installs WinUSB on the adapter (administrator). Returns true if Windows requests a restart.</summary>
-    public static bool Install()
+    public static bool Install(string instanceId)
     {
-        if (Find().Id is not { } id) throw new InvalidOperationException("No USB Bluetooth adapter found.");
-        (ushort vid, ushort pid) = (id.Vid, id.Pid);
-        string hwid = HardwareId(vid, pid);
+        var id = Get(instanceId).Id;
+        // ponytail: installs by VID/PID, so two identical adapters both switch to WinUSB; DiInstallDevice on the devnode if that matters.
+        string hwid = HardwareId(id.Vid, id.Pid);
         string root = Path.Combine(Path.GetTempPath(), "AppleRemoteWinUsb-" + Guid.NewGuid().ToString("N"));
         string pkg = Path.Combine(root, "pkg");
         Directory.CreateDirectory(pkg);
@@ -88,15 +104,13 @@ public static class WinUsbDriver
     /// Removes the WinUSB driver from the adapter (administrator): the original package, still in the driver store,
     /// is reinstalled by Windows. Returns true if there was nothing to remove.
     /// </summary>
-    public static bool Restore()
+    public static bool Restore(string instanceId)
     {
-        if (Find().Id is not { } id) return true;
-        (ushort vid, ushort pid) = (id.Vid, id.Pid);
-        string inf = Ps($"$d = {FindDevice(vid, pid)}; if ($d -and $d.Service -eq 'WinUSB') " +
-                        "{ (Get-PnpDeviceProperty -InstanceId $d.InstanceId -KeyName 'DEVPKEY_Device_DriverInfPath').Data }").Trim();
+        if (Get(instanceId).Driver != AdapterDriver.WinUsb) return true;
+        string inf = Ps($"(Get-PnpDeviceProperty -InstanceId '{instanceId}' -KeyName 'DEVPKEY_Device_DriverInfPath').Data").Trim();
         if (!inf.StartsWith("oem", StringComparison.OrdinalIgnoreCase)) return true; // no third-party WinUSB (or inbox driver)
 
-        string provider = Ps($"$d = {FindDevice(vid, pid)}; (Get-PnpDeviceProperty -InstanceId $d.InstanceId -KeyName 'DEVPKEY_Device_DriverProvider').Data").Trim();
+        string provider = Ps($"(Get-PnpDeviceProperty -InstanceId '{instanceId}' -KeyName 'DEVPKEY_Device_DriverProvider').Data").Trim();
         Run("pnputil.exe", $"/delete-driver {inf} /uninstall /force");
         Run("pnputil.exe", "/scan-devices");
         if (provider == Publisher)
@@ -105,9 +119,6 @@ public static class WinUsbDriver
                 """);
         return false;
     }
-
-    static string FindDevice(ushort vid, ushort pid) =>
-        $"Get-PnpDevice -PresentOnly | Where-Object {{ ($_.HardwareID -join ' ') -like '*VID_{vid:X4}&PID_{pid:X4}*' }} | Select-Object -First 1";
 
     static string BuildInf(string hwid) => $$"""
         [Version]
@@ -143,17 +154,18 @@ public static class WinUsbDriver
         DeviceName = "Adaptateur Bluetooth (WinUSB)"
         """;
 
-    static string Ps(string script)
+    static string Ps(string script, Encoding? encoding = null)
     {
         string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes("$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'; " + script));
-        return Run("powershell.exe", $"-NoProfile -NonInteractive -EncodedCommand {encoded}");
+        return Run("powershell.exe", $"-NoProfile -NonInteractive -EncodedCommand {encoded}", encoding);
     }
 
-    static string Run(string file, string args)
+    static string Run(string file, string args, Encoding? encoding = null)
     {
         using var p = Process.Start(new ProcessStartInfo(file, args)
         {
             RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
+            StandardOutputEncoding = encoding,
         })!;
         string error = "";
         p.ErrorDataReceived += (_, e) => error += e.Data + "\n";

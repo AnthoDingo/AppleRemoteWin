@@ -16,7 +16,7 @@ public partial class App : Application
     {
         Loc.SetLanguage(Settings.Load().Language);   // before any text, including the elevated instance's
         // Elevated instance launched by DriverCommand: no window, just the operation.
-        if (e.Args is ["--driver", var verb]) Environment.Exit(DriverCommand.Run(verb));
+        if (e.Args is ["--driver", var verb, var adapter]) Environment.Exit(DriverCommand.Run(verb, adapter));
 
         _instance = new Mutex(true, @"Local\AppleRemote.Instance", out bool first);
         _showRequest = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\AppleRemote.Show");
