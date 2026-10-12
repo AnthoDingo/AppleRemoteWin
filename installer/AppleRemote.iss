@@ -19,7 +19,7 @@ AppName=Apple Remote
 AppVersion={#AppVersion}
 AppPublisher=AnthoDingo
 DefaultDirName={autopf}\AppleRemote
-DefaultGroupName=Apple Remote
+DefaultGroupName=AppleRemote
 UninstallDisplayIcon={app}\AppleRemote.exe
 OutputDir=..\Output
 OutputBaseFilename=AppleRemote-{#AppVersion}-win-{#Arch}-setup
@@ -46,6 +46,7 @@ Source: "..\keymap.example.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Apple Remote"; Filename: "{app}\AppleRemote.exe"
+Name: "{group}\Macro Editor"; Filename: "{app}\AppleRemote.MacroEditor.exe"
 Name: "{autodesktop}\Apple Remote"; Filename: "{app}\AppleRemote.exe"; Tasks: desktopicon
 
 [Run]
