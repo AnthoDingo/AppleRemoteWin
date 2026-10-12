@@ -36,13 +36,25 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     readonly List<(Point Point, long Time)> _trail = new();
     readonly BleScanner _scanner = new();
+    readonly IDialogs _dialogs;
     readonly DispatcherTimer _scanTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     readonly DispatcherTimer _trailTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
     readonly DispatcherTimer _gestureTimer = new() { Interval = TimeSpan.FromMilliseconds(TrailLifeMs) };
     bool _wasDown;
 
     /// <summary>BLE devices seen advertising with Apple manufacturer data + HID service ("Apple HID").</summary>
-    [ObservableProperty] IReadOnlyList<string> _nearbyDevices = [];
+    [ObservableProperty] IReadOnlyList<NearbyRow> _nearbyDevices = [];
+    [ObservableProperty] NearbyRow? _selectedNearby;
+
+    /// <summary>Pairing started from the nearby list: spinner while <see cref="IsPairing"/>, then the result for a few seconds.</summary>
+    [ObservableProperty] bool _isPairing;
+    [ObservableProperty] string _pairText = "";
+
+    /// <summary>A row of the nearby list; <see cref="Connected"/> = seen by Windows' HID, not over BLE.</summary>
+    public sealed record NearbyRow(string Name, string Address, string Signal, bool Connected, ulong Key = 0);
+
+    /// <summary>Settings, for the adapter choice shown on the Remote page.</summary>
+    public SettingsViewModel? Preferences { get; set; }
 
     public FingerViewModel[] Fingers { get; } = [new(0), new(1)];
 
@@ -85,9 +97,10 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
     public string StartStopText => Loc.T(_session.IsRunning ? "Remote.Stop" : "Remote.Start");
 
     /// <param name="runBound">Runs what is assigned to a remote input (key, software, combo, macro).</param>
-    public RemoteViewModel(RemoteSession session, Action<string> log, Action<string> runBound)
+    public RemoteViewModel(RemoteSession session, IDialogs dialogs, Action<string> log, Action<string> runBound)
     {
         _session = session;
+        _dialogs = dialogs;
         _log = log;
         _runBound = runBound;
         _session.Event += ev => _ui.InvokeAsync(() => OnEvent(ev), DispatcherPriority.Render);
@@ -106,10 +119,17 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
             });
             // A single remote exposes several HID collections: one line per product.
             var connected = hid.DistinctBy(d => (d.VendorId, d.ProductId))
-                .Select(d => $"{(d.IsSiriRemoteGen1 ? "Siri Remote (1st)" : d.Product.Length > 0 ? d.Product : $"HID {d.VendorId:X4}:{d.ProductId:X4}")}   {Loc.T("Remote.Connected")}");
+                .Select(d => new NearbyRow(d.IsSiriRemoteGen1 ? "Siri Remote (1st)" : d.Product.Length > 0 ? d.Product : $"HID {d.VendorId:X4}:{d.ProductId:X4}",
+                    "", Loc.T("Remote.Connected"), true));
+            // Direct Bluetooth: the remote is connected through the WinUSB adapter, invisible to Windows (no HID, no advertising).
+            if (_session.UsesBluetoothDirect && StatusLevel == StatusLevel.Ok)
+                connected = connected.Append(new NearbyRow("Siri Remote (1st)", "", Loc.T("Remote.Connected"), true));
             var nearby = _scanner.Snapshot().Where(d => d.AppleHid)
-                .Select(d => $"Siri Remote (1st)   {d.AddressText}   {d.Rssi} dBm");
+                .Select(d => new NearbyRow("Siri Remote (1st)", d.AddressText, $"{d.Rssi} dBm", false, d.Address));
+            // The list is rebuilt on every tick: the selection is kept by name + address.
+            var selected = SelectedNearby;
             NearbyDevices = connected.Concat(nearby).ToList();
+            SelectedNearby = NearbyDevices.FirstOrDefault(r => r.Name == selected?.Name && r.Address == selected.Address);
         };
     }
 
@@ -129,8 +149,16 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
     /// <summary>The language changed: texts computed here are re-read.</summary>
     public void RefreshTexts() => OnPropertyChanged(string.Empty);
 
+    /// <summary>Empties the nearby list (adapters changed, new session): devices seen before are no longer meaningful.</summary>
+    public void ClearNearby()
+    {
+        _scanner.Clear();
+        NearbyDevices = [];
+    }
+
     public void StartSession()
     {
+        ClearNearby();
         _session.Start();
         RefreshButtons();
     }
@@ -277,6 +305,7 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
     void RefreshButtons()
     {
         OnPropertyChanged(nameof(StartStopText));
+        Preferences?.SessionChanged();
         if (!_session.IsRunning)
         {
             foreach (var f in Fingers) f.IsVisible = false;
@@ -285,11 +314,32 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Double-click on a row of the nearby list: only the rows that are not connected start pairing.
+    // Double-click on a row of the nearby list: a device that is not connected is paired through Windows, as in the BLE scanner.
     [RelayCommand]
-    void PairDevice(string line)
+    async Task PairDevice()
     {
-        if (!line.EndsWith(Loc.T("Remote.Connected"))) Pair();
+        if (IsPairing || SelectedNearby is not { Connected: false } row) return;
+        // Adapter under WinUSB: the list comes from Windows' adapter, pairing through Windows would bond the remote to
+        // the wrong one; the session pairs it itself (Pair button). Double-click does nothing.
+        if (_session.UsesBluetoothDirect || Preferences?.WinUsbOn == true) return;
+        IsPairing = true;
+        // Scanning while connecting upsets some adapters: the scan is suspended.
+        _scanner.Stop();
+        try
+        {
+            if (await BleScanViewModel.PairAsync(row.Key, row.Name, row.Address, _dialogs, text => { PairText = text; _log(text); })
+                && !_session.IsRunning)
+                StartSession();   // the driver unlocks the remote as soon as Windows exposes its HID collection
+        }
+        finally
+        {
+            _scanner.Start();
+            IsPairing = false;
+        }
+        // The result stays readable a moment, unless another pairing has started since.
+        var shown = PairText;
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        if (!IsPairing && PairText == shown) PairText = "";
     }
 
     [RelayCommand]

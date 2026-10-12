@@ -23,14 +23,22 @@ public sealed class UsbHci : IDisposable
 
     public HciHost Host { get; }
 
+    /// <summary>Adapter name for the logs: USB product string and VID:PID, e.g. "TP-Link UB500 Adapter (2357:0604)".</summary>
+    public string Name { get; }
+
+    /// <summary>PnP instance ID (<c>USB\VID_…&amp;PID_…\serial</c>), as in the settings.</summary>
+    public string InstanceId { get; }
+
     /// <summary>USB read error (adapter removed, driver changed…). Raised from a reader thread.</summary>
     public event Action<string>? Failed;
 
-    UsbHci(SafeFileHandle file, IntPtr usb)
+    UsbHci(SafeFileHandle file, IntPtr usb, string instanceId)
     {
+        InstanceId = instanceId;
         _file = file;
         _usb = usb;
         (_eventPipe, _aclInPipe, _aclOutPipe) = FindPipes(usb);
+        Name = ReadName(usb);
         Host = new HciHost(SendCommand, SendAcl);
         _eventReader = StartReader(_eventPipe, 260, Host.ReceiveEventBytes, "events");
         _aclReader = StartReader(_aclInPipe, 1024, Host.ReceiveAclBytes, "ACL");
@@ -66,46 +74,46 @@ public sealed class UsbHci : IDisposable
     }
 
     /// <summary>PnP instance ID of an interface path: <c>\\?\usb#vid_x&amp;pid_y#serial#{guid}</c> -> <c>usb\vid_x&amp;pid_y\serial</c>.</summary>
-    static string InstanceId(string path) => path[4..path.LastIndexOf('#')].Replace('#', '\\');
+    static string PathInstanceId(string path) => path[4..path.LastIndexOf('#')].Replace('#', '\\');
 
     /// <summary>
     /// Opens a USB device under WinUSB whose interface 0 is a Bluetooth controller (class 0xE0, subclass 1, protocol 1),
     /// whatever its VID/PID: the one with this PnP instance ID, or the first found if null.
     /// </summary>
-    static bool TryOpenAdapter(string? instanceId, out SafeFileHandle file, out IntPtr usb)
+    /// <param name="present">The device with this instance ID is plugged in (whatever its driver).</param>
+    static UsbHci? TryOpenAdapter(string? instanceId, out bool present)
     {
+        present = false;
         foreach (string path in EnumerateUsbPaths())
         {
-            if (instanceId is not null && !InstanceId(path).Equals(instanceId, StringComparison.OrdinalIgnoreCase)) continue;
+            if (instanceId is not null && !PathInstanceId(path).Equals(instanceId, StringComparison.OrdinalIgnoreCase)) continue;
+            present = true;
             var handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero,
                 OPEN_EXISTING, FILE_FLAG_OVERLAPPED, IntPtr.Zero);
             if (handle.IsInvalid) continue;
             if (WinUsb_Initialize(handle, out IntPtr h)
                 && WinUsb_QueryInterfaceSettings(h, 0, out var d)
                 && d.bInterfaceClass == 0xE0 && d.bInterfaceSubClass == 1 && d.bInterfaceProtocol == 1)
-            {
-                file = handle;
-                usb = h;
-                return true;
-            }
+                return new UsbHci(handle, h, PathInstanceId(path));
             if (h != IntPtr.Zero) WinUsb_Free(h);
             handle.Dispose();
         }
-        file = null!;
-        usb = IntPtr.Zero;
-        return false;
+        return null;
     }
 
     /// <summary>
-    /// Opens the USB Bluetooth adapter under WinUSB with this PnP instance ID (the one chosen in the settings),
-    /// otherwise the first one under WinUSB.
+    /// Opens the USB Bluetooth adapter with this PnP instance ID (the one chosen in the settings) if it is plugged in;
+    /// otherwise (absent, or no choice) the first one under WinUSB. A chosen adapter that is present but not under WinUSB
+    /// is not replaced by another one: the session then uses Windows' stack, i.e. that adapter.
     /// </summary>
     public static UsbHci Open(string? instanceId = null)
     {
-        if (!(instanceId is not null && TryOpenAdapter(instanceId, out var file, out var usb)) && !TryOpenAdapter(null, out file, out usb))
-            throw new InvalidOperationException(
-                "No USB Bluetooth adapter under WinUSB (WinUSB driver installed, PC restarted since, adapter not already in use?).");
-        return new UsbHci(file, usb);
+        bool present = false;
+        if (instanceId is not null && TryOpenAdapter(instanceId, out present) is { } chosen) return chosen;
+        if (present)
+            throw new InvalidOperationException($"The chosen Bluetooth adapter ({instanceId}) is not under WinUSB (or already in use).");
+        return TryOpenAdapter(null, out _) ?? throw new InvalidOperationException(
+            "No USB Bluetooth adapter under WinUSB (WinUSB driver installed, PC restarted since, adapter not already in use?).");
     }
 
     static (byte Event, byte AclIn, byte AclOut) FindPipes(IntPtr usb)
@@ -124,6 +132,18 @@ public sealed class UsbHci : IDisposable
         if (evt == 0 || aclIn == 0 || aclOut == 0)
             throw new InvalidOperationException("This USB device doesn't have the endpoints of a Bluetooth controller.");
         return (evt, aclIn, aclOut);
+    }
+
+    static string ReadName(IntPtr usb)
+    {
+        var device = new byte[18];
+        if (!WinUsb_GetDescriptor(usb, 0x01, 0, 0, device, (uint)device.Length, out uint read) || read < 18) return "USB adapter";
+        string id = $"{device[8] | device[9] << 8:X4}:{device[10] | device[11] << 8:X4}";
+        var text = new byte[255];
+        // iProduct (byte 15), US English; string descriptor = length, type, UTF-16LE.
+        if (device[15] == 0 || !WinUsb_GetDescriptor(usb, 0x03, device[15], 0x0409, text, (uint)text.Length, out read) || read < 2)
+            return id;
+        return $"{System.Text.Encoding.Unicode.GetString(text, 2, (int)Math.Min(read, text[0]) - 2).Trim()} ({id})";
     }
 
     void SendCommand(byte[] packet)

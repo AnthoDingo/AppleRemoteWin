@@ -6,6 +6,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="clr-namespace:AppleRemote.App.Views"
+      xmlns:controls="clr-namespace:AppleRemote.App.Controls"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       ScrollViewer.CanContentScroll="False">
     <!-- CanContentScroll=False: no scrolling around the page, the remote fits the window height. -->
@@ -115,33 +116,37 @@
             <!-- Devices card: nearby "Apple HID" BLE advertisements, fixed height -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" />
-                    <Grid Height="110" Margin="0,4,0,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding NearbyDevices}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" Padding="4,2" FontFamily="Consolas" Background="Transparent"
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                            <TextBlock.InputBindings>
-                                                <MouseBinding Gesture="LeftDoubleClick"
-                                                              Command="{Binding DataContext.PairDeviceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                              CommandParameter="{Binding}" />
-                                            </TextBlock.InputBindings>
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Style.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                    <Grid>
+                        <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" VerticalAlignment="Center" />
+                        <!-- Adapter choice (same as Settings), only with several adapters -->
+                        <ComboBox DataContext="{Binding Preferences}" ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}"
+                                  IsEnabled="{Binding CanChangeAdapter}" Visibility="{Binding SeveralAdapters, Converter={StaticResource BoolToVisibility}}"
+                                  HorizontalAlignment="Right" MaxWidth="280" Margin="0,0,0,6" />
+                    </Grid>
+                    <Grid Height="140" Margin="0,4,0,0">
+                        <!-- Same list as the BLE scanner: selectable rows, double-click = pair -->
+                        <ui:ListView ItemsSource="{Binding NearbyDevices}" SelectedItem="{Binding SelectedNearby}"
+                                     BorderThickness="0" Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ui:ListView.ItemContainerStyle>
+                                <Style TargetType="ui:ListViewItem" BasedOn="{StaticResource ListViewItemStyle}">
+                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Connected}" Value="True">
+                                            <Setter Property="Foreground" Value="#3FB950" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:ListView.ItemContainerStyle>
+                            <ui:ListView.View>
+                                <ui:GridView>
+                                    <ui:GridViewColumn Header="{l:T Ble.ColName}" Width="200" DisplayMemberBinding="{Binding Name}" />
+                                    <ui:GridViewColumn Header="{l:T Ble.ColAddress}" Width="160" DisplayMemberBinding="{Binding Address}" />
+                                    <ui:GridViewColumn Header="{l:T Ble.ColSignal}" Width="110" DisplayMemberBinding="{Binding Signal}" />
+                                </ui:GridView>
+                            </ui:ListView.View>
+                        </ui:ListView>
                         <TextBlock Text="{l:T Remote.NearbyNone}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}">
                             <TextBlock.Style>
@@ -156,6 +161,23 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </Grid>
+                    <!-- Pairing in progress (double-click on a row): spinner, then the step / result text -->
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PairText}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <controls:Beachball Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
+                                            Visibility="{Binding IsPairing, Converter={StaticResource BoolToVisibility}}" />
+                        <TextBlock Text="{Binding PairText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   MaxWidth="460" ToolTip="{Binding PairText}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>

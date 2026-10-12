@@ -41,3 +41,4 @@ target/
 
 # Inno Setup
 Output/
+src/AppleRemoteEsp32/ota_signing_key.pem

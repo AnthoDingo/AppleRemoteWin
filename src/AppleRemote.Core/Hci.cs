@@ -11,12 +11,17 @@ public static class HciOpcode
     public const ushort Reset = 0x0C03;
     public const ushort ReadLocalVersion = 0x1001;
     public const ushort ReadBdAddr = 0x1009;
+    public const ushort LeSetEventMask = 0x2001;
+    public const ushort LeReadLocalFeatures = 0x2003;
     public const ushort LeSetScanParameters = 0x200B;
     public const ushort LeSetScanEnable = 0x200C;
     public const ushort LeCreateConnection = 0x200D;
     public const ushort LeCreateConnectionCancel = 0x200E;
     public const ushort LeConnectionUpdate = 0x2013;
     public const ushort LeEnableEncryption = 0x2019;
+    public const ushort LeSetExtendedScanParameters = 0x2041;
+    public const ushort LeSetExtendedScanEnable = 0x2042;
+    public const ushort LeExtendedCreateConnection = 0x2043;
 }
 
 /// <summary>An HCI command rejected by the controller (non-zero status).</summary>

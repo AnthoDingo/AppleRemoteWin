@@ -114,7 +114,7 @@
                 <TextBlock Text="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" />
             </Button>
         </StackPanel>
-        <ComboBox ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}" IsEnabled="{Binding DriverIdle}"
+        <ComboBox ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}" IsEnabled="{Binding CanChangeAdapter}"
                   Visibility="{Binding SeveralAdapters, Converter={StaticResource BoolToVisibility}}"
                   MinWidth="220" HorizontalAlignment="Center" Margin="0,4,0,8" />
         <TextBlock Text="{Binding DriverText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,8"

@@ -38,8 +38,9 @@ public sealed class MainViewModel : IDisposable
         }
         _session = new RemoteSession(map);
 
-        Remote = new RemoteViewModel(_session, Debug.Add, input => Preferences!.RunBound(input));
+        Remote = new RemoteViewModel(_session, dialogs, Debug.Add, input => Preferences!.RunBound(input));
         Preferences = new SettingsViewModel(_settings, _session, dialogs, Debug.Add, Remote);
+        Remote.Preferences = Preferences;
         Macros = new MacrosViewModel(Preferences.MacroChoices, Preferences.SoftwareChoices, dialogs);
     }
 

@@ -4,6 +4,8 @@
 using AppleRemote.App.Models;
 using AppleRemote.App.ViewModels;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Threading;
 using Wpf.Ui.Abstractions;
 
 namespace AppleRemote.App.Views;
@@ -30,6 +32,23 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         RootNavigation.Navigate(typeof(RemotePage));
         _viewModel.Start();
+        // Bluetooth adapter plugged in / removed: WM_DEVICECHANGE reaches top-level windows, hidden ones too (tray).
+        // Windows sends a burst of them per device: handled once things settle.
+        var settle = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+        settle.Tick += async (_, _) =>
+        {
+            settle.Stop();
+            await _viewModel.Preferences.OnDevicesChanged();
+        };
+        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle).AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+        {
+            if (msg == 0x0219 && wParam == 0x0007)   // WM_DEVICECHANGE, DBT_DEVNODES_CHANGED
+            {
+                settle.Stop();
+                settle.Start();
+            }
+            return IntPtr.Zero;
+        });
         if (Environment.GetCommandLineArgs().Contains("--tray")) Hide();   // launched with Windows: straight to the notification area
     }
 

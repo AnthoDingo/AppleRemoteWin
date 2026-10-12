@@ -131,6 +131,8 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Ble.ScanNoLe" xml:space="preserve"><value>Scan impossible : cet adaptateur ne prend pas en charge le Bluetooth LE.</value></data>
   <data name="Ble.ScanOffUser" xml:space="preserve"><value>Scan impossible : Bluetooth désactivé dans Windows.</value></data>
   <data name="Ble.ScanOffPolicy" xml:space="preserve"><value>Scan impossible : Bluetooth désactivé par une stratégie.</value></data>
+  <data name="Ble.SourceWindows" xml:space="preserve"><value>Windows (adaptateur par défaut)</value></data>
+  <data name="Ble.SourceTip" xml:space="preserve"><value>Adaptateur qui écoute : celui de Windows, ou un adaptateur sous WinUSB (libéré par la session de la télécommande)</value></data>
   <data name="Ble.ScanStopped" xml:space="preserve"><value>Scan arrêté ({0}).</value></data>
   <data name="Ble.DeviceNotFound" xml:space="preserve"><value>Appareil introuvable (n'est plus en mode appairage ?).</value></data>
   <data name="Ble.AlreadyPaired" xml:space="preserve"><value>Déjà appairé.</value></data>
@@ -169,6 +171,7 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.OpenBtFailed" xml:space="preserve"><value>Impossible d'ouvrir les paramètres Bluetooth : {0}</value></data>
   <data name="Log.DriverReboot" xml:space="preserve"><value>Pilote installé : redémarrez le PC pour terminer.</value></data>
   <data name="Log.DriverInstalled" xml:space="preserve"><value>Pilote WinUSB installé.</value></data>
+  <data name="Log.AdaptersChanged" xml:space="preserve"><value>Adaptateurs Bluetooth modifiés : {0}.</value></data>
   <data name="Log.DriverRestored" xml:space="preserve"><value>Pilote d'origine restauré.</value></data>
   <data name="Log.FilterInstalled" xml:space="preserve"><value>Filtre Bluetooth installé.</value></data>
   <data name="Log.FilterRemoved" xml:space="preserve"><value>Filtre Bluetooth retiré.</value></data>
@@ -214,7 +217,7 @@ Une confirmation administrateur (UAC) va s'afficher.</value></data>
   <data name="Status.Disconnected" xml:space="preserve"><value>Déconnectée : appuyez sur un bouton pour la réveiller.</value></data>
   <data name="Status.WaitBonded" xml:space="preserve"><value>En attente de la télécommande : appuyez sur un bouton.</value></data>
   <data name="Status.WaitPairing" xml:space="preserve"><value>En attente d'une télécommande en mode appairage : maintenez Menu + Volume + ~5 s, près du PC.</value></data>
-  <data name="Status.Found" xml:space="preserve"><value>Télécommande trouvée ({0}) : appairage…</value></data>
+  <data name="Status.Found" xml:space="preserve"><value>Télécommande trouvée ({0}) via {1} : appairage…</value></data>
   <data name="Status.ConnectedDirect" xml:space="preserve"><value>Connecté : Siri Remote (Bluetooth direct, déverrouillée)</value></data>
   <data name="Status.DisconnectedReason" xml:space="preserve"><value>Déconnectée (raison 0x{0:X2}) : appuyez sur un bouton pour la réveiller.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Clés refusées par la télécommande (0x{0:X2}) : nouvel appairage…</value></data>

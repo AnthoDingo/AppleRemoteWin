@@ -39,6 +39,8 @@
                    Text="{l:T Ble.Intro}" />
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding SelectedSource}" MinWidth="200" Margin="0,0,8,0"
+                      ToolTip="{l:T Ble.SourceTip}" />
             <Button Content="{Binding ToggleText}" Command="{Binding ToggleCommand}" MinWidth="80" />
             <Button Content="{l:T Ble.Pair}" Command="{Binding PairCommand}" />
             <Button Content="{l:T Debug.Clear}" Command="{Binding ClearCommand}" />
@@ -53,7 +55,7 @@
                 <Style TargetType="ui:ListViewItem" BasedOn="{StaticResource ListViewItemStyle}">
                     <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Likely}" Value="True">
+                        <DataTrigger Binding="{Binding AppleHid}" Value="True">
                             <Setter Property="Foreground" Value="#3FB950" />
                             <Setter Property="FontWeight" Value="SemiBold" />
                         </DataTrigger>

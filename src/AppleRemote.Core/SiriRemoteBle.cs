@@ -14,8 +14,9 @@ namespace AppleRemote;
 /// same decoder, same session.
 /// </summary>
 /// <param name="onBattery">Battery level in %: on each connection, then on each change. Transport thread.</param>
+/// <param name="adapterName">Adapter driven, shown in the status messages (logs).</param>
 public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
-    Action<double, byte[]?> onReport, Action<string> onStatus, Action<int>? onBattery = null)
+    Action<double, byte[]?> onReport, Action<string> onStatus, Action<int>? onBattery = null, string adapterName = "?")
 {
     const ushort HidService = 0x1812, Report = 0x2A4D, ReportReference = 0x2908, ClientConfiguration = 0x2902,
         BatteryService = 0x180F, BatteryLevel = 0x2A19;
@@ -66,7 +67,7 @@ public sealed class SiriRemoteBle(HciHost hci, BondStore bonds,
                 {
                     onStatus(Loc.T("Status.WaitPairing"));
                     address = await central.ScanAsync(IsSiriRemoteAdvertisement, ct);
-                    onStatus(Loc.T("Status.Found", address));
+                    onStatus(Loc.T("Status.Found", address, adapterName));
                 }
                 handle = await central.ConnectAsync(address, ct);
             }

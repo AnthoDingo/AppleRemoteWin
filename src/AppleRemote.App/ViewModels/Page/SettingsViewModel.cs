@@ -230,8 +230,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     // ---- adapter driver (Zadig equivalent) --------------------------------------
 
     [ObservableProperty] string _driverText = Loc.T("Driver.Checking");
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(DriverIdle))] bool _driverBusy;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DriverIdle)), NotifyPropertyChangedFor(nameof(CanChangeAdapter))] bool _driverBusy;
     public bool DriverIdle => !DriverBusy;
+    /// <summary>The adapter is chosen with the session stopped: stop, change, start again.</summary>
+    public bool CanChangeAdapter => DriverIdle && !_session.IsRunning;
+    /// <summary>The session started or stopped (<see cref="RemoteViewModel"/>).</summary>
+    public void SessionChanged() => OnPropertyChanged(nameof(CanChangeAdapter));
     [ObservableProperty] string _filterText = Loc.T("Driver.Checking");
     [ObservableProperty, NotifyPropertyChangedFor(nameof(WinUsbButton)), NotifyPropertyChangedFor(nameof(CanToggleFilter)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _winUsbOn;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(CanToggleFilter))] bool _adapterPresent;
@@ -278,6 +282,32 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _settings.Save();
         ShowAdapterState();
     }
+
+    /// <summary>
+    /// A device was plugged in or removed (UI thread, debounced): refreshes the adapter list and, if the running session
+    /// is not on the adapter it would now open, restarts it there.
+    /// </summary>
+    public async Task OnDevicesChanged()
+    {
+        if (DriverBusy) return;   // a driver change replugs the adapter; ChangeDriver restarts the session itself
+        var before = Adapters.Select(a => (a.InstanceId, a.Driver)).ToHashSet();
+        await RefreshDriver();
+        if (DriverBusy || before.SetEquals(Adapters.Select(a => (a.InstanceId, a.Driver)))) return;
+        _log(Loc.T("Log.AdaptersChanged", Adapters.Count > 0 ? string.Join(", ", Adapters) : "—"));
+        Remote.ClearNearby();
+        if (!_session.IsRunning || string.Equals(ExpectedAdapter(), _session.AdapterInUse, StringComparison.OrdinalIgnoreCase)) return;
+        Remote.StopSession();
+        Remote.StartSession();
+    }
+
+    /// <summary>
+    /// What <see cref="UsbHci.Open"/> would pick: the saved adapter if plugged in (direct Bluetooth only under WinUSB),
+    /// otherwise the first under WinUSB. Null: Windows' stack.
+    /// </summary>
+    string? ExpectedAdapter() =>
+        Adapters.FirstOrDefault(a => a.InstanceId.Equals(_settings.Adapter, StringComparison.OrdinalIgnoreCase)) is { } saved
+            ? saved.Driver == AdapterDriver.WinUsb ? saved.InstanceId : null
+            : Adapters.FirstOrDefault(a => a.Driver == AdapterDriver.WinUsb)?.InstanceId;
 
     void ShowAdapterState()
     {
