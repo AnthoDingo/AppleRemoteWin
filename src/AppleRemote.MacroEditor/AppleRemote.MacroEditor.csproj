@@ -9,6 +9,9 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.MacroEditor</RootNamespace>
     <ApplicationIcon>..\AppleRemote.App\app.ico</ApplicationIcon>
+    <!-- Published with a RID: self-contained, so the app runs without .NET installed. App, macro editor and filter
+         installer are published to the same folder and share that runtime; they must agree (NETSDK1150/1151). -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>

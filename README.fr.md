@@ -105,7 +105,7 @@ Chaque recompilation retamponne l'INF et resigne le `.cat` : installer toujours 
 ```
 dotnet build AppleRemote.sln                    # sous Windows (Visual Studio 2026 ou SDK .NET 10)
 dotnet test tests/AppleRemote.Tests             # sur n'importe quel OS
-dotnet publish src/AppleRemote.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
+dotnet publish src/AppleRemote.App -c Release -r win-x64 --self-contained true
 ```
 
 Depuis macOS/Linux : `-p:EnableWindowsTargeting=true` permet de compiler (pas d'exécuter) les projets Windows.

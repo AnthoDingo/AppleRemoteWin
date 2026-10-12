@@ -61,14 +61,23 @@ jobs:
         with:
           dotnet-version: 10.0.x
       # AppleRemoteDriver=false: the kernel filter is built by its own job.
+      # Self-contained, not single-file: the app, the macro editor and the filter installer share one bundled runtime.
       - run: >
           dotnet publish src/AppleRemote.App -c Release -r ${{ matrix.rid }}
-          --self-contained false -p:PublishSingleFile=true -p:AppleRemoteDriver=false
+          --self-contained true -p:AppleRemoteDriver=false
           -p:Version=${{ needs.version.outputs.version }} -o out
       - run: >
           dotnet publish src/AppleRemote.MacroEditor -c Release -r ${{ matrix.rid }}
-          --self-contained false -p:PublishSingleFile=true -p:AppleRemoteDriver=false
+          --self-contained true -p:AppleRemoteDriver=false
           -p:Version=${{ needs.version.outputs.version }} -o out
+      # Self-contained: every exe must run on the bundled runtime, never ask for an installed .NET.
+      - name: Check the runtime is bundled
+        shell: pwsh
+        run: |
+          if (-not (Test-Path out/hostfxr.dll)) { throw "out/hostfxr.dll missing: the publish is not self-contained" }
+          Get-ChildItem out -Filter *.runtimeconfig.json | ForEach-Object {
+            if (-not (Select-String -Path $_.FullName -Pattern includedFrameworks -Quiet)) { throw "$($_.Name) is framework-dependent" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: app-${{ matrix.rid }}
@@ -89,7 +98,7 @@ jobs:
           dotnet-version: 10.0.x
       - run: >
           dotnet publish src/AppleRemote.DriverInstaller -c Release -r ${{ matrix.rid }}
-          --self-contained false -p:Version=${{ needs.version.outputs.version }} -o out
+          --self-contained true -p:Version=${{ needs.version.outputs.version }} -o out
       - uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.rid }}

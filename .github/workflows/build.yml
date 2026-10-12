@@ -41,10 +41,19 @@ jobs:
           dotnet-version: 10.0.x
       - run: >
           dotnet publish src/AppleRemote.App -c Release -r ${{ matrix.rid }}
-          --self-contained false -p:PublishSingleFile=true -o out
+          --self-contained true -o out
+      # Same publish as the release: it references the app, both must be self-contained (NETSDK1150/1151).
       - run: >
           dotnet publish src/AppleRemote.MacroEditor -c Release -r ${{ matrix.rid }}
-          --self-contained false -p:PublishSingleFile=true -o out
+          --self-contained true -o out
+      # Self-contained: every exe must run on the bundled runtime, never ask for an installed .NET.
+      - name: Check the runtime is bundled
+        shell: pwsh
+        run: |
+          if (-not (Test-Path out/hostfxr.dll)) { throw "out/hostfxr.dll missing: the publish is not self-contained" }
+          Get-ChildItem out -Filter *.runtimeconfig.json | ForEach-Object {
+            if (-not (Select-String -Path $_.FullName -Pattern includedFrameworks -Quiet)) { throw "$($_.Name) is framework-dependent" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: AppleRemote-${{ matrix.rid }}

@@ -35,6 +35,9 @@ dotnet run --project src/AppleRemote.App
 Kernel filter: `cargo make --profile release` in `src/AppleRemoteDriver` (LLVM required: `LIBCLANG_PATH=C:\Program Files\LLVM\bin`, WDK).
 The Release build of `App` does it too (`-p:AppleRemoteDriver=false` to skip it); publishing copies it to `Publish\driver\`
 (the 4 files go together: every build re-stamps the INF and re-signs the `.cat`).
+Releases are published **self-contained** with a RID (`--self-contained true`, no single-file): the app runs without .NET installed;
+`App`, `MacroEditor` and `DriverInstaller` share the bundled runtime in one folder, so all three must stay self-contained together
+(`SelfContained` set in each csproj whenever a RID is given; mixing them fails with NETSDK1150/1151).
 
 Outside Windows: add `-p:EnableWindowsTargeting=true` to compile (not run) `Windows` and `App`.
 Required SDK: **.NET 10**. Run the tests after any change to `Core`.

@@ -16,8 +16,9 @@
     <Version>1.1.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <!-- Referenced by the macro editor (published with a RID): must not default to self-contained (NETSDK1151). -->
-    <SelfContained>false</SelfContained>
+    <!-- Published with a RID: self-contained, so the app runs without .NET installed. App, macro editor and filter
+         installer are published to the same folder and share that runtime; they must agree (NETSDK1150/1151). -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
     <!-- Debug page and its menu entry: off by default, enabled only by a Debug build. -->
     <EnableDebugPage>false</EnableDebugPage>
     <EnableDebugPage Condition="'$(Configuration)' == 'Debug'">true</EnableDebugPage>
