@@ -54,7 +54,7 @@
             <!-- Nothing under Play/Volume: the remote is cut off there -->
             <Grid Width="190" Height="440" Margin="250,50,250,0" VerticalAlignment="Top" ClipToBounds="True">
                 <Viewbox Width="190" Height="600" VerticalAlignment="Top" Stretch="Uniform">
-                    <local:RemoteDrawing IsEnabled="False" />
+                    <local:RemoteDrawing DataContext="{Binding Remote}" IsEnabled="False" />
                 </Viewbox>
             </Grid>
             <Canvas>
@@ -114,6 +114,9 @@
                 <TextBlock Text="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" />
             </Button>
         </StackPanel>
+        <ComboBox ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}" IsEnabled="{Binding DriverIdle}"
+                  Visibility="{Binding SeveralAdapters, Converter={StaticResource BoolToVisibility}}"
+                  MinWidth="220" HorizontalAlignment="Center" Margin="0,4,0,8" />
         <TextBlock Text="{Binding DriverText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,8"
                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
         <Grid>
@@ -154,7 +157,7 @@
             <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
             <TextBlock VerticalAlignment="Center"><Run Text="{l:T Settings.License}" /> AGPL-3.0-or-later</TextBlock>
             <TextBlock Text="·" Margin="12,0" VerticalAlignment="Center" />
-            <ui:HyperlinkButton Content="{l:T Settings.Components}" Click="Components_Click" Padding="0" />
+            <ui:HyperlinkButton Content="{l:T Settings.Components}" Command="{Binding ShowComponentsCommand}" Padding="0" />
         </StackPanel>
     </Border>
     </Grid>

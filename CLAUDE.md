@@ -14,7 +14,7 @@ src/AppleRemote.Windows   HID (SetupAPI + hid.dll), unlock, reading, SendInput, 
                           HCI transport over WinUSB (UsbHci.cs, any adapter under the WinUSB driver)
 src/AppleRemote.App       WPF window (startup project)                             net10.0-windows10.0.19041.0
                           WPF-UI + MVVM: MainWindow = NavigationView menu; Remote, Settings, Debug pages
-                          (menu footer) sharing MainViewModel; common styles in Views/Styles.xaml
+                          (menu footer), one view-model per page (ViewModels/Page) owned by MainViewModel (settings + session); common styles in Views/Styles.xaml
 src/AppleRemote.DriverInstaller  installs / removes the kernel filter through its package (pnputil), requires elevation; launched by the app's button
 src/AppleRemoteDriver     KMDF kernel filter in Rust (windows-drivers-rs) under BTHUSB, extension INF; signed package (test certificate)
 tests/AppleRemote.Tests   xunit, run on any OS (sample.jsonl + golden.json)
@@ -104,10 +104,12 @@ Required SDK: **.NET 10**. Run the tests after any change to `Core`.
   `BondStore`), connection, encryption, HID discovery, unlock, all buttons and gestures decoded by
   `RemotePipeline`, encrypted reconnection after sleep. Right after a pairing, the remote drops once or twice
   (reason 0x13): the loop reconnects by itself. Only re-pair on key rejection (0x05/0x06), not on 0x3E.
-- **In the app**: `RemoteSession.Start` uses direct Bluetooth if `UsbHci.Open()` succeeds (first USB Bluetooth adapter
-  under WinUSB, detected by its `E0/01/01` class, any VID/PID), otherwise Windows' HID (with the filter). Keys in `%AppData%\AppleRemote\bonds.json`; without keys, scan for a
+- **In the app**: `RemoteSession.Start` uses direct Bluetooth if `UsbHci.Open(AdapterId)` succeeds (adapter chosen in Settings
+  if under WinUSB, else the first one under WinUSB, detected by its `E0/01/01` class, any VID/PID), otherwise Windows' HID (with the filter). Keys in `%AppData%\AppleRemote\bonds.json`; without keys, scan for a
   remote in pairing mode (service 0x1812 + Apple data 0x004C). "Pair" forgets the keys and restarts.
-  Only one adapter handled (the first found; `WinUsbDriver.Find` for driver install/restore). Firmware is not loaded: the UB500 (Realtek) would additionally need its firmware loaded.
+  Several adapters: `WinUsbDriver.List` (PnP, compatible ID `USB\Class_E0&SubClass_01&Prot_01`), the Settings ComboBox picks one
+  (PnP instance ID in `settings.json` `Adapter`), WinUSB install/restore target it (`--driver install|restore <instanceId>`).
+  WinUSB is installed by VID/PID: two identical dongles switch together. Bonds are tied to the adapter: re-pair after switching. Firmware is not loaded: the UB500 (Realtek) would additionally need its firmware loaded.
   `FakeRemote` (tests) reproduces the real one's GATT database (handles `0x1D` F0, `0x20` F1, `0x23`/`0x24` FC).
 - Reports received over GATT: the ID (`0xFC`) is not in the notification; it is put back at the front to keep the `hid.dll` format.
 - Application windows running as administrator ignore `SendInput` from a non-elevated program (UIPI).

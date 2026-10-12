@@ -13,6 +13,7 @@ public interface IDialogs
     Task Warn(string title, string message);
     void CopyText(string text);
     void ShowBleScan(Action onPaired);
+    void ShowComponents();
 }
 
 public sealed class Dialogs(Window owner) : IDialogs
@@ -38,4 +39,6 @@ public sealed class Dialogs(Window owner) : IDialogs
         window.ViewModel.Paired += onPaired;
         window.Show();
     }
+
+    public void ShowComponents() => new ComponentsWindow { Owner = owner }.ShowDialog();
 }

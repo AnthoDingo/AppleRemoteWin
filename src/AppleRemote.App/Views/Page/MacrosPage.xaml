@@ -22,12 +22,12 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="{l:T Nav.Macros}" Style="{StaticResource Section}" />
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-                    <ui:Button Icon="{ui:SymbolIcon Add24}" ToolTip="{l:T Macros.New}" Click="New_Click" Margin="0,0,6,0" />
-                    <ui:Button x:Name="DuplicateButton" Icon="{ui:SymbolIcon Copy24}" ToolTip="{l:T Pick.DuplicateMacro}" Click="Duplicate_Click" Margin="0,0,6,0" IsEnabled="False" />
-                    <ui:Button x:Name="DeleteButton" Icon="{ui:SymbolIcon Delete24}" ToolTip="{l:T Macro.DeleteMacro}" Click="Delete_Click" Margin="0,0,6,0" IsEnabled="False" Appearance="Danger" />
-                    <ui:Button x:Name="SaveButton" Icon="{ui:SymbolIcon Save24}" ToolTip="{l:T Macros.Save}" Click="Save_Click" IsEnabled="False" Appearance="Success" />
+                    <ui:Button Icon="{ui:SymbolIcon Add24}" ToolTip="{l:T Macros.New}" Command="{Binding NewCommand}" Click="New_Click" Margin="0,0,6,0" />
+                    <ui:Button Icon="{ui:SymbolIcon Copy24}" ToolTip="{l:T Pick.DuplicateMacro}" Command="{Binding DuplicateCommand}" Margin="0,0,6,0" />
+                    <ui:Button Icon="{ui:SymbolIcon Delete24}" ToolTip="{l:T Macro.DeleteMacro}" Command="{Binding DeleteCommand}" Margin="0,0,6,0" Appearance="Danger" />
+                    <ui:Button Icon="{ui:SymbolIcon Save24}" ToolTip="{l:T Macros.Save}" Command="{Binding SaveCommand}" Appearance="Success" />
                 </StackPanel>
-                <ListBox x:Name="List" ItemsSource="{Binding MacroChoices}" SelectionChanged="List_SelectionChanged" />
+                <ListBox ItemsSource="{Binding Macros}" SelectedItem="{Binding SelectedMacro}" />
             </DockPanel>
         </Border>
         <Grid Grid.Column="1">
@@ -38,12 +38,25 @@
             <StackPanel Margin="0,0,0,10">
                 <TextBlock Text="{l:T Macro.Name}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,4" />
                 <DockPanel>
-                    <ui:Button x:Name="TestButton" DockPanel.Dock="Right" Icon="{ui:SymbolIcon Play24}" ToolTip="{l:T Macros.Test}"
-                               Click="Test_Click" IsEnabled="False" Appearance="Primary" Margin="8,0,0,0" VerticalAlignment="Stretch" />
-                    <TextBox x:Name="NameBox" TextChanged="Refresh" />
+                    <!-- While a test runs, the same button stops it. -->
+                    <ui:Button DockPanel.Dock="Right" Command="{Binding TestCommand}" Appearance="Primary" Margin="8,0,0,0" VerticalAlignment="Stretch">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                <Setter Property="Icon" Value="{ui:SymbolIcon Play24}" />
+                                <Setter Property="ToolTip" Value="{l:T Macros.Test}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Testing}" Value="True">
+                                        <Setter Property="Icon" Value="{ui:SymbolIcon Stop24}" />
+                                        <Setter Property="ToolTip" Value="{l:T Macros.StopTest}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <TextBox x:Name="NameBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
                 </DockPanel>
             </StackPanel>
-            <c:MacroEditor x:Name="Editor" Grid.Row="1" Changed="Refresh" />
+            <c:MacroEditor x:Name="Editor" Grid.Row="1" />
         </Grid>
     </Grid>
 </Page>

@@ -13,7 +13,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
         Loc.SetLanguage(Settings.Load().Language);
-        new MainWindow(new MacroLibrary()).ShowDialog();
+        new MainWindow().ShowDialog();
         Shutdown();
     }
 }

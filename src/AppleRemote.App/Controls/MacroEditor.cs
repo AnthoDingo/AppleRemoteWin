@@ -16,7 +16,7 @@ namespace AppleRemote.App.Controls;
 
 /// <summary>Block-based macro editor: Blockly in a WebView2, served from the Blockly folder next to the exe.
 /// Shared by the Macros page and the macro editor window.</summary>
-public sealed class MacroEditor : Border
+public sealed class MacroEditor : Border, ViewModels.IMacroWorkspace
 {
     readonly WebView2 _web = new() { DefaultBackgroundColor = System.Drawing.Color.FromArgb(0x20, 0x20, 0x20) };
     bool _started, _ready;

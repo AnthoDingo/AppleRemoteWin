@@ -34,7 +34,7 @@
                 <Button Content="{l:T Debug.Clear}" HorizontalAlignment="Right" Padding="8,2" Margin="0,0,0,6"
                         Command="{Binding ClearLogCommand}" />
             </Grid>
-            <TextBox x:Name="LogBox" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+            <TextBox Grid.Row="1" Text="{Binding LogText, Mode=OneWay}" TextChanged="Log_TextChanged" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
                      VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                      FontFamily="Consolas" FontSize="12" />
         </Grid>

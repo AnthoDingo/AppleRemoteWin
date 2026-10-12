@@ -1,28 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 AnthoDingo
 
-using System.Collections.Specialized;
-using AppleRemote.App.ViewModels;
+using System.Windows.Controls;
 
 namespace AppleRemote.App.Views;
 
 public partial class DebugPage
 {
-    public DebugPage()
-    {
-        InitializeComponent();
+    public DebugPage() => InitializeComponent();
 
-        // Log: one line per entry, always scrolled to the last one (300 lines max, rebuilt on every change).
-        DataContextChanged += (_, e) =>
-        {
-            if (e.NewValue is not MainViewModel vm) return;
-            void Refresh()
-            {
-                LogBox.Text = string.Join(Environment.NewLine, vm.Log);
-                LogBox.ScrollToEnd();
-            }
-            ((INotifyCollectionChanged)vm.Log).CollectionChanged += (_, _) => Refresh();
-            Refresh();
-        };
-    }
+    // The log always shows its last line.
+    void Log_TextChanged(object sender, TextChangedEventArgs e) => ((TextBox)sender).ScrollToEnd();
 }

@@ -19,15 +19,15 @@ public static class DriverCommand
     static string LogPath => Path.Combine(Path.GetTempPath(), "AppleRemoteDriver.log");
 
     /// <summary>Elevated-process side: runs the operation and returns the exit code.</summary>
-    public static int Run(string verb)
+    public static int Run(string verb, string adapter)
     {
         try
         {
             File.Delete(LogPath);
             switch (verb)
             {
-                case "install": return WinUsbDriver.Install() ? RebootNeeded : Ok;
-                case "restore": WinUsbDriver.Restore(); return Ok;
+                case "install": return WinUsbDriver.Install(adapter) ? RebootNeeded : Ok;
+                case "restore": WinUsbDriver.Restore(adapter); return Ok;
                 default: throw new ArgumentException(Loc.T("Driver.UnknownVerb", verb));
             }
         }
@@ -58,14 +58,14 @@ public static class DriverCommand
     }
 
     /// <summary>Application side: relaunches elevated and waits. Returns (exit code, optional error message).</summary>
-    public static async Task<(int Code, string? Error)> RunElevatedAsync(string verb)
+    public static async Task<(int Code, string? Error)> RunElevatedAsync(string verb, string? adapter = null)
     {
         try
         {
             // Bluetooth filter: DriverInstaller (install|uninstall); WinUSB: the application relaunches itself elevated.
             var info = verb.StartsWith("filter-")
                 ? new ProcessStartInfo(FindInstaller(), $"{verb["filter-".Length..]} --quiet") { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden }
-                : new ProcessStartInfo(Environment.ProcessPath!, $"--driver {verb}") { UseShellExecute = true, Verb = "runas" };
+                : new ProcessStartInfo(Environment.ProcessPath!, $"--driver {verb} \"{adapter}\"") { UseShellExecute = true, Verb = "runas" };
             using var process = Process.Start(info)!;
             await process.WaitForExitAsync();
             string? error = process.ExitCode == Failed && File.Exists(LogPath) ? File.ReadAllText(LogPath) : null;

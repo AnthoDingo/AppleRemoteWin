@@ -23,6 +23,8 @@ public sealed class Settings
     public List<string> Apps { get; set; } = new();
     /// <summary>"auto" (Windows language), "fr" or "en"; applied at startup.</summary>
     public string Language { get; set; } = "auto";
+    /// <summary>PnP instance ID of the USB Bluetooth adapter chosen for WinUSB / direct Bluetooth (null: the first one).</summary>
+    public string? Adapter { get; set; }
     /// <summary>Last release tag a toast was shown for (one notification per version).</summary>
     public string? LastNotifiedVersion { get; set; }
 
