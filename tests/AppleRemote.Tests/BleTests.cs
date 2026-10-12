@@ -42,6 +42,67 @@ public class BleTests
     }
 
     [Fact]
+    public void Scan_reports_every_advertisement_with_address_and_rssi()
+    {
+        var seen = new List<(byte[] Address, sbyte Rssi, byte[] Data)>();
+        _central.Advertisement += (a, r, d) => seen.Add((a, r, d));
+        using var cts = new CancellationTokenSource();
+        var scanning = _central.ScanAsync(_ => false, cts.Token);
+        void CommandCompleteOk(ushort opcode) => _hci.ReceiveEventBytes([0x0E, 0x04, 0x01, (byte)opcode, (byte)(opcode >> 8), 0x00]);
+        CommandCompleteOk(HciOpcode.LeSetScanParameters);
+        CommandCompleteOk(HciOpcode.LeSetScanEnable);
+
+        // Name "AB", Apple manufacturer data, 16-bit services 0x180F + 0x1812; random address; RSSI -60.
+        byte[] ad = [0x03, 0x09, (byte)'A', (byte)'B', 0x04, 0xFF, 0x4C, 0x00, 0x01, 0x05, 0x03, 0x0F, 0x18, 0x12, 0x18];
+        _hci.ReceiveEventBytes([0x3E, (byte)(12 + ad.Length), 0x02, 0x01, 0x00, 0x01, 1, 2, 3, 4, 5, 6, (byte)ad.Length, .. ad, 0xC4]);
+
+        var (address, rssi, data) = seen.Single();
+        Assert.Equal(new byte[] { 1, 2, 3, 4, 5, 6 }, address);
+        Assert.Equal(-60, rssi);
+        Assert.Equal([(0x09, "AB"u8.ToArray()), (0xFF, [0x4C, 0x00, 0x01]), (0x03, [0x0F, 0x18, 0x12, 0x18])],
+            LeCentral.AdStructures(data).Select(s => (s.Type, s.Value)));
+
+        Assert.False(scanning.IsCompleted);   // nothing matched: scans until cancelled
+        cts.Cancel();
+    }
+
+    [Fact]
+    public async Task Bluetooth_5_controller_scans_and_connects_with_the_extended_commands()
+    {
+        // Self-answering controller announcing LE Extended Advertising (feature bit 12).
+        var sent = new List<byte[]>();
+        HciHost? hci = null;
+        hci = new HciHost(c =>
+        {
+            sent.Add(c);
+            ushort op = (ushort)(c[0] | c[1] << 8);
+            if (op == HciOpcode.LeExtendedCreateConnection) hci!.ReceiveEventBytes([0x0F, 0x04, 0x00, 0x01, c[0], c[1]]);
+            else hci!.ReceiveEventBytes([0x0E, 12, 0x01, c[0], c[1], 0x00, .. (op == HciOpcode.LeReadLocalFeatures ? new byte[] { 0, 0x10, 0, 0, 0, 0, 0, 0 } : new byte[8])]);
+        }, _ => { });
+        var central = new LeCentral(hci);
+        await central.InitializeAsync();
+        Assert.True(central.Extended);
+        Assert.Contains(sent, c => c[0] == 0x01 && c[1] == 0x20 && c[3] == 0x1F && c[4] == 0x10);   // LE event mask: + extended report
+
+        var scanning = central.ScanAsync(SiriRemoteBle.IsSiriRemoteAdvertisement);
+        Assert.Equal(new byte[] { 0x41, 0x20, 8, 0x00, 0x00, 0x01, 0x01, 0x60, 0x00, 0x30, 0x00 }, sent[^2]);
+        // Extended report of a legacy ADV_IND (event type 0x13) from a public address, RSSI -40.
+        byte[] ad = FakeRemote.PairingAdvertisement;
+        hci.ReceiveEventBytes([0x3E, (byte)(26 + ad.Length), 0x0D, 0x01, 0x13, 0x00, 0x00, .. BdAddr.Parse(FakeRemote.Address),
+            0x01, 0x00, 0xFF, 0x7F, 0xD8, 0x00, 0x00, 0x00, 0, 0, 0, 0, 0, 0, (byte)ad.Length, .. ad]);
+        Assert.Equal(FakeRemote.Address, await scanning);
+        Assert.Equal(new byte[] { 0x42, 0x20, 6, 0, 0, 0, 0, 0, 0 }, sent[^1]);   // scan disabled
+
+        var connecting = central.ConnectAsync(FakeRemote.Address);
+        byte[] expected = [0x43, 0x20, 26, 0x00, 0x00, 0x00, .. BdAddr.Parse(FakeRemote.Address), 0x01, 0x60, 0x00, 0x30, 0x00,
+            0x0C, 0x00, 0x18, 0x00, 0x00, 0x00, 0xC8, 0x00, 0, 0, 0, 0];
+        Assert.Equal(expected, sent[^1]);
+        hci.ReceiveEventBytes([0x3E, 0x13, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00, .. BdAddr.Parse(FakeRemote.Address),
+            0x18, 0x00, 0x00, 0x00, 0xC8, 0x00, 0x00]);
+        Assert.Equal((ushort)0x0040, await connecting);
+    }
+
+    [Fact]
     public async Task Encrypt_sends_the_bond_keys_and_waits_for_the_encryption_change()
     {
         var keys = new BondKeys(Enumerable.Range(1, 16).Select(i => (byte)i).ToArray(), 0x4D3E, [9, 8, 7, 6, 5, 4, 3, 2]);

@@ -13,7 +13,13 @@ namespace AppleRemote.App.ViewModels;
 
 public sealed partial class BleScanViewModel : ObservableObject, IDisposable
 {
-    public sealed record Row(string NameText, string Address, short Rssi, string Companies, string Note, bool Likely, bool AppleNoHid, ulong Key);
+    /// <summary>Scan source: Windows' radio (<see cref="AdapterId"/> null) or an adapter under WinUSB.</summary>
+    public sealed record Source(string Name, string? AdapterId)
+    {
+        public override string ToString() => Name;
+    }
+
+    public sealed record Row(string NameText, string Address, short Rssi, string Companies, string Note, bool AppleHid, bool AppleNoHid, ulong Key);
 
     readonly BleScanner _scanner = new();
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(500) };
@@ -21,6 +27,8 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
     readonly IDialogs _dialogs;
     bool _paused;
 
+    [ObservableProperty] IReadOnlyList<Source> _sources = [new(Loc.T("Ble.SourceWindows"), null)];
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(PairCommand))] Source? _selectedSource;
     [ObservableProperty] IReadOnlyList<Row> _rows = [];
     [ObservableProperty] Row? _selected;
     [ObservableProperty] string _toggleText = Loc.T("Ble.Pause");
@@ -46,10 +54,31 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         _timer.Tick += (_, _) => Refresh();
     }
 
-    public void Start()
+    public async void Start()
     {
-        _scanner.Start();
+        SelectedSource = Sources[0];
         _timer.Start();
+        // Adapters under their original driver are all behind Windows' single radio: only WinUSB ones are a choice.
+        try
+        {
+            var usb = await Task.Run(() => WinUsbDriver.List().Where(a => a.Driver == AdapterDriver.WinUsb).ToList());
+            Sources = [Sources[0], .. usb.Select(a => new Source($"{a.Name} ({a.Id}, WinUSB)", a.InstanceId))];
+            SelectedSource = Sources[0];   // the ComboBox clears its selection when the list is replaced
+        }
+        catch (Exception) { /* listing failed: Windows' radio only */ }
+    }
+
+    Source? _scanned;
+
+    partial void OnSelectedSourceChanged(Source? value)
+    {
+        if (value is null || value == _scanned) return;   // null: transient, while the list is replaced
+        _scanned = value;
+        _scanner.Clear();
+        _scanner.Start(value.AdapterId);
+        _paused = false;
+        ToggleText = Loc.T("Ble.Pause");
+        Refresh();
     }
 
     public void Dispose()
@@ -65,7 +94,7 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         var devices = _scanner.Snapshot();
         if (OnlyLikely) devices = devices.Where(d => d.AppleHid).ToList();
         return devices
-            .Select(d => new Row(d.Name.Length > 0 ? d.Name : Loc.T("Ble.Unnamed"), d.AddressText, d.Rssi, d.CompaniesText, d.Note, d.Likely, d.IsApple && !d.HidService, d.Address))
+            .Select(d => new Row(d.Name.Length > 0 ? d.Name : Loc.T("Ble.Unnamed"), d.AddressText, d.Rssi, d.CompaniesText, d.Note, d.AppleHid, d.IsApple && !d.HidService, d.Address))
             .ToList();
     }
 
@@ -76,7 +105,7 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         ulong? selected = Selected?.Key;
         Rows = rows;
         Selected = rows.FirstOrDefault(r => r.Key == selected);
-        CountText = Loc.T("Ble.Count", rows.Count, rows.Count(r => r.Likely));
+        CountText = Loc.T("Ble.Count", rows.Count, rows.Count(r => r.AppleHid));
     }
 
     [RelayCommand]
@@ -84,7 +113,7 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
     {
         if (_paused)
         {
-            _scanner.Start();
+            _scanner.Start(SelectedSource?.AdapterId);
             _timer.Start();
             ToggleText = Loc.T("Ble.Pause");
         }
@@ -96,7 +125,8 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         _paused = !_paused;
     }
 
-    bool CanPair() => !IsPairing;
+    // Pairing goes through Windows: not for a device seen by an adapter under WinUSB (the Remote page pairs those).
+    bool CanPair() => !IsPairing && SelectedSource?.AdapterId is null;
 
     [RelayCommand(CanExecute = nameof(CanPair))]
     Task Pair() => PairSelected(system: false);
@@ -113,35 +143,48 @@ public sealed partial class BleScanViewModel : ObservableObject, IDisposable
         // Scanning while connecting upsets some adapters: the scan is suspended.
         bool resume = !_paused;
         _scanner.Stop();
-        PairText = Loc.T("Ble.Pairing", row.NameText, row.Address);
         try
         {
-            var (status, message) = await BleScanner.PairAsync(row.Key, system);
-            // Paired on the Windows side while the device advertises in pairing mode: stale link, no GATT services (hence no HID).
-            if (status == DevicePairingResultStatus.AlreadyPaired && await _dialogs.Confirm(Loc.T("Ble.AlreadyTitle"),
-                    Loc.T("Ble.AlreadyAsk", row.NameText, row.Address)))
-            {
-                PairText = Loc.T("Ble.Unpairing");
-                var unpaired = await BleScanner.UnpairAsync(row.Key);
-                if (unpaired is not (DeviceUnpairingResultStatus.Unpaired or DeviceUnpairingResultStatus.AlreadyUnpaired))
-                {
-                    PairText = Loc.T("Ble.UnpairFailed", unpaired);
-                    return;
-                }
-                PairText = Loc.T("Ble.Pairing", row.NameText, row.Address);
-                (status, message) = await BleScanner.PairAsync(row.Key, system);
-            }
-            PairText = message;
-            if (status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired) Paired?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            PairText = Loc.T("Ble.PairFailed", ex.Message);
+            if (await PairAsync(row.Key, row.NameText, row.Address, _dialogs, text => PairText = text, system)) Paired?.Invoke();
         }
         finally
         {
             IsPairing = false;
-            if (resume) _scanner.Start();
+            if (resume) _scanner.Start(SelectedSource?.AdapterId);
+        }
+    }
+
+    /// <summary>
+    /// Pairs a device through Windows (also used by the Remote page). Offers to drop a stale Windows pairing first.
+    /// <paramref name="progress"/> receives each step's text. True if paired (or already paired).
+    /// </summary>
+    public static async Task<bool> PairAsync(ulong key, string name, string address, IDialogs dialogs, Action<string> progress, bool system = false)
+    {
+        progress(Loc.T("Ble.Pairing", name, address));
+        try
+        {
+            var (status, message) = await BleScanner.PairAsync(key, system);
+            // Paired on the Windows side while the device advertises in pairing mode: stale link, no GATT services (hence no HID).
+            if (status == DevicePairingResultStatus.AlreadyPaired && await dialogs.Confirm(Loc.T("Ble.AlreadyTitle"),
+                    Loc.T("Ble.AlreadyAsk", name, address)))
+            {
+                progress(Loc.T("Ble.Unpairing"));
+                var unpaired = await BleScanner.UnpairAsync(key);
+                if (unpaired is not (DeviceUnpairingResultStatus.Unpaired or DeviceUnpairingResultStatus.AlreadyUnpaired))
+                {
+                    progress(Loc.T("Ble.UnpairFailed", unpaired));
+                    return false;
+                }
+                progress(Loc.T("Ble.Pairing", name, address));
+                (status, message) = await BleScanner.PairAsync(key, system);
+            }
+            progress(message);
+            return status is DevicePairingResultStatus.Paired or DevicePairingResultStatus.AlreadyPaired;
+        }
+        catch (Exception ex)
+        {
+            progress(Loc.T("Ble.PairFailed", ex.Message));
+            return false;
         }
     }
 

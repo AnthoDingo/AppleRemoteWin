@@ -73,6 +73,9 @@ public sealed class RemoteSession : IDisposable
     /// <summary>True if the running session drives the adapter directly (WinUSB) rather than Windows' HID.</summary>
     public bool UsesBluetoothDirect { get; private set; }
 
+    /// <summary>PnP instance ID of the WinUSB adapter the running session drives; null on Windows' HID or when stopped.</summary>
+    public string? AdapterInUse { get; private set; }
+
     /// <summary>Forgets the direct-Bluetooth bond: on next start, looks for a remote in pairing mode.</summary>
     public void ForgetPairing() => new BondStore(BondsPath).Clear();
 
@@ -91,10 +94,11 @@ public sealed class RemoteSession : IDisposable
         catch (Exception e) { Status?.Invoke(Loc.T("Status.BtUnavailable", e.Message)); }
 
         UsesBluetoothDirect = hci is not null;
+        AdapterInUse = hci?.InstanceId;
         if (hci is not null)
         {
             hci.Failed += s => Status?.Invoke(s);
-            var driver = new SiriRemoteBle(hci.Host, new BondStore(BondsPath), Feed, s => Status?.Invoke(s), l => Battery?.Invoke(l));
+            var driver = new SiriRemoteBle(hci.Host, new BondStore(BondsPath), Feed, s => Status?.Invoke(s), l => Battery?.Invoke(l), hci.Name);
             _driverTask = Task.Run(async () =>
             {
                 try { await driver.RunAsync(ct); }
@@ -120,6 +124,7 @@ public sealed class RemoteSession : IDisposable
         cts.Dispose();
         _cts = null;
         _driverTask = _tickTask = null;
+        AdapterInUse = null;
         lock (_gate) _binder.ReleaseAll();
         Status?.Invoke(Loc.T("Status.Stopped"));
     }

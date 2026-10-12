@@ -109,7 +109,13 @@ Required SDK: **.NET 10**. Run the tests after any change to `Core`.
   remote in pairing mode (service 0x1812 + Apple data 0x004C). "Pair" forgets the keys and restarts.
   Several adapters: `WinUsbDriver.List` (PnP, compatible ID `USB\Class_E0&SubClass_01&Prot_01`), the Settings ComboBox picks one
   (PnP instance ID in `settings.json` `Adapter`), WinUSB install/restore target it (`--driver install|restore <instanceId>`).
-  WinUSB is installed by VID/PID: two identical dongles switch together. Bonds are tied to the adapter: re-pair after switching. Firmware is not loaded: the UB500 (Realtek) would additionally need its firmware loaded.
+  WinUSB is installed by VID/PID: two identical dongles switch together. Bonds are tied to the adapter: re-pair after switching. Realtek RTL8761B (TP-Link UB500): its ROM firmware answers HCI but
+  can't hold an LE connection; `LeCentral.InitializeAsync` sends the patch (`RealtekFirmware`, port of Bumble's `rtk.py`) from
+  `rtl8761bu_fw.bin` + `rtl8761bu_config.bin` (linux-firmware `rtl_bt/`) in `%AppData%\AppleRemote\firmware\` or `firmware\` next
+  to the exe. RAM only: lost on unplug, kept across HCI Reset. Patched, it accepts the legacy LE Create Connection but never
+  connects: on controllers with LE Extended Advertising (feature bit 12) `LeCentral` scans and connects with the extended
+  commands (0x2041-0x2043, extended report 0x0D), like Bumble; the Qualcomm keeps the legacy ones. Validated 2026-10-12
+  (reconnection with keys from a Bumble pairing; pairing from the app itself not yet re-tested on the UB500).
   `FakeRemote` (tests) reproduces the real one's GATT database (handles `0x1D` F0, `0x20` F1, `0x23`/`0x24` FC).
 - Reports received over GATT: the ID (`0xFC`) is not in the notification; it is put back at the front to keep the `hid.dll` format.
 - Application windows running as administrator ignore `SendInput` from a non-elevated program (UIPI).

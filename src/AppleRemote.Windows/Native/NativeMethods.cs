@@ -161,6 +161,11 @@ internal static class NativeMethods
 
     [DllImport("winusb.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool WinUsb_GetDescriptor(IntPtr interfaceHandle, byte descriptorType, byte index, ushort languageId,
+        byte[] buffer, uint bufferLength, out uint lengthTransferred);
+
+    [DllImport("winusb.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool WinUsb_QueryPipe(IntPtr interfaceHandle, byte alternateInterfaceNumber, byte pipeIndex,
         out WINUSB_PIPE_INFORMATION pipeInformation);
 

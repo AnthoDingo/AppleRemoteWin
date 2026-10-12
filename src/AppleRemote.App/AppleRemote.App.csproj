@@ -46,6 +46,9 @@
   <ItemGroup>
     <!-- Éditeur de macro : Blockly 11.2.2 (Apache-2.0) et sa page, servis au WebView2 depuis le dossier de l'exe. -->
     <Content Include="Blockly\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Realtek RTL8761B patch (TP-Link UB500) from linux-firmware rtl_bt/, sent by RealtekFirmware under WinUSB;
+         redistributable unmodified with its licence. -->
+    <Content Include="firmware\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

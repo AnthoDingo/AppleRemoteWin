@@ -131,6 +131,8 @@ Remove this pairing and pair again?</value></data>
   <data name="Ble.ScanNoLe" xml:space="preserve"><value>Scan impossible: this adapter does not support Bluetooth LE.</value></data>
   <data name="Ble.ScanOffUser" xml:space="preserve"><value>Scan impossible: Bluetooth is turned off in Windows.</value></data>
   <data name="Ble.ScanOffPolicy" xml:space="preserve"><value>Scan impossible: Bluetooth is disabled by a policy.</value></data>
+  <data name="Ble.SourceWindows" xml:space="preserve"><value>Windows (default adapter)</value></data>
+  <data name="Ble.SourceTip" xml:space="preserve"><value>Listening adapter: Windows’ one, or an adapter under WinUSB (released by the remote session)</value></data>
   <data name="Ble.ScanStopped" xml:space="preserve"><value>Scan stopped ({0}).</value></data>
   <data name="Ble.DeviceNotFound" xml:space="preserve"><value>Device not found (no longer in pairing mode?).</value></data>
   <data name="Ble.AlreadyPaired" xml:space="preserve"><value>Already paired.</value></data>
@@ -169,6 +171,7 @@ Remove this pairing and pair again?</value></data>
   <data name="Log.OpenBtFailed" xml:space="preserve"><value>Could not open the Bluetooth settings: {0}</value></data>
   <data name="Log.DriverReboot" xml:space="preserve"><value>Driver installed: restart the PC to finish.</value></data>
   <data name="Log.DriverInstalled" xml:space="preserve"><value>WinUSB driver installed.</value></data>
+  <data name="Log.AdaptersChanged" xml:space="preserve"><value>Bluetooth adapters changed: {0}.</value></data>
   <data name="Log.DriverRestored" xml:space="preserve"><value>Original driver restored.</value></data>
   <data name="Log.FilterInstalled" xml:space="preserve"><value>Bluetooth filter installed.</value></data>
   <data name="Log.FilterRemoved" xml:space="preserve"><value>Bluetooth filter removed.</value></data>
@@ -214,7 +217,7 @@ An administrator confirmation (UAC) will appear.</value></data>
   <data name="Status.Disconnected" xml:space="preserve"><value>Disconnected: press a button to wake it.</value></data>
   <data name="Status.WaitBonded" xml:space="preserve"><value>Waiting for the remote: press a button.</value></data>
   <data name="Status.WaitPairing" xml:space="preserve"><value>Waiting for a remote in pairing mode: hold Menu + Volume + for ~5 s, near the PC.</value></data>
-  <data name="Status.Found" xml:space="preserve"><value>Remote found ({0}): pairing…</value></data>
+  <data name="Status.Found" xml:space="preserve"><value>Remote found ({0}) via {1}: pairing…</value></data>
   <data name="Status.ConnectedDirect" xml:space="preserve"><value>Connected: Siri Remote (direct Bluetooth, unlocked)</value></data>
   <data name="Status.DisconnectedReason" xml:space="preserve"><value>Disconnected (reason 0x{0:X2}): press a button to wake it.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Keys refused by the remote (0x{0:X2}): pairing again…</value></data>

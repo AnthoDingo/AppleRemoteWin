@@ -49,6 +49,7 @@ public sealed record BleDevice(
 /// Listens to Bluetooth LE advertisements around the PC (<see cref="BluetoothLEAdvertisementWatcher"/>), without pairing.
 /// Diagnostic aid: a Siri Remote in pairing mode (Menu + Volume + ~5 s) must show up here,
 /// with the Apple manufacturer (0x004C) and/or the HID service, even if Windows' "Add a device" list doesn't show it.
+/// Windows only scans with its default radio: an adapter under WinUSB is scanned directly over HCI instead.
 /// </summary>
 public sealed class BleScanner : IDisposable
 {
@@ -57,15 +58,20 @@ public sealed class BleScanner : IDisposable
     readonly object _gate = new();
     readonly Dictionary<ulong, BleDevice> _devices = new();
     BluetoothLEAdvertisementWatcher? _watcher;
+    (UsbHci Hci, CancellationTokenSource Cts, Task Scan)? _usb;
 
     /// <summary>Raised (pool thread) if the scan stops by itself: Bluetooth off, no LE adapter, etc.</summary>
     public event Action<string>? Failed;
 
-    public bool IsRunning => _watcher is { Status: BluetoothLEAdvertisementWatcherStatus.Started or BluetoothLEAdvertisementWatcherStatus.Created };
-
-    public void Start()
+    /// <summary>Starts scanning: with Windows' radio if <paramref name="adapterId"/> is null, otherwise with this adapter under WinUSB.</summary>
+    public void Start(string? adapterId = null)
     {
-        if (_watcher is not null) return;
+        Stop();   // also releases a scan that failed by itself
+        if (adapterId is not null)
+        {
+            StartUsb(adapterId);
+            return;
+        }
 
         var watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
         watcher.Received += OnReceived;
@@ -82,8 +88,54 @@ public sealed class BleScanner : IDisposable
         }
     }
 
+    void StartUsb(string adapterId)
+    {
+        UsbHci hci;
+        try { hci = UsbHci.Open(adapterId); }
+        catch (Exception e)
+        {
+            Failed?.Invoke(Loc.T("Ble.ScanStopped", e.Message));
+            return;
+        }
+        var central = new LeCentral(hci.Host);
+        central.Advertisement += (address, rssi, data) =>
+        {
+            string name = "";
+            var companies = new List<ushort>();
+            bool hid = false;
+            foreach (var (type, value) in LeCentral.AdStructures(data))
+            {
+                if (type is 0x08 or 0x09) name = System.Text.Encoding.UTF8.GetString(value);   // shortened or complete name
+                else if (type == 0xFF && value.Length >= 2) companies.Add((ushort)(value[0] | value[1] << 8));
+                else if (type is 0x02 or 0x03)   // 16-bit services
+                    for (int i = 0; i + 1 < value.Length; i += 2) hid |= (value[i] | value[i + 1] << 8) == 0x1812;
+            }
+            Add(BitConverter.ToUInt64([.. address, 0, 0]), name, rssi, companies, hid);
+        };
+        hci.Failed += message => Failed?.Invoke(message);
+        var cts = new CancellationTokenSource();
+        var scan = Task.Run(async () =>
+        {
+            try
+            {
+                await central.InitializeAsync();
+                await central.ScanAsync(_ => false, cts.Token);
+            }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested) { }
+            catch (Exception e) { Failed?.Invoke(Loc.T("Ble.ScanStopped", e.Message)); }
+        });
+        _usb = (hci, cts, scan);
+    }
+
     public void Stop()
     {
+        if (_usb is var (hci, cts, scan))
+        {
+            _usb = null;
+            cts.Cancel();
+            scan.Wait(TimeSpan.FromSeconds(1));   // scan disabled before the adapter is released
+            hci.Dispose();
+        }
         var watcher = _watcher;
         if (watcher is null) return;
         _watcher = null;
@@ -107,20 +159,22 @@ public sealed class BleScanner : IDisposable
     void OnReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
     {
         var ad = args.Advertisement;
-        string name = ad.LocalName ?? "";
-        var companies = ad.ManufacturerData.Select(m => m.CompanyId).Distinct().ToList();
-        bool hid = ad.ServiceUuids.Contains(HidServiceUuid);
+        Add(args.BluetoothAddress, ad.LocalName ?? "", args.RawSignalStrengthInDBm,
+            ad.ManufacturerData.Select(m => m.CompanyId).Distinct().ToList(), ad.ServiceUuids.Contains(HidServiceUuid));
+    }
 
+    void Add(ulong address, string name, short rssi, List<ushort> companies, bool hid)
+    {
         lock (_gate)
         {
             // The name often arrives in the scan response, separately from the rest: merged by address.
-            if (_devices.TryGetValue(args.BluetoothAddress, out var old))
+            if (_devices.TryGetValue(address, out var old))
             {
                 if (name.Length == 0) name = old.Name;
                 companies = old.Companies.Union(companies).ToList();
                 hid |= old.HidService;
             }
-            _devices[args.BluetoothAddress] = new BleDevice(args.BluetoothAddress, name, args.RawSignalStrengthInDBm, companies, hid, DateTime.Now);
+            _devices[address] = new BleDevice(address, name, rssi, companies, hid, DateTime.Now);
         }
     }
 

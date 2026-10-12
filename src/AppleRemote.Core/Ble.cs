@@ -63,7 +63,7 @@ public sealed class BondStore(string path)
 public sealed class LeCentral
 {
     const byte EvtDisconnectionComplete = 0x05, EvtEncryptionChange = 0x08, EvtLeMeta = 0x3E, LeConnectionComplete = 0x01,
-        LeAdvertisingReport = 0x02;
+        LeAdvertisingReport = 0x02, LeEnhancedConnectionComplete = 0x0A, LeExtendedAdvertisingReport = 0x0D;
     public const ushort CidAtt = 0x0004, CidSignaling = 0x0005, CidSmp = 0x0006;
 
     readonly HciHost _hci;
@@ -82,8 +82,25 @@ public sealed class LeCentral
     /// <summary>Our public address (6 little-endian bytes), read by <see cref="InitializeAsync"/>.</summary>
     public byte[] LocalAddress { get; private set; } = new byte[6];
 
+    /// <summary>
+    /// Bluetooth 5 controller (LE Extended Advertising feature), read by <see cref="InitializeAsync"/>: scanning and connection
+    /// then use the extended commands, as Bumble does. The Realtek RTL8761B accepts the legacy LE Create Connection
+    /// but never connects (observed 2026-10-12, TP-Link UB500); older controllers (Qualcomm QCA61x4A) only have the legacy ones.
+    /// </summary>
+    public bool Extended { get; private set; }
+
     /// <summary>Disconnection: (handle, HCI reason). Raised from the transport thread.</summary>
     public event Action<ushort, byte>? Disconnected;
+
+    /// <summary>Advertising report received while scanning: (address, 6 little-endian bytes; RSSI in dBm; AD data). Transport thread.</summary>
+    public event Action<byte[], sbyte, byte[]>? Advertisement;
+
+    /// <summary>AD structures of advertising data: (type, value). Stops at the first malformed one.</summary>
+    public static IEnumerable<(byte Type, byte[] Value)> AdStructures(byte[] data)
+    {
+        for (int i = 0; i + 1 < data.Length && data[i] > 0 && i + 1 + data[i] <= data.Length; i += data[i] + 1)
+            yield return (data[i + 1], data[(i + 2)..(i + 1 + data[i])]);
+    }
 
     /// <summary>Complete L2CAP frame received (except the signalling channel, handled here): (handle, channel, data).</summary>
     public event Action<ushort, ushort, byte[]>? L2capData;
@@ -93,9 +110,13 @@ public sealed class LeCentral
 
     public async Task InitializeAsync()
     {
-        await _hci.CommandAsync(HciOpcode.Reset);
+        await RealtekFirmware.LoadIfNeededAsync(_hci);
         // Default mask + "LE Meta" (bit 61, no LE event without it) + "Encryption Key Refresh" (bit 47).
         await _hci.CommandAsync(HciOpcode.SetEventMask, BitConverter.GetBytes(0x2000_9FFF_FFFF_FFFFUL));
+        byte[] features = await _hci.CommandAsync(HciOpcode.LeReadLocalFeatures);
+        Extended = features.Length > 2 && (features[2] & 0x10) != 0;   // feature bit 12
+        // Default LE events + Extended Advertising Report (bit 12), masked by default.
+        if (Extended) await _hci.CommandAsync(HciOpcode.LeSetEventMask, BitConverter.GetBytes(0x101FUL));
         LocalAddress = (await _hci.CommandAsync(HciOpcode.ReadBdAddr))[1..7];
     }
 
@@ -106,18 +127,20 @@ public sealed class LeCentral
     public async Task<ushort> ConnectAsync(string address, CancellationToken ct = default)
     {
         var connecting = _connecting = new TaskCompletionSource<ushort>(TaskCreationOptions.RunContinuationsAsynchronously);
-        byte[] p =
+        byte[] scan = [0x60, 0x00, 0x30, 0x00];   // scan: 60 ms interval, 30 ms window
+        byte[] link =
         [
-            0x60, 0x00, 0x30, 0x00,     // scan: 60 ms interval, 30 ms window
-            0x00,                       // no filter list: the address below
-            0x00, .. BdAddr.Parse(address),   // adresse publique de l'appareil
-            0x00,                       // our public address: the remote (BT 4.0) reconnects poorly to a changing address
             0x0C, 0x00, 0x18, 0x00,     // intervalle de connexion 15–30 ms
             0x00, 0x00,                 // latence 0
             0xC8, 0x00,                 // supervision 2 s
             0x00, 0x00, 0x00, 0x00,     // event length: up to the controller
         ];
-        await _hci.CommandAsync(HciOpcode.LeCreateConnection, p);
+        // No filter list: the device's public address; our public address: the remote (BT 4.0) reconnects poorly to a changing one.
+        if (Extended)
+            await _hci.CommandAsync(HciOpcode.LeExtendedCreateConnection,
+                [0x00, 0x00, 0x00, .. BdAddr.Parse(address), 0x01 /* 1M PHY */, .. scan, .. link]);
+        else
+            await _hci.CommandAsync(HciOpcode.LeCreateConnection, [.. scan, 0x00, 0x00, .. BdAddr.Parse(address), 0x00, .. link]);
         await using var cancel = ct.Register(() => _ = _hci.CommandAsync(HciOpcode.LeCreateConnectionCancel));
         try
         {
@@ -139,14 +162,27 @@ public sealed class LeCentral
         try
         {
             // Active (the scan response may carry data), 60 ms / 30 ms, our public address, no filtering.
-            await _hci.CommandAsync(HciOpcode.LeSetScanParameters, 0x01, 0x60, 0x00, 0x30, 0x00, 0x00, 0x00);
-            await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x01, 0x00);
+            if (Extended)
+            {
+                await _hci.CommandAsync(HciOpcode.LeSetExtendedScanParameters, 0x00, 0x00, 0x01 /* 1M PHY */, 0x01, 0x60, 0x00, 0x30, 0x00);
+                await _hci.CommandAsync(HciOpcode.LeSetExtendedScanEnable, 0x01, 0x00, 0, 0, 0, 0);
+            }
+            else
+            {
+                await _hci.CommandAsync(HciOpcode.LeSetScanParameters, 0x01, 0x60, 0x00, 0x30, 0x00, 0x00, 0x00);
+                await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x01, 0x00);
+            }
             return await found.Task.WaitAsync(ct);
         }
         finally
         {
             _scan = null;
-            try { await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x00, 0x00); } catch (Exception) { /* controller gone */ }
+            try
+            {
+                if (Extended) await _hci.CommandAsync(HciOpcode.LeSetExtendedScanEnable, 0, 0, 0, 0, 0, 0);
+                else await _hci.CommandAsync(HciOpcode.LeSetScanEnable, 0x00, 0x00);
+            }
+            catch (Exception) { /* controller gone */ }
         }
     }
 
@@ -206,6 +242,13 @@ public sealed class LeCentral
         }
     }
 
+    void OnAdvertisement((Func<byte[], bool> Match, TaskCompletionSource<string> Found) scan, byte addressType, byte[] address,
+        sbyte rssi, byte[] data)
+    {
+        Advertisement?.Invoke(address, rssi, data);
+        if (addressType == 0x00 && scan.Match(data)) scan.Found.TrySetResult(BdAddr.Format(address));
+    }
+
     void OnEvent(byte code, byte[] p)
     {
         switch (code)
@@ -214,12 +257,23 @@ public sealed class LeCentral
                 for (int i = 2, n = 0; n < p[1] && i + 9 <= p.Length; n++)   // type, address type, address, length, data, RSSI
                 {
                     int length = p[i + 8];
-                    if (i + 9 + length > p.Length) break;
-                    if (p[i + 1] == 0x00 && scan.Match(p[(i + 9)..(i + 9 + length)])) scan.Found.TrySetResult(BdAddr.Format(p.AsSpan(i + 2, 6)));
+                    if (i + 10 + length > p.Length) break;   // RSSI included
+                    OnAdvertisement(scan, p[i + 1], p[(i + 2)..(i + 8)], (sbyte)p[i + 9 + length], p[(i + 9)..(i + 9 + length)]);
                     i += 10 + length;
                 }
                 break;
-            case EvtLeMeta when p.Length >= 4 && p[0] == LeConnectionComplete:
+            // Event type (2), address type, address, PHYs (2), SID, TX power, RSSI, periodic interval (2), direct address (7), length, data
+            case EvtLeMeta when p.Length >= 2 && p[0] == LeExtendedAdvertisingReport && _scan is { } scan:
+                for (int i = 2, n = 0; n < p[1] && i + 24 <= p.Length; n++)
+                {
+                    int length = p[i + 23];
+                    if (i + 24 + length > p.Length) break;
+                    // Address type 2 = public identity (resolved by the controller): public too.
+                    OnAdvertisement(scan, (byte)(p[i + 2] & ~2), p[(i + 3)..(i + 9)], (sbyte)p[i + 13], p[(i + 24)..(i + 24 + length)]);
+                    i += 24 + length;
+                }
+                break;
+            case EvtLeMeta when p.Length >= 4 && p[0] is LeConnectionComplete or LeEnhancedConnectionComplete:
                 if (p[1] != 0) _connecting?.TrySetException(new HciException(HciOpcode.LeCreateConnection, p[1]));
                 else _connecting?.TrySetResult((ushort)(p[2] | p[3] << 8));
                 break;
