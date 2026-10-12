@@ -4,6 +4,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AppleRemote.App.Models;
@@ -236,9 +237,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty, NotifyPropertyChangedFor(nameof(WinUsbButton)), NotifyPropertyChangedFor(nameof(CanToggleFilter)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _winUsbOn;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(CanToggleFilter))] bool _adapterPresent;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterButton)), NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _filterOn;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _dongleOn;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(AnyOn)),
+     NotifyPropertyChangedFor(nameof(UpdateAvailable)), NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] bool _dongleOn;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(UpdateAvailable)),
+     NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] string? _dongleFirmware;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(UpdateAvailable)),
+     NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] int? _dongleProgress;   // null: no update running
     public bool AnyOn => WinUsbOn || FilterOn || DongleOn;
-    public string DongleText => Loc.T(DongleOn ? "Settings.DonglePresent" : "Settings.DongleAbsent");
+    public string DongleText =>
+        DongleProgress is { } percent ? Loc.T("Settings.DongleUpdating", percent)
+        : !DongleOn ? Loc.T("Settings.DongleAbsent")
+        : DongleFirmware is { } version ? Loc.T("Settings.DongleFirmware", version)
+        : Loc.T("Settings.DonglePresent");
     public bool CanToggleWinUsb => !FilterOn && AdapterPresent; // mutually exclusive: only one of the two at a time
     public bool CanToggleFilter => !WinUsbOn && (AdapterPresent || FilterOn); // without an adapter, only removal remains possible
     public string WinUsbButton => Loc.T(WinUsbOn ? "Settings.RestoreDriver" : "Settings.InstallWinUsb");
@@ -253,8 +263,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             FilterText = Loc.T(FilterOn ? "Filter.Installed" : "Filter.NotInstalled");
         }
         catch (Exception ex) { FilterText = Loc.T("Driver.Unknown", ex.Message); }
-        try { DongleOn = await Task.Run(() => EspDongle.Find() is not null); }
+        try
+        {
+            DongleFirmware = await Task.Run(EspDongle.ReadFirmwareVersion);
+            DongleOn = DongleFirmware is not null || await Task.Run(() => EspDongle.Find() is not null);
+        }
         catch (Exception) { DongleOn = false; }   // HID enumeration failed: shown as absent
+        if (UpdateAvailable && _announcedFirmware != DongleFirmware)
+        {
+            _announcedFirmware = DongleFirmware;
+            _log(Loc.T("Log.FirmwareAvailable", FirmwareImage.Version(BundledFirmware.Value!), DongleFirmware));
+        }
         try
         {
             Adapters = await Task.Run(() => WinUsbDriver.List());
@@ -326,6 +345,56 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         finally
         {
             DriverBusy = false;
+            await RefreshDriver();
+        }
+    }
+
+    /// <summary>
+    /// Signed firmware shipped next to the exe (firmware\AppleRemoteEsp32.bin, copied at build): the only update source,
+    /// the dongle itself never goes online. Null if missing or damaged.
+    /// </summary>
+    static readonly Lazy<byte[]?> BundledFirmware = new(() =>
+    {
+        try
+        {
+            byte[] image = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "firmware", FirmwareImage.Project + ".bin"));
+            return FirmwareImage.Problem(image) is null ? image : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return null; }
+    });
+
+    string? _announcedFirmware;
+
+    /// <summary>The shipped firmware is newer than the dongle's (which still checks signature and version itself).</summary>
+    public bool UpdateAvailable => DongleOn && DongleProgress is null && BundledFirmware.Value is { } image
+        && FirmwareImage.IsNewer(FirmwareImage.Version(image), DongleFirmware);
+
+    public string DongleUpdateText =>
+        BundledFirmware.Value is { } image ? Loc.T("Settings.UpdateDongle", FirmwareImage.Version(image)) : "";
+
+    [RelayCommand(CanExecute = nameof(UpdateAvailable))]
+    async Task UpdateDongle()
+    {
+        byte[] image = BundledFirmware.Value!;
+        string version = FirmwareImage.Version(image), title = Loc.T("Firmware.Title");
+        if (!await _dialogs.Confirm(title, Loc.T("Firmware.Ask", DongleFirmware, version))) return;
+
+        _log(Loc.T("Log.FirmwareSending", version, Convert.ToHexString(SHA256.HashData(image)).ToLowerInvariant()));
+        DongleProgress = 0;
+        try
+        {
+            await EspDongle.UpdateFirmwareAsync(image, new Progress<int>(p => DongleProgress = p), CancellationToken.None);
+            _log(Loc.T("Log.FirmwareUpdated"));
+            await Task.Delay(4000);   // the dongle reboots on its new firmware before answering again
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.ComponentModel.Win32Exception or TimeoutException)
+        {
+            _log(Loc.T("Log.FirmwareFailed", ex.Message));
+            await _dialogs.Warn(title, ex.Message);
+        }
+        finally
+        {
+            DongleProgress = null;
             await RefreshDriver();
         }
     }

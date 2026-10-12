@@ -17,7 +17,8 @@ src/AppleRemote.App       WPF window (startup project)                          
                           (menu footer), one view-model per page (ViewModels/Page) owned by MainViewModel (settings + session); common styles in Views/Styles.xaml
 src/AppleRemote.DriverInstaller  installs / removes the kernel filter through its package (pnputil), requires elevation; launched by the app's button
 src/AppleRemoteDriver     KMDF kernel filter in Rust (windows-drivers-rs) under BTHUSB, extension INF; signed package (test certificate)
-src/AppleRemoteEsp32      ESP32-S3 firmware (ESP-IDF, NimBLE + TinyUSB): USB HID dongle holding the remote, driven by the app (EspDongle.cs); NOT yet built or tested on hardware
+src/AppleRemoteEsp32      ESP32-S3 firmware (ESP-IDF, NimBLE + TinyUSB): USB HID dongle holding the remote, driven by the app (EspDongle.cs),
+                          update only from the app, which ships it in firmware\ (signed images only, rollback: see its README); NOT yet built or tested on hardware
 tests/AppleRemote.Tests   xunit, run on any OS (sample.jsonl + golden.json)
 tools/siri_bumble.py      Python probe (Bumble): remote through an adapter under WinUSB, outside the Windows Bluetooth stack
 tools/test_siri_bumble.py its hardware-free test (fake remote on virtual Bumble controllers)

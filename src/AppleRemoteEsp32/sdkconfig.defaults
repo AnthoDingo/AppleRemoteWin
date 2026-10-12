@@ -6,3 +6,18 @@ CONFIG_BT_NIMBLE_ENABLED=y
 # Bond kept across reboots
 CONFIG_BT_NIMBLE_NVS_PERSIST=y
 CONFIG_TINYUSB_HID_COUNT=1
+
+# ---- USB update (see README "Firmware update") ----
+# Two OTA slots + factory: needs 4 MB of flash (XIAO ESP32S3 / DevKitC-1: 8 MB)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_TWO_OTA=y
+# A new firmware that never confirms itself (USB + BLE up) is rolled back on the next reset
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+# Only images signed with the key of the running firmware are accepted (RSA-3072, Secure Boot V2 format).
+# No eFuse is burnt: hardware Secure Boot stays a separate, irreversible production choice.
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=y
+CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=y
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
+# Private key: never committed (*.pem is ignored), keep an offline backup
+CONFIG_SECURE_BOOT_SIGNING_KEY="ota_signing_key.pem"

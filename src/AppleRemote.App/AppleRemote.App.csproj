@@ -5,6 +5,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <EspFirmware Condition="'$(EspFirmware)' == ''">$(MSBuildThisFileDirectory)..\AppleRemoteEsp32\build\AppleRemoteEsp32.bin</EspFirmware>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -46,6 +47,9 @@
   <ItemGroup>
     <!-- Éditeur de macro : Blockly 11.2.2 (Apache-2.0) et sa page, servis au WebView2 depuis le dossier de l'exe. -->
     <Content Include="Blockly\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Signed dongle firmware (src/AppleRemoteEsp32, idf.py build): the app is its only update channel.
+         Override with -p:EspFirmware=<signed .bin>; absent = no update offered. -->
+    <Content Include="$(EspFirmware)" Link="firmware\AppleRemoteEsp32.bin" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(EspFirmware)')" />
   </ItemGroup>
 
   <ItemGroup>

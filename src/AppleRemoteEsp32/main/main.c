@@ -16,6 +16,7 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/util/util.h"
+#include "ota.h"
 
 void ble_store_config_init(void);   // NimBLE NVS store, not declared in a public header
 
@@ -37,6 +38,7 @@ static const char *TAG = "appleremote";
 #define USB_REPORT_REMOTE  1    // in:  [remote report ID, 20 bytes zero-padded]
 #define USB_REPORT_STATE   2    // in:  [state, battery %, last disconnect reason]
 #define USB_REPORT_COMMAND 3    // feature (out): [command]
+#define USB_REPORT_OTA     4    // feature: firmware update, see ota.h
 enum { CMD_STATUS = 0, CMD_PAIR = 1, CMD_FORGET = 2 };
 enum { ST_IDLE = 0, ST_PAIRING = 1, ST_WAITING = 2, ST_CONNECTED = 3 };
 
@@ -60,6 +62,7 @@ static const uint8_t hid_report_descriptor[] = {
     0x85, USB_REPORT_REMOTE, 0x09, 0x01, 0x95, 1 + REPORT_MAX, 0x81, 0x02,   // Input
     0x85, USB_REPORT_STATE, 0x09, 0x02, 0x95, 3, 0x81, 0x02,                 // Input
     0x85, USB_REPORT_COMMAND, 0x09, 0x03, 0x95, 1, 0xB1, 0x02,               // Feature
+    0x85, USB_REPORT_OTA, 0x09, 0x04, 0x95, OTA_REPORT_SIZE, 0xB1, 0x02,     // Feature
     0xC0,
 };
 
@@ -95,12 +98,27 @@ uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) { return hid_repor
 
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t type, uint8_t *buffer, uint16_t length)
 {
-    return 0;
+    return report_id == USB_REPORT_OTA && type == HID_REPORT_TYPE_FEATURE ? ota_get(buffer, length) : 0;
+}
+
+// The new firmware is kept only once USB and BLE both came up: otherwise the next reset rolls back.
+static volatile bool usb_up, ble_up;
+
+static void confirm_if_working(void)
+{
+    if (usb_up && ble_up) ota_confirm_running();
+}
+
+void tud_mount_cb(void)
+{
+    usb_up = true;
+    confirm_if_working();
 }
 
 // Commands come from the TinyUSB task: hand them to the NimBLE host task, which owns all BLE state.
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t type, uint8_t const *buffer, uint16_t length)
 {
+    if (report_id == USB_REPORT_OTA && type == HID_REPORT_TYPE_FEATURE) { ota_set(buffer, length); return; }
     if (report_id != USB_REPORT_COMMAND || length < 1) return;
     pending_command = buffer[0];
     ble_npl_eventq_put(nimble_port_get_dflt_eventq(), &command_event);
@@ -271,6 +289,8 @@ static void on_sync(void)
 {
     ble_hs_util_ensure_addr(0);
     ble_hs_id_infer_auto(0, &own_addr_type);
+    ble_up = true;
+    confirm_if_working();
     start();
 }
 

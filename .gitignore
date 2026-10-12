@@ -47,3 +47,6 @@ src/AppleRemoteEsp32/build/
 src/AppleRemoteEsp32/managed_components/
 src/AppleRemoteEsp32/sdkconfig
 src/AppleRemoteEsp32/sdkconfig.old
+
+# Firmware signing keys (src/AppleRemoteEsp32): never commit them
+*.pem

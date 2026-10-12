@@ -52,6 +52,23 @@
   <data name="Settings.Option3" xml:space="preserve"><value>Dongle ESP</value></data>
   <data name="Settings.DonglePresent" xml:space="preserve"><value>Dongle ESP32-S3 branché</value></data>
   <data name="Settings.DongleAbsent" xml:space="preserve"><value>Aucun dongle branché</value></data>
+  <data name="Settings.DongleFirmware" xml:space="preserve"><value>Dongle ESP32-S3 branché (firmware {0})</value></data>
+  <data name="Settings.DongleUpdating" xml:space="preserve"><value>Mise à jour du firmware : {0} %</value></data>
+  <data name="Settings.UpdateDongle" xml:space="preserve"><value>Mettre à jour vers {0}</value></data>
+  <data name="Firmware.Title" xml:space="preserve"><value>Firmware du dongle</value></data>
+  <data name="Firmware.Ask" xml:space="preserve"><value>Mettre à jour le firmware du dongle de {0} vers {1} ?
+
+Ne débranchez pas le dongle pendant la mise à jour (environ une minute). Le dongle vérifie lui-même la signature avant d'installer, et revient à son firmware actuel en cas de problème.</value></data>
+  <data name="Firmware.NoDongle" xml:space="preserve"><value>Aucun dongle ESP32-S3 branché.</value></data>
+  <data name="Firmware.BadSize" xml:space="preserve"><value>Taille de fichier invalide pour un firmware du dongle.</value></data>
+  <data name="Firmware.NotImage" xml:space="preserve"><value>Ce fichier n'est pas une image de firmware ESP32 (le .bin de l'application).</value></data>
+  <data name="Firmware.WrongChip" xml:space="preserve"><value>Ce firmware n'est pas destiné à un ESP32-S3.</value></data>
+  <data name="Firmware.Unsigned" xml:space="preserve"><value>Ce firmware n'est pas signé : le dongle le refuserait.</value></data>
+  <data name="Firmware.BadSignature" xml:space="preserve"><value>Signature refusée par le dongle : ce firmware n'a pas été signé avec la clé du projet. Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.Downgrade" xml:space="preserve"><value>Ce firmware est plus ancien que celui du dongle : refusé. Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.WrongProject" xml:space="preserve"><value>Ce firmware n'est pas celui du dongle AppleRemote : refusé.</value></data>
+  <data name="Firmware.Failed" xml:space="preserve"><value>Mise à jour refusée par le dongle (code 0x{0:X2}). Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.Timeout" xml:space="preserve"><value>Le dongle n'a pas terminé la vérification à temps.</value></data>
   <data name="Settings.Refresh" xml:space="preserve"><value>Actualiser</value></data>
   <data name="Settings.InstallFilter" xml:space="preserve"><value>Installer le filtre Bluetooth…</value></data>
   <data name="Settings.UninstallFilter" xml:space="preserve"><value>Retirer le filtre…</value></data>
@@ -178,6 +195,10 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.DriverRestored" xml:space="preserve"><value>Pilote d'origine restauré.</value></data>
   <data name="Log.FilterInstalled" xml:space="preserve"><value>Filtre Bluetooth installé.</value></data>
   <data name="Log.FilterRemoved" xml:space="preserve"><value>Filtre Bluetooth retiré.</value></data>
+  <data name="Log.FirmwareSending" xml:space="preserve"><value>Envoi du firmware {0} au dongle (SHA-256 {1})…</value></data>
+  <data name="Log.FirmwareAvailable" xml:space="preserve"><value>Firmware {0} disponible pour le dongle (installé : {1}) : Paramètres &gt; ESP Dongle.</value></data>
+  <data name="Log.FirmwareUpdated" xml:space="preserve"><value>Firmware accepté par le dongle : il redémarre dessus.</value></data>
+  <data name="Log.FirmwareFailed" xml:space="preserve"><value>Mise à jour du firmware échouée : {0}</value></data>
   <data name="Log.NoHid" xml:space="preserve"><value>Aucun périphérique HID Apple vu par Windows : la télécommande n'est pas appairée/connectée.</value></data>
   <data name="Log.HidCount" xml:space="preserve"><value>{0} collection(s) HID Apple :</value></data>
   <data name="Log.HidGen1" xml:space="preserve"><value>   &lt;- Siri Remote gen 1</value></data>

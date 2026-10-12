@@ -153,8 +153,10 @@
             </StackPanel>
             <StackPanel Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Margin="4,0,0,0">
                 <TextBlock Text="{l:T Settings.Option3}" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,14" />
-                <TextBlock Text="{Binding DongleText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0"
+                <TextBlock Text="{Binding DongleText}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,8"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <Button Content="{Binding DongleUpdateText}" Command="{Binding UpdateDongleCommand}" HorizontalAlignment="Center"
+                        Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>
         </Grid>
         </StackPanel>
