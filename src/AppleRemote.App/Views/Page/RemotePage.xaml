@@ -118,10 +118,14 @@
                 <StackPanel>
                     <Grid>
                         <TextBlock Text="{l:T Remote.Nearby}" Style="{StaticResource Section}" VerticalAlignment="Center" />
-                        <!-- Adapter choice (same as Settings), only with several adapters -->
-                        <ComboBox DataContext="{Binding Preferences}" ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}"
-                                  IsEnabled="{Binding CanChangeAdapter}" Visibility="{Binding SeveralAdapters, Converter={StaticResource BoolToVisibility}}"
-                                  HorizontalAlignment="Right" MaxWidth="280" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <!-- Adapter choice (same as Settings), only with several adapters -->
+                            <ComboBox DataContext="{Binding Preferences}" ItemsSource="{Binding Adapters}" SelectedItem="{Binding SelectedAdapter}"
+                                      IsEnabled="{Binding CanChangeAdapter}" Visibility="{Binding SeveralAdapters, Converter={StaticResource BoolToVisibility}}"
+                                      MaxWidth="280" Margin="0,0,6,6" />
+                            <Button Content="{l:T Remote.Pair}" Command="{Binding PairCommand}" Margin="0,0,6,6" />
+                            <Button Content="{l:T Remote.Forget}" Command="{Binding ForgetCommand}" Margin="0,0,0,6" />
+                        </StackPanel>
                     </Grid>
                     <Grid Height="140" Margin="0,4,0,0">
                         <!-- Same list as the BLE scanner: selectable rows, double-click = pair -->

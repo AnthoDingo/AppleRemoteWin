@@ -20,6 +20,8 @@
   <data name="Remote.Nearby" xml:space="preserve"><value>APPAREILS APPLE HID À PROXIMITÉ</value></data>
   <data name="Remote.Connected" xml:space="preserve"><value>connecté</value></data>
   <data name="Remote.NearbyNone" xml:space="preserve"><value>Aucun appareil.</value></data>
+  <data name="Remote.Pair" xml:space="preserve"><value>Appairer</value></data>
+  <data name="Remote.Forget" xml:space="preserve"><value>Oublier</value></data>
   <data name="Remote.Battery" xml:space="preserve"><value>Batterie : {0} %</value></data>
   <data name="Remote.BatteryUnknown" xml:space="preserve"><value>Batterie : —</value></data>
   <data name="Remote.Start" xml:space="preserve"><value>Démarrer</value></data>
@@ -47,6 +49,26 @@
   <data name="Settings.RestoreDriver" xml:space="preserve"><value>Restaurer le pilote d'origine…</value></data>
   <data name="Settings.Option1" xml:space="preserve"><value>Pilote WinUSB</value></data>
   <data name="Settings.Option2" xml:space="preserve"><value>Filtre Bluetooth</value></data>
+  <data name="Settings.Option3" xml:space="preserve"><value>Dongle ESP</value></data>
+  <data name="Settings.DonglePresent" xml:space="preserve"><value>Dongle ESP32-S3 branché</value></data>
+  <data name="Settings.DongleAbsent" xml:space="preserve"><value>Aucun dongle branché</value></data>
+  <data name="Settings.DongleFirmware" xml:space="preserve"><value>Dongle ESP32-S3 branché (firmware {0})</value></data>
+  <data name="Settings.DongleUpdating" xml:space="preserve"><value>Mise à jour du firmware : {0} %</value></data>
+  <data name="Settings.UpdateDongle" xml:space="preserve"><value>Mettre à jour vers {0}</value></data>
+  <data name="Firmware.Title" xml:space="preserve"><value>Firmware du dongle</value></data>
+  <data name="Firmware.Ask" xml:space="preserve"><value>Mettre à jour le firmware du dongle de {0} vers {1} ?
+
+Ne débranchez pas le dongle pendant la mise à jour (environ une minute). Le dongle vérifie lui-même la signature avant d'installer, et revient à son firmware actuel en cas de problème.</value></data>
+  <data name="Firmware.NoDongle" xml:space="preserve"><value>Aucun dongle ESP32-S3 branché.</value></data>
+  <data name="Firmware.BadSize" xml:space="preserve"><value>Taille de fichier invalide pour un firmware du dongle.</value></data>
+  <data name="Firmware.NotImage" xml:space="preserve"><value>Ce fichier n'est pas une image de firmware ESP32 (le .bin de l'application).</value></data>
+  <data name="Firmware.WrongChip" xml:space="preserve"><value>Ce firmware n'est pas destiné à un ESP32-S3.</value></data>
+  <data name="Firmware.Unsigned" xml:space="preserve"><value>Ce firmware n'est pas signé : le dongle le refuserait.</value></data>
+  <data name="Firmware.BadSignature" xml:space="preserve"><value>Signature refusée par le dongle : ce firmware n'a pas été signé avec la clé du projet. Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.Downgrade" xml:space="preserve"><value>Ce firmware est plus ancien que celui du dongle : refusé. Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.WrongProject" xml:space="preserve"><value>Ce firmware n'est pas celui du dongle AppleRemote : refusé.</value></data>
+  <data name="Firmware.Failed" xml:space="preserve"><value>Mise à jour refusée par le dongle (code 0x{0:X2}). Le dongle garde son firmware actuel.</value></data>
+  <data name="Firmware.Timeout" xml:space="preserve"><value>Le dongle n'a pas terminé la vérification à temps.</value></data>
   <data name="Settings.Refresh" xml:space="preserve"><value>Actualiser</value></data>
   <data name="Settings.InstallFilter" xml:space="preserve"><value>Installer le filtre Bluetooth…</value></data>
   <data name="Settings.UninstallFilter" xml:space="preserve"><value>Retirer le filtre…</value></data>
@@ -168,6 +190,7 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.KeyboardOff" xml:space="preserve"><value>Clavier virtuel désactivé.</value></data>
   <data name="Log.PairDirect" xml:space="preserve"><value>Appairage : maintenez Menu + Volume + pendant ~5 s, près du PC.</value></data>
   <data name="Log.PairSettings" xml:space="preserve"><value>Maintenez Menu + Volume + pendant ~5 s près du PC, puis ajoutez-la dans Paramètres &gt; Bluetooth.</value></data>
+  <data name="Log.Forget" xml:space="preserve"><value>Télécommande oubliée.</value></data>
   <data name="Log.OpenBtFailed" xml:space="preserve"><value>Impossible d'ouvrir les paramètres Bluetooth : {0}</value></data>
   <data name="Log.DriverReboot" xml:space="preserve"><value>Pilote installé : redémarrez le PC pour terminer.</value></data>
   <data name="Log.DriverInstalled" xml:space="preserve"><value>Pilote WinUSB installé.</value></data>
@@ -175,6 +198,10 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.DriverRestored" xml:space="preserve"><value>Pilote d'origine restauré.</value></data>
   <data name="Log.FilterInstalled" xml:space="preserve"><value>Filtre Bluetooth installé.</value></data>
   <data name="Log.FilterRemoved" xml:space="preserve"><value>Filtre Bluetooth retiré.</value></data>
+  <data name="Log.FirmwareSending" xml:space="preserve"><value>Envoi du firmware {0} au dongle (SHA-256 {1})…</value></data>
+  <data name="Log.FirmwareAvailable" xml:space="preserve"><value>Firmware {0} disponible pour le dongle (installé : {1}) : Paramètres &gt; ESP Dongle.</value></data>
+  <data name="Log.FirmwareUpdated" xml:space="preserve"><value>Firmware accepté par le dongle : il redémarre dessus.</value></data>
+  <data name="Log.FirmwareFailed" xml:space="preserve"><value>Mise à jour du firmware échouée : {0}</value></data>
   <data name="Log.NoHid" xml:space="preserve"><value>Aucun périphérique HID Apple vu par Windows : la télécommande n'est pas appairée/connectée.</value></data>
   <data name="Log.HidCount" xml:space="preserve"><value>{0} collection(s) HID Apple :</value></data>
   <data name="Log.HidGen1" xml:space="preserve"><value>   &lt;- Siri Remote gen 1</value></data>
@@ -219,6 +246,9 @@ Une confirmation administrateur (UAC) va s'afficher.</value></data>
   <data name="Status.WaitPairing" xml:space="preserve"><value>En attente d'une télécommande en mode appairage : maintenez Menu + Volume + ~5 s, près du PC.</value></data>
   <data name="Status.Found" xml:space="preserve"><value>Télécommande trouvée ({0}) via {1} : appairage…</value></data>
   <data name="Status.ConnectedDirect" xml:space="preserve"><value>Connecté : Siri Remote (Bluetooth direct, déverrouillée)</value></data>
+  <data name="Status.ConnectedDongle" xml:space="preserve"><value>Connecté : Siri Remote (dongle ESP32-S3, déverrouillée)</value></data>
+  <data name="Status.WaitDongle" xml:space="preserve"><value>En attente du dongle ESP32-S3 (USB)…</value></data>
+  <data name="Status.DongleIdle" xml:space="preserve"><value>Dongle ESP32-S3 : aucune télécommande, cliquez sur Appairer.</value></data>
   <data name="Status.DisconnectedReason" xml:space="preserve"><value>Déconnectée (raison 0x{0:X2}) : appuyez sur un bouton pour la réveiller.</value></data>
   <data name="Status.KeysRefused" xml:space="preserve"><value>Clés refusées par la télécommande (0x{0:X2}) : nouvel appairage…</value></data>
   <data name="Status.PairingFirst" xml:space="preserve"><value>Appairage… (première fois : télécommande en mode appairage, Menu + Volume + ~5 s)</value></data>
