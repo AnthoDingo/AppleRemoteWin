@@ -89,13 +89,13 @@ avec votre propre certificat (la clé privée ne quitte jamais votre PC) :
 1. Installer les prérequis : Rust, [cargo-make](https://github.com/sagiegurari/cargo-make), le Windows Driver Kit (WDK) et
    LLVM (`LIBCLANG_PATH=C:\Program Files\LLVM\bin`).
 2. Activer le test-signing comme ci-dessus (étapes 1 et 2).
-3. Dans `src/AppleRemoteDriver`, lancer :
+3. Cloner [AppleRemoteWin-Driver](https://github.com/AnthoDingo/AppleRemoteWin-Driver) et lancer, à sa racine :
    ```
    cargo make --profile release
    ```
    Le build crée un `WDRLocalTestCert` auto-signé dans votre propre magasin de certificats (`WDRTestCertStore`), signe le `.cat`
    avec, et écrit le paquet, avec son `.cer`, dans `target\release\AppleRemoteDriver_package\`.
-   (Un build Release de `AppleRemote.App` fait la même chose et copie le paquet dans `driver\`.)
+   (Un build Release de `AppleRemote.App` télécharge à la place le dernier paquet publié dans `driver\` ; remplacez ces fichiers par les vôtres.)
 4. Installer ce paquet avec l'app ou `AppleRemote.DriverInstaller` : il approuve le `.cer` placé à côté du `.sys`, qui est désormais le vôtre.
 
 Chaque recompilation retamponne l'INF et resigne le `.cat` : installer toujours les quatre fichiers issus du même build.
@@ -141,4 +141,4 @@ GNU AGPL v3 ou ultérieure (`AGPL-3.0-or-later`), voir `LICENSE`.
 `Decoder.cs` et `Gestures.cs` sont des ports de [open-appleremote](https://github.com/a-funk/open-appleremote), publié sous licence MIT :
 son avis de copyright est conservé dans `LICENSE-MIT-open-appleremote`.
 
-Le pilote noyau de `src/AppleRemoteDriver` est un composant séparé sous licence MIT : voir son `LICENSE` et son `README.md`.
+Le pilote noyau a son propre dépôt, [AppleRemoteWin-Driver](https://github.com/AnthoDingo/AppleRemoteWin-Driver), sous licence MIT : voir son `LICENSE` et son `README.md`.

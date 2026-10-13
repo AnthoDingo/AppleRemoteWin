@@ -89,13 +89,13 @@ with a certificate of your own (the private key never leaves your PC):
 1. Install the prerequisites: Rust, [cargo-make](https://github.com/sagiegurari/cargo-make), the Windows Driver Kit (WDK) and
    LLVM (`LIBCLANG_PATH=C:\Program Files\LLVM\bin`).
 2. Enable test-signing as above (steps 1 and 2).
-3. In `src/AppleRemoteDriver`, run:
+3. Clone [AppleRemoteWin-Driver](https://github.com/AnthoDingo/AppleRemoteWin-Driver) and run, in its root:
    ```
    cargo make --profile release
    ```
    The build creates a self-signed `WDRLocalTestCert` in your own certificate store (`WDRTestCertStore`), signs the `.cat`
    with it and writes the package, with its `.cer`, to `target\release\AppleRemoteDriver_package\`.
-   (A Release build of `AppleRemote.App` does the same and copies the package to `driver\`.)
+   (A Release build of `AppleRemote.App` downloads the latest published package into `driver\` instead; replace those files with yours.)
 4. Install that package with the app or `AppleRemote.DriverInstaller`: it trusts the `.cer` next to the `.sys`, which is now yours.
 
 Every rebuild re-stamps the INF and re-signs the `.cat`: always install the four files from the same build.
@@ -141,4 +141,4 @@ GNU AGPL v3 or later (`AGPL-3.0-or-later`), see `LICENSE`.
 `Decoder.cs` and `Gestures.cs` are ports of [open-appleremote](https://github.com/a-funk/open-appleremote), released under the MIT license:
 its copyright notice is kept in `LICENSE-MIT-open-appleremote`.
 
-The kernel driver in `src/AppleRemoteDriver` is a separate component under the MIT license: see its `LICENSE` and `README.md`.
+The kernel driver lives in its own repository, [AppleRemoteWin-Driver](https://github.com/AnthoDingo/AppleRemoteWin-Driver), under the MIT license: see its `LICENSE` and `README.md`.

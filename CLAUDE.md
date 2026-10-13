@@ -16,7 +16,7 @@ src/AppleRemote.App       WPF window (startup project)                          
                           WPF-UI + MVVM: MainWindow = NavigationView menu; Remote, Settings, Debug pages
                           (menu footer), one view-model per page (ViewModels/Page) owned by MainViewModel (settings + session); common styles in Views/Styles.xaml
 src/AppleRemote.DriverInstaller  installs / removes the kernel filter through its package (pnputil), requires elevation; launched by the app's button
-src/AppleRemoteDriver     KMDF kernel filter in Rust (windows-drivers-rs) under BTHUSB, extension INF; signed package (test certificate)
+(driver)                  KMDF kernel filter in Rust: separate repo AnthoDingo/AppleRemoteWin-Driver (MIT, signed package = test certificate)
 tests/AppleRemote.Tests   xunit, run on any OS (sample.jsonl + golden.json)
 tools/siri_bumble.py      Python probe (Bumble): remote through an adapter under WinUSB, outside the Windows Bluetooth stack
 tools/test_siri_bumble.py its hardware-free test (fake remote on virtual Bumble controllers)
@@ -32,8 +32,8 @@ dotnet test tests/AppleRemote.Tests
 dotnet run --project src/AppleRemote.App
 ```
 
-Kernel filter: `cargo make --profile release` in `src/AppleRemoteDriver` (LLVM required: `LIBCLANG_PATH=C:\Program Files\LLVM\bin`, WDK).
-The Release build of `App` does it too (`-p:AppleRemoteDriver=false` to skip it); publishing copies it to `Publish\driver\`
+Kernel filter: built and released in AnthoDingo/AppleRemoteWin-Driver (`cargo make --profile release` there; LLVM + WDK required).
+The Release build of `App` downloads its latest release (`AppleRemoteDriver.zip`; `-p:AppleRemoteDriver=false` to skip it); publishing copies it to `Publish\driver\`
 (the 4 files go together: every build re-stamps the INF and re-signs the `.cat`).
 Releases are published **self-contained** with a RID (`--self-contained true`, no single-file): the app runs without .NET installed;
 `App`, `MacroEditor` and `DriverInstaller` share the bundled runtime in one folder, so all three must stay self-contained together
@@ -61,7 +61,7 @@ Required SDK: **.NET 10**. Run the tests after any change to `Core`.
 - `Core`: any new logic = a test. The `Whole_pipeline_matches_the_python_reference` test compares against `golden.json`
   (output of the original Python code on `sample.jsonl`): do not regenerate `golden.json` to make a test pass without understanding the discrepancy.
 - Driver events are raised from thread-pool threads: marshal to the UI with `Dispatcher`.
-- Every source file starts with a license header (SPDX: `AGPL-3.0-or-later`, `MIT` under `src/AppleRemoteDriver`).
+- Every source file starts with a license header (SPDX: `AGPL-3.0-or-later`, `MIT` in the driver repo).
 
 ## Diagnostic features
 

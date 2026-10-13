@@ -58,14 +58,16 @@
     <Folder Include="Assets\" />
   </ItemGroup>
 
-  <!-- Release: builds and signs (test certificate) the AppleRemoteDriver kernel filter, then copies it next to the exe.
-       Without the Rust/WDK toolchain, the step is skipped with a warning (AppleRemoteDriver=false to skip it). -->
-  <PropertyGroup>
-    <DriverDir>$(MSBuildThisFileDirectory)..\AppleRemoteDriver\</DriverDir>
-    <DriverPackage>$(DriverDir)target\release\AppleRemoteDriver_package\</DriverPackage>
-  </PropertyGroup>
+  <!-- Release: downloads the latest published AppleRemoteDriver package (github.com/AnthoDingo/AppleRemoteWin-Driver:
+       .sys, .inf, .cat, test certificate) and copies it next to the exe. Offline or AppleRemoteDriver=false: skipped. -->
+  <!-- Evaluated late: IntermediateOutputPath is empty at project evaluation (the package would land in the project folder). -->
+  <Target Name="DriverPackagePath" BeforeTargets="BuildDriver;PublishDriver">
+    <PropertyGroup>
+      <DriverPackage>$(MSBuildProjectDirectory)\$(IntermediateOutputPath)driver\</DriverPackage>
+    </PropertyGroup>
+  </Target>
   <Target Name="BuildDriver" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(AppleRemoteDriver)' != 'false'">
-    <Exec Command="cargo make --profile release" WorkingDirectory="$(DriverDir)" EnvironmentVariables="LIBCLANG_PATH=$(ProgramFiles)\LLVM\bin" ContinueOnError="WarnAndContinue" StandardOutputImportance="low">
+    <Exec Command="powershell -NoProfile -Command &quot;$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force '$(DriverPackage)' | Out-Null; Invoke-WebRequest https://github.com/AnthoDingo/AppleRemoteWin-Driver/releases/latest/download/AppleRemoteDriver.zip -OutFile '$(DriverPackage)AppleRemoteDriver.zip'; Expand-Archive -Force '$(DriverPackage)AppleRemoteDriver.zip' '$(DriverPackage)'&quot;" ContinueOnError="WarnAndContinue" StandardOutputImportance="low">
       <Output TaskParameter="ExitCode" PropertyName="DriverExitCode" />
     </Exec>
     <ItemGroup Condition="'$(DriverExitCode)' == '0'">
@@ -76,12 +78,11 @@
 
   <!-- Publish: the driver package ALWAYS goes in <PublishDir>driver\ (never at the root, where files can be
        locked by the test VM reading the shared folder). The 4 files go together: the .cat signs this .sys. -->
-  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' And Exists('$(DriverPackage)AppleRemoteDriver.sys')">
+  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <PublishedDriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
-    <!-- A file held open (VMware, VM share) must not fail the publish: warning only, and the package remains
-         to be checked (cmp against the target folder). -->
+    <!-- A file held open (VMware, VM share) must not fail the publish: warning only. -->
     <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 
