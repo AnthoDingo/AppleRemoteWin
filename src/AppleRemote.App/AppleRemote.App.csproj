@@ -13,7 +13,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.App</RootNamespace>
     <AssemblyName>AppleRemote</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Published with a RID: self-contained, so the app runs without .NET installed. App, macro editor and filter
@@ -58,14 +58,16 @@
     <Folder Include="Assets\" />
   </ItemGroup>
 
-  <!-- Release: builds and signs (test certificate) the AppleRemoteDriver kernel filter, then copies it next to the exe.
-       Without the Rust/WDK toolchain, the step is skipped with a warning (AppleRemoteDriver=false to skip it). -->
-  <PropertyGroup>
-    <DriverDir>$(MSBuildThisFileDirectory)..\AppleRemoteDriver\</DriverDir>
-    <DriverPackage>$(DriverDir)target\release\AppleRemoteDriver_package\</DriverPackage>
-  </PropertyGroup>
+  <!-- Release: downloads the latest published AppleRemoteDriver package (github.com/AnthoDingo/AppleRemoteWin-Driver:
+       .sys, .inf, .cat, test certificate) and copies it next to the exe. Offline or AppleRemoteDriver=false: skipped. -->
+  <!-- Evaluated late: IntermediateOutputPath is empty at project evaluation (the package would land in the project folder). -->
+  <Target Name="DriverPackagePath" BeforeTargets="BuildDriver;PublishDriver">
+    <PropertyGroup>
+      <DriverPackage>$(MSBuildProjectDirectory)\$(IntermediateOutputPath)driver\</DriverPackage>
+    </PropertyGroup>
+  </Target>
   <Target Name="BuildDriver" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(AppleRemoteDriver)' != 'false'">
-    <Exec Command="cargo make --profile release" WorkingDirectory="$(DriverDir)" EnvironmentVariables="LIBCLANG_PATH=$(ProgramFiles)\LLVM\bin" ContinueOnError="WarnAndContinue" StandardOutputImportance="low">
+    <Exec Command="powershell -NoProfile -Command &quot;$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force '$(DriverPackage)' | Out-Null; Invoke-WebRequest https://github.com/AnthoDingo/AppleRemoteWin-Driver/releases/latest/download/AppleRemoteDriver.zip -OutFile '$(DriverPackage)AppleRemoteDriver.zip'; Expand-Archive -Force '$(DriverPackage)AppleRemoteDriver.zip' '$(DriverPackage)'&quot;" ContinueOnError="WarnAndContinue" StandardOutputImportance="low">
       <Output TaskParameter="ExitCode" PropertyName="DriverExitCode" />
     </Exec>
     <ItemGroup Condition="'$(DriverExitCode)' == '0'">
@@ -74,14 +76,31 @@
     <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)driver\" Condition="'$(DriverExitCode)' == '0'" />
   </Target>
 
+  <!-- Dongle firmware (github.com/AnthoDingo/AppleRemoteWin-Dongle): the signed AppleRemoteEsp32.bin of its latest
+       release, shipped as firmware\AppleRemoteEsp32.bin; the app is the dongle's only update channel. Release builds only;
+       -p:EspFirmware=<signed .bin> ships a local build instead (any configuration). Offline or AppleRemoteDongle=false:
+       not shipped, no update offered. -->
+  <Target Name="DongleFirmwarePath" BeforeTargets="DongleFirmware;PublishDongleFirmware">
+    <PropertyGroup>
+      <DongleFirmware Condition="'$(EspFirmware)' != ''">$(EspFirmware)</DongleFirmware>
+      <DongleFirmware Condition="'$(EspFirmware)' == ''">$(MSBuildProjectDirectory)\$(IntermediateOutputPath)dongle\AppleRemoteEsp32.bin</DongleFirmware>
+    </PropertyGroup>
+  </Target>
+  <Target Name="DongleFirmware" AfterTargets="Build" Condition="('$(Configuration)' == 'Release' Or '$(EspFirmware)' != '') And '$(AppleRemoteDongle)' != 'false'">
+    <Exec Condition="'$(EspFirmware)' == ''" Command="powershell -NoProfile -Command &quot;$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force (Split-Path '$(DongleFirmware)') | Out-Null; Invoke-WebRequest https://github.com/AnthoDingo/AppleRemoteWin-Dongle/releases/latest/download/AppleRemoteEsp32.bin -OutFile '$(DongleFirmware)'&quot;" ContinueOnError="WarnAndContinue" StandardOutputImportance="low" />
+    <Copy SourceFiles="$(DongleFirmware)" DestinationFiles="$(OutDir)firmware\AppleRemoteEsp32.bin" Condition="Exists('$(DongleFirmware)')" />
+  </Target>
+  <Target Name="PublishDongleFirmware" AfterTargets="Publish" Condition="('$(Configuration)' == 'Release' Or '$(EspFirmware)' != '') And '$(AppleRemoteDongle)' != 'false'">
+    <Copy SourceFiles="$(DongleFirmware)" DestinationFiles="$(PublishDir)firmware\AppleRemoteEsp32.bin" Condition="Exists('$(DongleFirmware)')" ContinueOnError="WarnAndContinue" />
+  </Target>
+
   <!-- Publish: the driver package ALWAYS goes in <PublishDir>driver\ (never at the root, where files can be
        locked by the test VM reading the shared folder). The 4 files go together: the .cat signs this .sys. -->
-  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' And Exists('$(DriverPackage)AppleRemoteDriver.sys')">
+  <Target Name="PublishDriver" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <PublishedDriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
-    <!-- A file held open (VMware, VM share) must not fail the publish: warning only, and the package remains
-         to be checked (cmp against the target folder). -->
+    <!-- A file held open (VMware, VM share) must not fail the publish: warning only. -->
     <Copy SourceFiles="@(PublishedDriverFile)" DestinationFolder="$(PublishDir)driver\" SkipUnchangedFiles="true" Retries="2" RetryDelayMilliseconds="500" ContinueOnError="WarnAndContinue" />
   </Target>
 

@@ -41,4 +41,6 @@ target/
 
 # Inno Setup
 Output/
-src/AppleRemoteEsp32/ota_signing_key.pem
+
+# Signing keys (the dongle firmware's lives in AppleRemoteWin-Dongle): never commit them
+*.pem
