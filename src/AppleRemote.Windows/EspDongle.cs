@@ -12,7 +12,7 @@ using static AppleRemote.Windows.Native.NativeMethods;
 namespace AppleRemote.Windows;
 
 /// <summary>
-/// ESP32-S3 dongle (src/AppleRemoteEsp32): it keeps the remote itself (BLE central, bond in its flash, unlock on every
+/// ESP32-S3 dongle (firmware: github.com/AnthoDingo/AppleRemoteWin-Dongle): it keeps the remote itself (BLE central, bond in its flash, unlock on every
 /// connection) and forwards it over USB HID, vendor collection 0xFF52 under Espressif's VID. Report 1 (in): remote report
 /// in hid.dll format (0xFC…), report 2 (in): state, battery %, last disconnect reason, feature 3: command,
 /// feature 4: firmware update (<see cref="UpdateFirmwareAsync"/>).
@@ -35,8 +35,9 @@ public sealed class EspDongle(Action<double, byte[]?> onReport, Action<string> o
         onStatus(message);
     }
 
-    public static HidDeviceInfo? Find() =>
-        HidEnumerator.ListAll().FirstOrDefault(d => d.VendorId == VendorId && d.UsagePage == UsagePage);
+    public static HidDeviceInfo? Find() => HidEnumerator.ListAll().FirstOrDefault(IsDongle);
+
+    public static bool IsDongle(HidDeviceInfo d) => d.VendorId == VendorId && d.UsagePage == UsagePage;
 
     /// <summary>Sends a command to the dongle; false if it is not open or refused it.</summary>
     public bool Send(byte command)
@@ -110,7 +111,7 @@ public sealed class EspDongle(Action<double, byte[]?> onReport, Action<string> o
         });
     }
 
-    // ---- firmware update (protocol mirrored in src/AppleRemoteEsp32/main/ota.c) ----------------
+    // ---- firmware update (protocol mirrored in main/ota.c of AppleRemoteWin-Dongle) -------------
 
     const byte ReportOta = 4, OtaBegin = 1, OtaData = 2, OtaEnd = 3, OtaAbort = 4;
     const byte OtaReceiving = 1, OtaVerifying = 2, OtaDone = 3;

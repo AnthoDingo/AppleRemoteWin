@@ -7,7 +7,7 @@ namespace AppleRemote;
 
 /// <summary>
 /// The ESP32-S3 dongle firmware shipped with the app. Not a security boundary: the dongle verifies the signature and the
-/// version itself (src/AppleRemoteEsp32/main/ota.c). This only rejects a damaged file early and reads its version.
+/// version itself (main/ota.c of AppleRemoteWin-Dongle). This only rejects a damaged file early and reads its version.
 /// </summary>
 public static class FirmwareImage
 {
@@ -36,7 +36,7 @@ public static class FirmwareImage
         return null;
     }
 
-    /// <summary>Version of an image <see cref="Problem"/> accepted (PROJECT_VER of the firmware).</summary>
+    /// <summary>Version of an image <see cref="Problem"/> accepted (CONFIG_APP_PROJECT_VER of the firmware).</summary>
     public static string Version(byte[] image) => Text(image, AppDescVersion);
 
     /// <summary>

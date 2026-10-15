@@ -39,6 +39,18 @@
   <data name="Settings.ImportAll" xml:space="preserve"><value>Import all</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>PAIRING</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Pair (Bluetooth)…</value></data>
+  <data name="Settings.Updates" xml:space="preserve"><value>VERSION &amp; UPDATES</value></data>
+  <data name="Settings.CheckUpdates" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Settings.UpToDate" xml:space="preserve"><value>Up to date (latest: {0})</value></data>
+  <data name="Settings.NewVersion" xml:space="preserve"><value>New version available: {0}</value></data>
+  <data name="Settings.UpdateFailed" xml:space="preserve"><value>Could not check for updates.</value></data>
+  <data name="Settings.ReleaseNotes" xml:space="preserve"><value>Release notes</value></data>
+  <data name="Settings.InstalledVersion" xml:space="preserve"><value>Installed version</value></data>
+  <data name="Settings.AvailableVersion" xml:space="preserve"><value>Available version</value></data>
+  <data name="Settings.LastChecked" xml:space="preserve"><value>Last checked: {0}</value></data>
+  <data name="Settings.NotifyUpdates" xml:space="preserve"><value>Show notifications for new updates</value></data>
+  <data name="Settings.AutoUpdate" xml:space="preserve"><value>Download and install updates automatically</value></data>
+  <data name="Settings.AutoUpdateNote" xml:space="preserve"><value>An administrator prompt (UAC) is shown</value></data>
   <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
   <data name="Settings.License" xml:space="preserve"><value>License</value></data>
   <data name="Settings.Components" xml:space="preserve"><value>Components and licenses</value></data>
@@ -191,6 +203,7 @@ Remove this pairing and pair again?</value></data>
   <data name="Log.PairDirect" xml:space="preserve"><value>Pairing: hold Menu + Volume + for ~5 s, near the PC.</value></data>
   <data name="Log.PairSettings" xml:space="preserve"><value>Hold Menu + Volume + for ~5 s near the PC, then add it in Settings &gt; Bluetooth.</value></data>
   <data name="Log.Forget" xml:space="preserve"><value>Remote forgotten.</value></data>
+  <data name="Log.DongleDetected" xml:space="preserve"><value>ESP32-S3 dongle detected: the session switches to it.</value></data>
   <data name="Log.OpenBtFailed" xml:space="preserve"><value>Could not open the Bluetooth settings: {0}</value></data>
   <data name="Log.DriverReboot" xml:space="preserve"><value>Driver installed: restart the PC to finish.</value></data>
   <data name="Log.DriverInstalled" xml:space="preserve"><value>WinUSB driver installed.</value></data>

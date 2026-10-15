@@ -112,17 +112,26 @@ public sealed partial class RemoteViewModel : ObservableObject, IDisposable
         _gestureTimer.Tick += (_, _) => ResetGesture();
         _scanTimer.Tick += async (_, _) =>
         {
-            var hid = await Task.Run(() =>
+            var all = await Task.Run(() =>
             {
-                try { return HidEnumerator.ListApple(); }
+                try { return HidEnumerator.ListAll(); }
                 catch { return []; }
             });
+            // The dongle is only picked when the session starts: one plugged in later (the app runs at logon, the dongle
+            // reboots after a cable flash) takes over the running session.
+            if (_session.IsRunning && !_session.UsesDongle && all.Any(EspDongle.IsDongle))
+            {
+                _log(Loc.T("Log.DongleDetected"));
+                StopSession();
+                StartSession();
+            }
+            var hid = all.Where(HidEnumerator.IsApple);
             // A single remote exposes several HID collections: one line per product.
             var connected = hid.DistinctBy(d => (d.VendorId, d.ProductId))
                 .Select(d => new NearbyRow(d.IsSiriRemoteGen1 ? "Siri Remote (1st)" : d.Product.Length > 0 ? d.Product : $"HID {d.VendorId:X4}:{d.ProductId:X4}",
                     "", Loc.T("Remote.Connected"), true));
-            // Direct Bluetooth: the remote is connected through the WinUSB adapter, invisible to Windows (no HID, no advertising).
-            if (_session.UsesBluetoothDirect && StatusLevel == StatusLevel.Ok)
+            // Direct Bluetooth or dongle: the remote is connected through them, invisible to Windows (no HID, no advertising).
+            if ((_session.UsesBluetoothDirect || _session.UsesDongle) && StatusLevel == StatusLevel.Ok)
                 connected = connected.Append(new NearbyRow("Siri Remote (1st)", "", Loc.T("Remote.Connected"), true));
             var nearby = _scanner.Snapshot().Where(d => d.AppleHid)
                 .Select(d => new NearbyRow("Siri Remote (1st)", d.AddressText, $"{d.Rssi} dBm", false, d.Address));

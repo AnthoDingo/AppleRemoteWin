@@ -39,6 +39,41 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public string AppVersion { get; } = typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "";
 
+    [ObservableProperty] string _updateStatus = "";
+    [ObservableProperty] string _lastChecked = "";
+    [ObservableProperty] bool _autoUpdate;
+    partial void OnAutoUpdateChanged(bool value) { _settings.AutoUpdate = value; _settings.Save(); }
+    [ObservableProperty] bool _notifyUpdates;
+    partial void OnNotifyUpdatesChanged(bool value) { _settings.NotifyUpdates = value; _settings.Save(); }
+    void ShowLastChecked() => LastChecked = _settings.LastUpdateCheck is { } at ? Loc.T("Settings.LastChecked", at.ToString("G")) : "";
+    [ObservableProperty] bool _checkingUpdates;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasReleaseUrl))] string? _releaseUrl;
+    public bool HasReleaseUrl => ReleaseUrl is not null;
+
+    [RelayCommand(CanExecute = nameof(CanCheckUpdates))]
+    async Task CheckUpdates()
+    {
+        CheckingUpdates = true;
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("AppleRemote-UpdateCheck");
+            http.Timeout = TimeSpan.FromMinutes(5);
+            var release = await UpdateService.LatestAsync(http);
+            ReleaseUrl = release.Url;
+            UpdateStatus = Loc.T(release.Newer ? "Settings.NewVersion" : "Settings.UpToDate", release.Tag);
+            if (release.Newer && AutoUpdate) await UpdateService.InstallAsync(http, release, _log);
+            _settings.LastUpdateCheck = DateTime.Now;
+            _settings.Save();
+            ShowLastChecked();
+            await FetchLatestReleases();
+        }
+        catch (Exception) { ReleaseUrl = null; UpdateStatus = Loc.T("Settings.UpdateFailed"); }
+        finally { CheckingUpdates = false; }
+    }
+    bool CanCheckUpdates() => !CheckingUpdates;
+    partial void OnCheckingUpdatesChanged(bool value) => CheckUpdatesCommand.NotifyCanExecuteChanged();
+
     static readonly string NoKey = Loc.T("NoKey");
     public IReadOnlyList<string> KeyChoices { get; } = [NoKey, .. Keys.Names.Keys.Where(n => n != "Esc")];
     public Dictionary<string, KeyChoice> Bindings { get; } = new();
@@ -116,6 +151,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _keyboardEnabled = _settings.KeyboardEnabled;
         _language = _settings.Language;
         _closeToTray = _settings.CloseToTray;
+        _notifyUpdates = _settings.NotifyUpdates;
+        _autoUpdate = _settings.AutoUpdate;
+        UpdateService.Checked += () => System.Windows.Application.Current?.Dispatcher.InvokeAsync(ShowLastChecked);
+        _ = FetchLatestReleases();
+        ShowLastChecked();
         _session.KeyboardEnabled = _settings.KeyboardEnabled;
         _session.AdapterId = _settings.Adapter;
         _ = RefreshDriver();
@@ -240,10 +280,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] string _filterText = Loc.T("Driver.Checking");
     [ObservableProperty, NotifyPropertyChangedFor(nameof(WinUsbButton)), NotifyPropertyChangedFor(nameof(CanToggleFilter)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _winUsbOn;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(CanToggleFilter))] bool _adapterPresent;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterButton)), NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _filterOn;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(AnyOn)),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterButton)), NotifyPropertyChangedFor(nameof(FilterInstalled)), NotifyPropertyChangedFor(nameof(FilterStatus)), NotifyPropertyChangedFor(nameof(CanToggleWinUsb)), NotifyPropertyChangedFor(nameof(AnyOn))] bool _filterOn;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(DongleInstalled)), NotifyPropertyChangedFor(nameof(AnyOn)),
      NotifyPropertyChangedFor(nameof(UpdateAvailable)), NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] bool _dongleOn;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(UpdateAvailable)),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(DongleInstalled)), NotifyPropertyChangedFor(nameof(UpdateAvailable)),
      NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] string? _dongleFirmware;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleText)), NotifyPropertyChangedFor(nameof(UpdateAvailable)),
      NotifyCanExecuteChangedFor(nameof(UpdateDongleCommand))] int? _dongleProgress;   // null: no update running
@@ -256,6 +296,42 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public bool CanToggleWinUsb => !FilterOn && AdapterPresent; // mutually exclusive: only one of the two at a time
     public bool CanToggleFilter => !WinUsbOn && (AdapterPresent || FilterOn); // without an adapter, only removal remains possible
     public string WinUsbButton => Loc.T(WinUsbOn ? "Settings.RestoreDriver" : "Settings.InstallWinUsb");
+    static readonly string Unknown = "—";
+    /// <summary>DriverVer of the package shipped in driver\ next to the exe (re-stamped by every build).</summary>
+    static readonly string PackageVersion = ReadPackageVersion();
+    /// <summary>Latest filter release on GitHub; the package shipped in driver\ (the one the app installs) wins when present.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(FilterAvailable))] string? _filterLatest;
+    public string FilterAvailable => PackageVersion != Unknown ? PackageVersion : FilterLatest ?? Unknown;
+    static string ReadPackageVersion()
+    {
+        try
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(
+                File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "driver", "AppleRemoteDriver.inf")), @"DriverVer\s*=\s*[^,
+
+]+,\s*([^\s;]+)");
+            return m.Success ? m.Groups[1].Value : Unknown;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return Unknown; }
+    }
+    public string FilterInstalled => !FilterOn ? Unknown : _settings.FilterVersion ?? "?";
+    public string FilterStatus => Loc.T(FilterOn ? "Filter.Installed" : "Filter.NotInstalled");
+    public string DongleInstalled => DongleOn ? DongleFirmware ?? "?" : Unknown;
+    /// <summary>Latest dongle firmware release on GitHub; the shipped image (the one the app can flash) wins when present.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DongleAvailable))] string? _dongleLatest;
+    public string DongleAvailable => BundledFirmware.Value is { } image ? FirmwareImage.Version(image) : DongleLatest ?? Unknown;
+
+    async Task FetchLatestReleases()
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("AppleRemote-UpdateCheck");
+            DongleLatest = await UpdateService.LatestTagAsync(http, "AnthoDingo/AppleRemoteWin-Dongle");
+            FilterLatest = await UpdateService.LatestTagAsync(http, "AnthoDingo/AppleRemoteWin-Driver");
+        }
+        catch (Exception) { }   // offline, rate-limited or no release yet: stays unknown
+    }
     public string FilterButton => Loc.T(FilterOn ? "Settings.UninstallFilter" : "Settings.InstallFilter");
 
     [RelayCommand]
@@ -368,6 +444,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
                         "filter-uninstall" => "Log.FilterRemoved",
                         _ => "Log.DriverRestored",
                     }));
+                if (verb is "filter-install" or "filter-uninstall")
+                {
+                    _settings.FilterVersion = verb == "filter-install" ? FilterAvailable : null;
+                    _settings.Save();
+                }
                 if (code == DriverCommand.Ok) Remote.StartSession(); // WinUSB -> direct Bluetooth, otherwise Windows' HID
             }
             else await _dialogs.Warn(Loc.T("Driver.DialogTitle"), error ?? Loc.T("Driver.Failed", code));
@@ -380,7 +461,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Signed firmware shipped next to the exe (firmware\AppleRemoteEsp32.bin, copied at build): the only update source,
+    /// Signed firmware shipped next to the exe (firmware\AppleRemoteEsp32.bin, downloaded from AppleRemoteWin-Dongle by the Release build): the only update source,
     /// the dongle itself never goes online. Null if missing or damaged.
     /// </summary>
     static readonly Lazy<byte[]?> BundledFirmware = new(() =>

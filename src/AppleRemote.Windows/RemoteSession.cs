@@ -78,7 +78,7 @@ public sealed class RemoteSession : IDisposable
 
     EspDongle? _dongle;
 
-    /// <summary>True if the running session reads an ESP32-S3 dongle (src/AppleRemoteEsp32).</summary>
+    /// <summary>True if the running session reads an ESP32-S3 dongle (firmware: AppleRemoteWin-Dongle).</summary>
     public bool UsesDongle => _dongle is not null;
 
     /// <summary>Sends <see cref="EspDongle.CommandPair"/>, <see cref="EspDongle.CommandForget"/>… to the dongle.</summary>

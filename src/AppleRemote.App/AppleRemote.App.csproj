@@ -5,7 +5,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <EspFirmware Condition="'$(EspFirmware)' == ''">$(MSBuildThisFileDirectory)..\AppleRemoteEsp32\build\AppleRemoteEsp32.bin</EspFirmware>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -14,7 +13,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AppleRemote.App</RootNamespace>
     <AssemblyName>AppleRemote</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Published with a RID: self-contained, so the app runs without .NET installed. App, macro editor and filter
@@ -53,9 +52,6 @@
     <!-- Realtek RTL8761B patch (TP-Link UB500) from linux-firmware rtl_bt/, sent by RealtekFirmware under WinUSB;
          redistributable unmodified with its licence. -->
     <Content Include="firmware\**" CopyToOutputDirectory="PreserveNewest" />
-    <!-- Signed dongle firmware (src/AppleRemoteEsp32, idf.py build): the app is its only update channel.
-         Override with -p:EspFirmware=<signed .bin>; absent = no update offered. -->
-    <Content Include="$(EspFirmware)" Link="firmware\AppleRemoteEsp32.bin" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(EspFirmware)')" />
   </ItemGroup>
 
   <ItemGroup>
@@ -78,6 +74,24 @@
       <DriverFile Include="$(DriverPackage)AppleRemoteDriver.sys;$(DriverPackage)AppleRemoteDriver.inf;$(DriverPackage)appleremotedriver.cat;$(DriverPackage)WDRLocalTestCert.cer" />
     </ItemGroup>
     <Copy SourceFiles="@(DriverFile)" DestinationFolder="$(OutDir)driver\" Condition="'$(DriverExitCode)' == '0'" />
+  </Target>
+
+  <!-- Dongle firmware (github.com/AnthoDingo/AppleRemoteWin-Dongle): the signed AppleRemoteEsp32.bin of its latest
+       release, shipped as firmware\AppleRemoteEsp32.bin; the app is the dongle's only update channel. Release builds only;
+       -p:EspFirmware=<signed .bin> ships a local build instead (any configuration). Offline or AppleRemoteDongle=false:
+       not shipped, no update offered. -->
+  <Target Name="DongleFirmwarePath" BeforeTargets="DongleFirmware;PublishDongleFirmware">
+    <PropertyGroup>
+      <DongleFirmware Condition="'$(EspFirmware)' != ''">$(EspFirmware)</DongleFirmware>
+      <DongleFirmware Condition="'$(EspFirmware)' == ''">$(MSBuildProjectDirectory)\$(IntermediateOutputPath)dongle\AppleRemoteEsp32.bin</DongleFirmware>
+    </PropertyGroup>
+  </Target>
+  <Target Name="DongleFirmware" AfterTargets="Build" Condition="('$(Configuration)' == 'Release' Or '$(EspFirmware)' != '') And '$(AppleRemoteDongle)' != 'false'">
+    <Exec Condition="'$(EspFirmware)' == ''" Command="powershell -NoProfile -Command &quot;$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force (Split-Path '$(DongleFirmware)') | Out-Null; Invoke-WebRequest https://github.com/AnthoDingo/AppleRemoteWin-Dongle/releases/latest/download/AppleRemoteEsp32.bin -OutFile '$(DongleFirmware)'&quot;" ContinueOnError="WarnAndContinue" StandardOutputImportance="low" />
+    <Copy SourceFiles="$(DongleFirmware)" DestinationFiles="$(OutDir)firmware\AppleRemoteEsp32.bin" Condition="Exists('$(DongleFirmware)')" />
+  </Target>
+  <Target Name="PublishDongleFirmware" AfterTargets="Publish" Condition="('$(Configuration)' == 'Release' Or '$(EspFirmware)' != '') And '$(AppleRemoteDongle)' != 'false'">
+    <Copy SourceFiles="$(DongleFirmware)" DestinationFiles="$(PublishDir)firmware\AppleRemoteEsp32.bin" Condition="Exists('$(DongleFirmware)')" ContinueOnError="WarnAndContinue" />
   </Target>
 
   <!-- Publish: the driver package ALWAYS goes in <PublishDir>driver\ (never at the root, where files can be

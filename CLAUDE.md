@@ -17,8 +17,8 @@ src/AppleRemote.App       WPF window (startup project)                          
                           (menu footer), one view-model per page (ViewModels/Page) owned by MainViewModel (settings + session); common styles in Views/Styles.xaml
 src/AppleRemote.DriverInstaller  installs / removes the kernel filter through its package (pnputil), requires elevation; launched by the app's button
 (driver)                  KMDF kernel filter in Rust: separate repo AnthoDingo/AppleRemoteWin-Driver (MIT, signed package = test certificate)
-src/AppleRemoteEsp32      ESP32-S3 firmware (ESP-IDF, NimBLE + TinyUSB): USB HID dongle holding the remote, driven by the app (EspDongle.cs),
-                          update only from the app, which ships it in firmware\ (signed images only, rollback: see its README); NOT yet built or tested on hardware
+(dongle)                  ESP32-S3 firmware (ESP-IDF/PlatformIO, NimBLE + TinyUSB): separate repo AnthoDingo/AppleRemoteWin-Dongle (+ 3D-printed case); USB HID dongle
+                          holding the remote, driven by the app (EspDongle.cs, FirmwareImage.cs), updated only from the app (signed images)
 tests/AppleRemote.Tests   xunit, run on any OS (sample.jsonl + golden.json)
 tools/siri_bumble.py      Python probe (Bumble): remote through an adapter under WinUSB, outside the Windows Bluetooth stack
 tools/test_siri_bumble.py its hardware-free test (fake remote on virtual Bumble controllers)
@@ -37,6 +37,9 @@ dotnet run --project src/AppleRemote.App
 Kernel filter: built and released in AnthoDingo/AppleRemoteWin-Driver (`cargo make --profile release` there; LLVM + WDK required).
 The Release build of `App` downloads its latest release (`AppleRemoteDriver.zip`; `-p:AppleRemoteDriver=false` to skip it); publishing copies it to `Publish\driver\`
 (the 4 files go together: every build re-stamps the INF and re-signs the `.cat`).
+Dongle firmware: built, signed and released in AnthoDingo/AppleRemoteWin-Dongle. The Release build of `App` downloads
+`AppleRemoteEsp32.bin` from its latest release into `firmware\` (`-p:AppleRemoteDongle=false` to skip it,
+`-p:EspFirmware=<signed .bin>` to ship a local build); without it, the app offers no dongle update.
 Releases are published **self-contained** with a RID (`--self-contained true`, no single-file): the app runs without .NET installed;
 `App`, `MacroEditor` and `DriverInstaller` share the bundled runtime in one folder, so all three must stay self-contained together
 (`SelfContained` set in each csproj whenever a RID is given; mixing them fails with NETSDK1150/1151).

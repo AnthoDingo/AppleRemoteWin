@@ -27,6 +27,12 @@ public sealed class Settings
     public string? Adapter { get; set; }
     /// <summary>Last release tag a toast was shown for (one notification per version).</summary>
     public string? LastNotifiedVersion { get; set; }
+    public bool NotifyUpdates { get; set; } = true;
+    /// <summary>Download and run the setup of a new release without asking (off by default: it raises a UAC prompt).</summary>
+    public bool AutoUpdate { get; set; }
+    public DateTime? LastUpdateCheck { get; set; }
+    /// <summary>DriverVer of the filter package this app installed (the installed driver cannot be read without elevation).</summary>
+    public string? FilterVersion { get; set; }
 
     public static string FilePath => System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AppleRemote", "settings.json");

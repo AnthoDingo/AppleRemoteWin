@@ -64,8 +64,9 @@ public static class HidEnumerator
     }
 
     /// <summary>Apple HID devices (diagnostic: "does Windows see the remote?").</summary>
-    public static IReadOnlyList<HidDeviceInfo> ListApple() =>
-        ListAll().Where(d => d.VendorId is AppleBluetoothVendorId or AppleUsbVendorId || d.IsSiriRemoteGen1).ToList();
+    public static IReadOnlyList<HidDeviceInfo> ListApple() => ListAll().Where(IsApple).ToList();
+
+    public static bool IsApple(HidDeviceInfo d) => d.VendorId is AppleBluetoothVendorId or AppleUsbVendorId || d.IsSiriRemoteGen1;
 
     /// <summary>
     /// The Siri Remote gen 1 collection carrying the 0xFC input report and the 0xF0 feature report

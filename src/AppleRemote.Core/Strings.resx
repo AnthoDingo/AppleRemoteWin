@@ -39,6 +39,18 @@
   <data name="Settings.ImportAll" xml:space="preserve"><value>Tout importer</value></data>
   <data name="Settings.Pairing" xml:space="preserve"><value>APPAIRAGE</value></data>
   <data name="Settings.PairButton" xml:space="preserve"><value>Appairer (Bluetooth)…</value></data>
+  <data name="Settings.Updates" xml:space="preserve"><value>VERSION ET MISES À JOUR</value></data>
+  <data name="Settings.CheckUpdates" xml:space="preserve"><value>Rechercher des mises à jour</value></data>
+  <data name="Settings.UpToDate" xml:space="preserve"><value>À jour (dernière version : {0})</value></data>
+  <data name="Settings.NewVersion" xml:space="preserve"><value>Nouvelle version disponible : {0}</value></data>
+  <data name="Settings.UpdateFailed" xml:space="preserve"><value>Impossible de vérifier les mises à jour.</value></data>
+  <data name="Settings.ReleaseNotes" xml:space="preserve"><value>Notes de version</value></data>
+  <data name="Settings.InstalledVersion" xml:space="preserve"><value>Version installée</value></data>
+  <data name="Settings.AvailableVersion" xml:space="preserve"><value>Version disponible</value></data>
+  <data name="Settings.LastChecked" xml:space="preserve"><value>Dernière vérification : {0}</value></data>
+  <data name="Settings.NotifyUpdates" xml:space="preserve"><value>Afficher une notification pour les nouvelles versions</value></data>
+  <data name="Settings.AutoUpdate" xml:space="preserve"><value>Télécharger et installer les mises à jour automatiquement</value></data>
+  <data name="Settings.AutoUpdateNote" xml:space="preserve"><value>Une confirmation administrateur (UAC) est demandée</value></data>
   <data name="Settings.Version" xml:space="preserve"><value>Version</value></data>
   <data name="Settings.License" xml:space="preserve"><value>Licence</value></data>
   <data name="Settings.Components" xml:space="preserve"><value>Composants et licences</value></data>
@@ -191,6 +203,7 @@ Supprimer cet appairage puis appairer à nouveau ?</value></data>
   <data name="Log.PairDirect" xml:space="preserve"><value>Appairage : maintenez Menu + Volume + pendant ~5 s, près du PC.</value></data>
   <data name="Log.PairSettings" xml:space="preserve"><value>Maintenez Menu + Volume + pendant ~5 s près du PC, puis ajoutez-la dans Paramètres &gt; Bluetooth.</value></data>
   <data name="Log.Forget" xml:space="preserve"><value>Télécommande oubliée.</value></data>
+  <data name="Log.DongleDetected" xml:space="preserve"><value>Dongle ESP32-S3 détecté : la session passe dessus.</value></data>
   <data name="Log.OpenBtFailed" xml:space="preserve"><value>Impossible d'ouvrir les paramètres Bluetooth : {0}</value></data>
   <data name="Log.DriverReboot" xml:space="preserve"><value>Pilote installé : redémarrez le PC pour terminer.</value></data>
   <data name="Log.DriverInstalled" xml:space="preserve"><value>Pilote WinUSB installé.</value></data>
